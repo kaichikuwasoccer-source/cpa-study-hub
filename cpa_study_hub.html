@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <title>CPA Study Hub</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Google Fonts: Inter & Noto Sans JP -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '"Noto Sans JP"', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-800 antialiased transition-colors duration-200 dark:bg-slate-950 dark:text-slate-100">
+
+  <!-- トースト通知 -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 hidden items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-xl dark:bg-slate-800">
+    <svg class="h-4 w-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+    </svg>
+    <span id="toastText">通知</span>
+  </div>
+
+  <!-- ヘッダー -->
+  <header class="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/90">
+    <div class="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+      <!-- ブランド -->
+      <div class="flex items-center gap-3">
+        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-base font-extrabold tracking-tight sm:text-lg">CPA Study Hub</h1>
+          <p id="headerDate" class="text-xs text-slate-500 dark:text-slate-400"></p>
+        </div>
+      </div>
+
+      <!-- アクションボタン群 -->
+      <div class="flex items-center gap-2">
+        <a id="headerLoggerBtn" href="#" target="_blank" rel="noopener noreferrer"
+           class="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-blue-700 active:scale-[0.98] transition sm:text-sm">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>記録アプリ</span>
+        </a>
+
+        <button id="refreshDataBtn" type="button" title="最新データを再読み込み"
+                class="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition">
+          <svg id="refreshIcon" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+          </svg>
+        </button>
+
+        <button id="themeToggleBtn" type="button" title="ライト/ダーク切替"
+                class="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition">
+          <svg class="h-4 w-4 dark:hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+          </svg>
+          <svg class="hidden h-4 w-4 dark:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+          </svg>
+        </button>
+
+        <button id="openSettingsBtn" type="button" title="連携URL設定"
+                class="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- メインコンテンツ -->
+  <main class="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6">
+
+    <!-- デモモード案内バナー -->
+    <div id="demoBanner" class="hidden flex-col items-start justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900 sm:flex-row sm:items-center dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+      <div>
+        <strong class="font-bold">デモデータ表示中：</strong>
+        右上の歯車アイコン（⚙）からGASのウェブアプリURLを設定すると、スプレッドシートとGoogleカレンダーの本番データが反映されます。
+      </div>
+      <button id="bannerOpenSettingsBtn" type="button"
+              class="shrink-0 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-700 transition">
+        URLを設定する
+      </button>
+    </div>
+
+    <!-- 1. 重要日程カウントダウン -->
+    <section>
+      <div class="mb-3 flex items-center justify-between">
+        <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">試験・重要日程カウントダウン</h2>
+        <button id="openAddCountdownBtn" type="button"
+                class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 transition">
+          ＋ 日程を追加
+        </button>
+      </div>
+      <div id="countdownGrid" class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <!-- JSで動的生成 -->
+      </div>
+    </section>
+
+    <!-- 2. 今日の勉強予定（カレンダー）※クイックアクセスと位置を入れ替え・全幅に揃え -->
+    <section>
+      <div class="mb-3 flex items-center justify-between">
+        <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">今日の勉強予定（カレンダー）</h2>
+        <a id="openCalendarLink" href="https://calendar.google.com/" target="_blank" rel="noopener noreferrer"
+           class="text-xs font-semibold text-blue-600 hover:underline dark:text-blue-400">
+          カレンダーを開く ↗
+        </a>
+      </div>
+      <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div id="todayEventsList" class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <!-- JSで動的生成 -->
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. 学習時間サマリー（KPI）＋ 期間切替 -->
+    <section>
+      <div class="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex items-center gap-2">
+          <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">学習進捗・分析</h2>
+          <span id="lastUpdated" class="text-xs text-slate-400"></span>
+        </div>
+
+        <!-- 期間切替タブ（今日 / 今週 / 今月 / 年間） -->
+        <div id="periodTabs" class="inline-flex self-start rounded-xl border border-slate-200 bg-white p-1 shadow-sm sm:self-auto dark:border-slate-800 dark:bg-slate-900">
+          <button type="button" data-period="today" class="period-btn rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition">今日</button>
+          <button type="button" data-period="week" class="period-btn rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition">今週</button>
+          <button type="button" data-period="month" class="period-btn rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition">今月</button>
+          <button type="button" data-period="year" class="period-btn rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition">年間</button>
+        </div>
+      </div>
+
+      <!-- 選択中の期間がGAS未対応の場合の補足バナー -->
+      <div id="periodNotice" class="mb-3 hidden rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-xs text-blue-800 dark:border-blue-900/50 dark:bg-blue-950/40 dark:text-blue-200">
+        ※ 現在のGASからは「今日・今週」のデータのみ取得しています。「今月・年間」も本番データで集計したい場合は、GAS側の集計処理を追加すると自動反映されます。
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <!-- 選択期間の勉強時間（実績） -->
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div class="flex items-center justify-between">
+            <span id="primaryKpiLabel" class="text-xs font-semibold text-slate-500 dark:text-slate-400">今週の勉強時間</span>
+            <span id="primaryPctBadge" class="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-700 dark:bg-blue-950 dark:text-blue-300">0%</span>
+          </div>
+          <div id="primaryActualVal" class="mt-2 text-3xl font-extrabold tracking-tight">--</div>
+          <div id="primaryPlannedVal" class="mt-1 text-xs text-slate-500 dark:text-slate-400">カレンダー予定: --</div>
+          <div class="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+            <div id="primaryProgressBar" class="h-full rounded-full bg-blue-600 transition-all duration-500" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- 比較用サブKPI -->
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div class="flex items-center justify-between">
+            <span id="subKpiLabel" class="text-xs font-semibold text-slate-500 dark:text-slate-400">今日の勉強時間</span>
+            <span id="subPctBadge" class="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">0%</span>
+          </div>
+          <div id="subActualVal" class="mt-2 text-3xl font-extrabold tracking-tight">--</div>
+          <div id="subPlannedVal" class="mt-1 text-xs text-slate-500 dark:text-slate-400">カレンダー予定: --</div>
+          <div class="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+            <div id="subProgressBar" class="h-full rounded-full bg-emerald-500 transition-all duration-500" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- 選択期間の分析インサイト -->
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <span id="focusLabel" class="text-xs font-semibold text-slate-500 dark:text-slate-400">今週の科目フォーカス</span>
+          <div id="topSubjectVal" class="mt-2 text-xl font-bold tracking-tight">--</div>
+          <p id="insightText" class="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+            データを読み込むと、予定と実績のギャップや重点科目の分析が表示されます。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. 分析グラフ（棒グラフ & 科目別割合） -->
+    <section class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <!-- 予定 vs 実績 棒グラフ -->
+      <div class="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2 dark:border-slate-800 dark:bg-slate-900">
+        <div class="mb-4 flex items-center justify-between">
+          <h3 id="barChartTitle" class="text-sm font-bold">今週の科目別：予定 vs 実績（時間）</h3>
+          <span class="text-xs text-slate-400">カレンダー比較</span>
+        </div>
+        <div class="relative min-h-[260px] w-full flex-1">
+          <canvas id="barChart"></canvas>
+        </div>
+      </div>
+
+      <!-- 科目別構成比 ドーナツグラフ＆割合一覧 -->
+      <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div class="mb-3 flex items-center justify-between">
+          <h3 id="ratioChartTitle" class="text-sm font-bold">今週の科目別割合</h3>
+          <span id="ratioTotalBadge" class="text-xs font-semibold text-slate-400">合計 --</span>
+        </div>
+        <div class="relative flex h-44 w-full items-center justify-center">
+          <canvas id="doughnutChart"></canvas>
+        </div>
+        <!-- 科目ごとの時間と割合（%）バー一覧 -->
+        <div id="subjectRatioList" class="mt-4 space-y-2">
+          <!-- JSで動的生成 -->
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. 科目別 予実ギャップ分析 & クイックアクセス（左右同じ幅に揃え） -->
+    <section class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <!-- 科目別 予実ギャップ一覧 -->
+      <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div class="mb-4 flex items-center justify-between">
+          <h3 id="gapTitle" class="text-sm font-bold">今週の科目別 予実ギャップ</h3>
+          <span class="text-xs text-slate-400">実績 − 予定</span>
+        </div>
+        <div id="subjectGapList" class="space-y-3">
+          <!-- JSで動的生成 -->
+        </div>
+      </div>
+
+      <!-- クイックアクセス（カレンダーと位置を入れ替え・同幅カード） -->
+      <div class="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div class="mb-4 flex items-center justify-between">
+          <h3 class="text-sm font-bold">クイックアクセス</h3>
+          <span class="text-xs text-slate-400">よく使うツール</span>
+        </div>
+        <div id="quickLinksGrid" class="grid flex-1 grid-cols-1 content-start gap-3 sm:grid-cols-2">
+          <!-- JSで動的生成 -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 設定モーダル -->
+  <div id="settingsModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+    <div class="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+      <div class="mb-4 flex items-center justify-between">
+        <h3 class="text-base font-bold">連携URL設定</h3>
+        <button id="closeSettingsBtn" type="button" class="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800">✕</button>
+      </div>
+      <form id="settingsForm" class="space-y-4 text-sm">
+        <div>
+          <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">GAS ウェブアプリURL *</label>
+          <input id="inputGasUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec"
+                 class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+        </div>
+        <div>
+          <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">学習記録アプリURL（Vercel）</label>
+          <input id="inputLoggerUrl" type="url" placeholder="https://xxxx.vercel.app"
+                 class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+        </div>
+        <div>
+          <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">スプレッドシートURL</label>
+          <input id="inputSheetUrl" type="url"
+                 class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+        </div>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">GoogleカレンダーURL</label>
+            <input id="inputCalendarUrl" type="url"
+                   class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">Gemini Notebook URL</label>
+            <input id="inputNotebookUrl" type="url"
+                   class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button id="cancelSettingsBtn" type="button"
+                  class="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
+            キャンセル
+          </button>
+          <button type="submit"
+                  class="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 transition">
+            保存して反映
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- カウントダウン追加モーダル -->
+  <div id="countdownModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+    <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+      <div class="mb-4 flex items-center justify-between">
+        <h3 class="text-base font-bold">重要日程を追加</h3>
+        <button id="closeCountdownBtn" type="button" class="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800">✕</button>
+      </div>
+      <form id="countdownForm" class="space-y-4 text-sm">
+        <div>
+          <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">試験・イベント名 *</label>
+          <input id="inputEventName" type="text" required placeholder="例：第Ⅰ回 短答公開模試"
+                 class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">日付 *</label>
+            <input id="inputEventDate" type="date" required
+                   class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">カラー</label>
+            <select id="inputEventColor"
+                    class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800">
+              <option value="rose">赤（本試験）</option>
+              <option value="blue">青（模試・答練）</option>
+              <option value="emerald">緑（マイルストーン）</option>
+              <option value="amber">橙（締切など）</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button id="cancelCountdownBtn" type="button"
+                  class="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
+            キャンセル
+          </button>
+          <button type="submit"
+                  class="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 transition">
+            追加する
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // 1. 定数・初期データ・状態管理
+    // =========================================================================
+    const STORAGE_KEYS = {
+      SETTINGS: 'cpa_hub_settings_v1',
+      COUNTDOWNS: 'cpa_hub_countdowns_v1',
+      THEME: 'cpa_hub_theme_v1',
+    };
+
+    const SUBJECTS = ['財務(計算)', '財務(理論)', '管理会計', '監査論', '企業法', '租税法', '選択科目'];
+    const SUBJECT_COLORS = ['#2563eb', '#38bdf8', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#64748b'];
+
+    const DEFAULT_SETTINGS = {
+      gasUrl: '',
+      loggerUrl: '',
+      sheetUrl: 'https://docs.google.com/spreadsheets/d/1t2HtZSgPttHl-ek01fI0rGpC1I-07gggdw8Xv7_uF7s/edit',
+      calendarUrl: 'https://calendar.google.com/',
+      notebookUrl: 'https://notebooklm.google.com/',
+    };
+
+    const DEFAULT_COUNTDOWNS = [
+      { id: 'c1', name: '第Ⅰ回 短答式試験', date: '2026-12-13', color: 'rose' },
+      { id: 'c2', name: '第Ⅱ回 短答式試験', date: '2027-05-23', color: 'blue' },
+      { id: 'c3', name: '論文式試験（本試験）', date: '2027-08-20', color: 'emerald' },
+    ];
+
+    const PERIOD_META = {
+      today: { label: '今日', subLabel: '今週の勉強時間' },
+      week:  { label: '今週', subLabel: '今日の勉強時間' },
+      month: { label: '今月', subLabel: '今週の勉強時間' },
+      year:  { label: '年間', subLabel: '今月の勉強時間' },
+    };
+
+    // GAS未設定時に表示するデモデータ（今日・今週・今月・年間すべて対応）
+    const DEMO_DATA = {
+      today: { actual: 265, planned: 360 },
+      week:  { actual: 1840, planned: 2400 },
+      periods: {
+        today: {
+          actual: 265, planned: 360,
+          bySubject: {
+            planned: { '財務(計算)': 150, '財務(理論)': 0, '管理会計': 120, '監査論': 90, '企業法': 0, '租税法': 0, '選択科目': 0 },
+            actual:  { '財務(計算)': 135, '財務(理論)': 0, '管理会計': 90, '監査論': 40, '企業法': 0, '租税法': 0, '選択科目': 0 }
+          }
+        },
+        week: {
+          actual: 1840, planned: 2400,
+          bySubject: {
+            planned: { '財務(計算)': 600, '財務(理論)': 360, '管理会計': 480, '監査論': 360, '企業法': 360, '租税法': 180, '選択科目': 60 },
+            actual:  { '財務(計算)': 540, '財務(理論)': 290, '管理会計': 420, '監査論': 250, '企業法': 220, '租税法': 120, '選択科目': 0 }
+          }
+        },
+        month: {
+          actual: 7420, planned: 9000,
+          bySubject: {
+            planned: { '財務(計算)': 2400, '財務(理論)': 1320, '管理会計': 1800, '監査論': 1260, '企業法': 1260, '租税法': 660, '選択科目': 300 },
+            actual:  { '財務(計算)': 2150, '財務(理論)': 1120, '管理会計': 1580, '監査論': 980, '企業法': 910, '租税法': 480, '選択科目': 200 }
+          }
+        },
+        year: {
+          actual: 68400, planned: 75000,
+          bySubject: {
+            planned: { '財務(計算)': 21000, '財務(理論)': 10800, '管理会計': 15000, '監査論': 10200, '企業法': 10200, '租税法': 5400, '選択科目': 2400 },
+            actual:  { '財務(計算)': 19800, '財務(理論)': 9900, '管理会計': 13900, '監査論': 9100, '企業法': 8900, '租税法': 4700, '選択科目': 2100 }
+          }
+        }
+      },
+      todayEvents: [
+        { title: '財務(計算) 連結会計・総合問題', start: '09:00', end: '11:30' },
+        { title: '管理会計 標準原価計算 復習', start: '13:30', end: '15:30' },
+        { title: '監査論 短答問題集（リスクアプローチ）', start: '16:00', end: '17:30' },
+      ]
+    };
+
+    function loadJSON(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : JSON.parse(JSON.stringify(fallback));
+      } catch (e) {
+        return JSON.parse(JSON.stringify(fallback));
+      }
+    }
+
+    function saveJSON(key, val) {
+      try {
+        localStorage.setItem(key, JSON.stringify(val));
+      } catch (e) {}
+    }
+
+    let settings = Object.assign({}, DEFAULT_SETTINGS, loadJSON(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS));
+    let countdowns = loadJSON(STORAGE_KEYS.COUNTDOWNS, DEFAULT_COUNTDOWNS);
+    let selectedPeriod = 'week';
+    let barChartInstance = null;
+    let doughnutChartInstance = null;
+    let currentData = null;
+    let currentIsDemo = true;
+
+    // =========================================================================
+    // 2. ユーティリティ（日付・時間フォーマット・トースト・テーマ）
+    // =========================================================================
+    function initHeaderDate() {
+      const now = new Date();
+      const days = ['日', '月', '火', '水', '木', '金', '土'];
+      document.getElementById('headerDate').textContent =
+        `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日（${days[now.getDay()]}）`;
+    }
+
+    function fmtHours(mins) {
+      const m = Math.max(0, Math.round(mins || 0));
+      const h = Math.floor(m / 60);
+      const r = m % 60;
+      return h > 0 ? `${h}h ${r}m` : `${r}m`;
+    }
+
+    function fmtSignedHours(diffMins) {
+      const sign = diffMins > 0 ? '+' : diffMins < 0 ? '-' : '';
+      return `${sign}${(Math.abs(diffMins) / 60).toFixed(1)}h`;
+    }
+
+    function escapeHTML(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    let toastTimer = null;
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastText').textContent = msg;
+      toast.classList.remove('hidden');
+      toast.classList.add('flex');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.add('hidden');
+        toast.classList.remove('flex');
+      }, 2800);
+    }
+
+    function initTheme() {
+      let saved = null;
+      try { saved = localStorage.getItem(STORAGE_KEYS.THEME); } catch (e) {}
+      if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      }
+    }
+
+    document.getElementById('themeToggleBtn').addEventListener('click', () => {
+      const isDark = document.documentElement.classList.toggle('dark');
+      try { localStorage.setItem(STORAGE_KEYS.THEME, isDark ? 'dark' : 'light'); } catch (e) {}
+      if (currentData) renderDashboard(currentData, currentIsDemo);
+    });
+
+    // =========================================================================
+    // 3. カウントダウン描画・追加・削除
+    // =========================================================================
+    const COLOR_STYLES = {
+      rose:    { border: 'border-l-rose-500',    num: 'text-rose-600 dark:text-rose-400' },
+      blue:    { border: 'border-l-blue-500',    num: 'text-blue-600 dark:text-blue-400' },
+      emerald: { border: 'border-l-emerald-500', num: 'text-emerald-600 dark:text-emerald-400' },
+      amber:   { border: 'border-l-amber-500',   num: 'text-amber-600 dark:text-amber-400' },
+    };
+
+    function renderCountdowns() {
+      const grid = document.getElementById('countdownGrid');
+      grid.innerHTML = '';
+
+      if (!countdowns.length) {
+        grid.innerHTML = `
+          <div class="col-span-full rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center text-xs text-slate-400 dark:border-slate-700 dark:bg-slate-900">
+            日程が登録されていません。「＋ 日程を追加」から試験日や模試の日程を登録できます。
+          </div>`;
+        return;
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const sorted = [...countdowns].sort((a, b) => new Date(a.date) - new Date(b.date));
+      sorted.forEach(item => {
+        const target = new Date(item.date + 'T00:00:00');
+        const diffDays = Math.ceil((target - today) / 86400000);
+        const st = COLOR_STYLES[item.color] || COLOR_STYLES.blue;
+
+        let daysHtml = '';
+        if (diffDays > 0) {
+          daysHtml = `<span class="text-xs font-semibold text-slate-500">あと </span><span class="text-3xl font-extrabold ${st.num}">${diffDays}</span><span class="text-xs font-semibold text-slate-500"> 日</span>`;
+        } else if (diffDays === 0) {
+          daysHtml = `<span class="text-xl font-extrabold ${st.num}">本日</span>`;
+        } else {
+          daysHtml = `<span class="text-xs font-semibold text-slate-400">${Math.abs(diffDays)}日経過</span>`;
+        }
+
+        const card = document.createElement('div');
+        card.className = `group relative flex items-center justify-between rounded-2xl border border-slate-200 border-l-4 ${st.border} bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900`;
+        card.innerHTML = `
+          <div class="min-w-0 pr-3">
+            <div class="text-xs font-semibold text-slate-400">${escapeHTML(item.date.replace(/-/g, '/'))}</div>
+            <div class="mt-0.5 truncate text-sm font-bold">${escapeHTML(item.name)}</div>
+          </div>
+          <div class="shrink-0 text-right">${daysHtml}</div>
+          <button type="button" data-del-id="${escapeHTML(item.id)}" title="削除"
+                  class="absolute right-2 top-2 hidden h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-xs text-slate-400 hover:bg-rose-100 hover:text-rose-600 group-hover:flex dark:bg-slate-800">
+            ✕
+          </button>
+        `;
+        grid.appendChild(card);
+      });
+
+      grid.querySelectorAll('[data-del-id]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.delId;
+          countdowns = countdowns.filter(c => c.id !== id);
+          saveJSON(STORAGE_KEYS.COUNTDOWNS, countdowns);
+          renderCountdowns();
+          showToast('日程を削除しました');
+        });
+      });
+    }
+
+    // =========================================================================
+    // 4. クイックアクセス描画
+    // =========================================================================
+    function renderQuickLinks() {
+      const headerLoggerBtn = document.getElementById('headerLoggerBtn');
+      if (settings.loggerUrl) {
+        headerLoggerBtn.href = settings.loggerUrl;
+        headerLoggerBtn.onclick = null;
+      } else {
+        headerLoggerBtn.href = '#';
+        headerLoggerBtn.onclick = (e) => {
+          e.preventDefault();
+          openSettingsModal();
+          showToast('学習記録アプリのURLを設定してください');
+        };
+      }
+
+      document.getElementById('openCalendarLink').href = settings.calendarUrl || 'https://calendar.google.com/';
+
+      const links = [
+        { title: '学習記録アプリ', sub: 'タイマー計測・記録', url: settings.loggerUrl, icon: '⏱️', bg: 'bg-blue-50 dark:bg-blue-950/60' },
+        { title: 'スプレッドシート', sub: '全ログ・集計シート', url: settings.sheetUrl, icon: '📊', bg: 'bg-emerald-50 dark:bg-emerald-950/60' },
+        { title: 'Googleカレンダー', sub: '週間スケジュール管理', url: settings.calendarUrl, icon: '📅', bg: 'bg-amber-50 dark:bg-amber-950/60' },
+        { title: 'Gemini Notebook', sub: '論点まとめ・復習ノート', url: settings.notebookUrl, icon: '✨', bg: 'bg-violet-50 dark:bg-violet-950/60' },
+      ];
+
+      const grid = document.getElementById('quickLinksGrid');
+      grid.innerHTML = '';
+
+      links.forEach(link => {
+        const a = document.createElement('a');
+        a.className = 'flex items-center gap-3 rounded-xl border border-slate-200/80 bg-slate-50/70 p-3.5 hover:border-blue-300 hover:bg-white hover:shadow-sm dark:border-slate-800 dark:bg-slate-800/50 dark:hover:border-blue-700 dark:hover:bg-slate-800 transition';
+        if (link.url) {
+          a.href = link.url;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+        } else {
+          a.href = '#';
+          a.onclick = (e) => {
+            e.preventDefault();
+            openSettingsModal();
+            showToast(`${link.title}のURLを設定してください`);
+          };
+        }
+        a.innerHTML = `
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg ${link.bg}">${link.icon}</div>
+          <div class="min-w-0">
+            <div class="truncate text-xs font-bold sm:text-sm">${escapeHTML(link.title)}</div>
+            <div class="truncate text-[11px] text-slate-500 dark:text-slate-400">${link.url ? escapeHTML(link.sub) : '未設定（クリックして設定）'}</div>
+          </div>
+        `;
+        grid.appendChild(a);
+      });
+    }
+
+    // =========================================================================
+    // 5. データ取得・ダッシュボード描画
+    // =========================================================================
+    async function fetchAndRenderData() {
+      const refreshIcon = document.getElementById('refreshIcon');
+      const demoBanner = document.getElementById('demoBanner');
+      refreshIcon.classList.add('animate-spin');
+
+      if (!settings.gasUrl) {
+        demoBanner.classList.remove('hidden');
+        demoBanner.classList.add('flex');
+        currentData = DEMO_DATA;
+        currentIsDemo = true;
+        renderDashboard(currentData, true);
+        refreshIcon.classList.remove('animate-spin');
+        return;
+      }
+
+      demoBanner.classList.add('hidden');
+      demoBanner.classList.remove('flex');
+
+      try {
+        const res = await fetch(settings.gasUrl);
+        const json = await res.json();
+        if (json.status !== 'ok') throw new Error(json.message || 'データ取得エラー');
+        currentData = json;
+        currentIsDemo = false;
+        renderDashboard(currentData, false);
+        const now = new Date();
+        document.getElementById('lastUpdated').textContent =
+          `最終更新 ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      } catch (err) {
+        console.error(err);
+        showToast('データ取得に失敗しました（デモを表示します）');
+        currentData = DEMO_DATA;
+        currentIsDemo = true;
+        renderDashboard(currentData, true);
+      } finally {
+        refreshIcon.classList.remove('animate-spin');
+      }
+    }
+
+    // 選択期間（today / week / month / year）に応じたデータを抽出
+    function resolvePeriodData(data, period) {
+      if (data.periods && data.periods[period]) {
+        return { slice: data.periods[period], unsupported: false };
+      }
+      if (period === 'week') {
+        return {
+          slice: {
+            actual: data.week?.actual || 0,
+            planned: data.week?.planned || 0,
+            bySubject: data.bySubject || { actual: {}, planned: {} }
+          },
+          unsupported: false
+        };
+      }
+      if (period === 'today') {
+        return {
+          slice: {
+            actual: data.today?.actual || 0,
+            planned: data.today?.planned || 0,
+            bySubject: data.today?.bySubject || { actual: {}, planned: {} }
+          },
+          unsupported: !data.today?.bySubject
+        };
+      }
+      return {
+        slice: { actual: 0, planned: 0, bySubject: { actual: {}, planned: {} } },
+        unsupported: true
+      };
+    }
+
+    function renderDashboard(data, isDemo) {
+      const meta = PERIOD_META[selectedPeriod] || PERIOD_META.week;
+      const { slice, unsupported } = resolvePeriodData(data, selectedPeriod);
+
+      // 期間未対応バナー
+      const noticeEl = document.getElementById('periodNotice');
+      if (!isDemo && unsupported) {
+        noticeEl.classList.remove('hidden');
+      } else {
+        noticeEl.classList.add('hidden');
+      }
+
+      // 見出し更新
+      document.getElementById('primaryKpiLabel').textContent = `${meta.label}の勉強時間`;
+      document.getElementById('focusLabel').textContent = `${meta.label}の科目フォーカス`;
+      document.getElementById('barChartTitle').textContent = `${meta.label}の科目別：予定 vs 実績（時間）`;
+      document.getElementById('ratioChartTitle').textContent = `${meta.label}の科目別割合`;
+      document.getElementById('gapTitle').textContent = `${meta.label}の科目別 予実ギャップ`;
+
+      // メインKPI
+      const primaryActual = slice.actual || 0;
+      const primaryPlanned = slice.planned || 0;
+      const primaryPct = primaryPlanned > 0 ? Math.round((primaryActual / primaryPlanned) * 100) : 0;
+
+      document.getElementById('primaryActualVal').textContent = fmtHours(primaryActual);
+      document.getElementById('primaryPlannedVal').textContent = `カレンダー予定: ${fmtHours(primaryPlanned)}`;
+      document.getElementById('primaryPctBadge').textContent = `${primaryPct}%`;
+      document.getElementById('primaryProgressBar').style.width = `${Math.min(100, primaryPct)}%`;
+
+      // サブKPI
+      const subPeriodKey = selectedPeriod === 'today' ? 'week'
+                         : selectedPeriod === 'week' ? 'today'
+                         : selectedPeriod === 'month' ? 'week'
+                         : 'month';
+      const subSlice = resolvePeriodData(data, subPeriodKey).slice;
+      const subActual = subSlice.actual || 0;
+      const subPlanned = subSlice.planned || 0;
+      const subPct = subPlanned > 0 ? Math.round((subActual / subPlanned) * 100) : 0;
+
+      document.getElementById('subKpiLabel').textContent = meta.subLabel;
+      document.getElementById('subActualVal').textContent = fmtHours(subActual);
+      document.getElementById('subPlannedVal').textContent = `カレンダー予定: ${fmtHours(subPlanned)}`;
+      document.getElementById('subPctBadge').textContent = `${subPct}%`;
+      document.getElementById('subProgressBar').style.width = `${Math.min(100, subPct)}%`;
+
+      // インサイト
+      const actualMap = slice.bySubject?.actual || {};
+      const plannedMap = slice.bySubject?.planned || {};
+      let topSubj = 'まだ記録なし';
+      let topMins = 0;
+      let behindSubj = null;
+      let worstGap = 0;
+
+      SUBJECTS.forEach(s => {
+        const a = actualMap[s] || 0;
+        const p = plannedMap[s] || 0;
+        if (a > topMins) {
+          topMins = a;
+          topSubj = `${s}（${fmtHours(a)}）`;
+        }
+        const gap = a - p;
+        if (p > 0 && gap < worstGap) {
+          worstGap = gap;
+          behindSubj = s;
+        }
+      });
+
+      document.getElementById('topSubjectVal').textContent = topSubj;
+      if (behindSubj) {
+        document.getElementById('insightText').textContent =
+          `${meta.label}の予定に対して最も遅れているのは「${behindSubj}」（${fmtSignedHours(worstGap)}）です。空き時間で優先的にリカバリーしましょう。`;
+      } else if (primaryActual > 0) {
+        document.getElementById('insightText').textContent =
+          `${meta.label}は予定通りのペースで進められています。この調子で科目バランスをキープしましょう。`;
+      } else {
+        document.getElementById('insightText').textContent =
+          `まだ${meta.label}の記録がありません。右上の「記録アプリ」から学習をスタートしましょう。`;
+      }
+
+      renderCharts(slice);
+      renderSubjectRatios(actualMap);
+      renderTodayEvents(data);
+      renderSubjectGaps(actualMap, plannedMap);
+    }
+
+    function renderCharts(slice) {
+      const isDark = document.documentElement.classList.contains('dark');
+      const gridColor = isDark ? 'rgba(148, 163, 184, 0.15)' : 'rgba(148, 163, 184, 0.2)';
+      const textColor = isDark ? '#94a3b8' : '#64748b';
+
+      const plannedHours = SUBJECTS.map(s => Number((((slice.bySubject?.planned?.[s]) || 0) / 60).toFixed(2)));
+      const actualHours  = SUBJECTS.map(s => Number((((slice.bySubject?.actual?.[s]) || 0) / 60).toFixed(2)));
+
+      // 棒グラフ
+      if (barChartInstance) barChartInstance.destroy();
+      barChartInstance = new Chart(document.getElementById('barChart'), {
+        type: 'bar',
+        data: {
+          labels: SUBJECTS,
+          datasets: [
+            { label: '予定 (h)', data: plannedHours, backgroundColor: isDark ? '#334155' : '#cbd5e1', borderRadius: 6 },
+            { label: '実績 (h)', data: actualHours, backgroundColor: '#2563eb', borderRadius: 6 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: textColor, font: { size: 11 } } }
+          },
+          scales: {
+            x: { ticks: { color: textColor, font: { size: 11 } }, grid: { display: false } },
+            y: { beginAtZero: true, ticks: { color: textColor, font: { size: 11 } }, grid: { color: gridColor } }
+          }
+        }
+      });
+
+      // ドーナツグラフ
+      const sumHours = actualHours.reduce((a, b) => a + b, 0);
+      if (doughnutChartInstance) doughnutChartInstance.destroy();
+      doughnutChartInstance = new Chart(document.getElementById('doughnutChart'), {
+        type: 'doughnut',
+        data: {
+          labels: sumHours > 0 ? SUBJECTS : ['記録なし'],
+          datasets: [{
+            data: sumHours > 0 ? actualHours : [1],
+            backgroundColor: sumHours > 0 ? SUBJECT_COLORS : [isDark ? '#1e293b' : '#e2e8f0'],
+            borderWidth: 2,
+            borderColor: isDark ? '#0f172a' : '#ffffff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '66%',
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => {
+                  if (sumHours === 0) return ' まだ記録がありません';
+                  const pct = ((ctx.raw / sumHours) * 100).toFixed(1);
+                  return ` ${ctx.label}: ${ctx.raw}h (${pct}%)`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function renderSubjectRatios(actualMap) {
+      const items = SUBJECTS.map((name, i) => ({
+        name,
+        mins: actualMap[name] || 0,
+        color: SUBJECT_COLORS[i]
+      }));
+      const total = items.reduce((sum, x) => sum + x.mins, 0);
+      document.getElementById('ratioTotalBadge').textContent = `合計 ${fmtHours(total)}`;
+
+      const sorted = [...items].sort((a, b) => b.mins - a.mins);
+      const container = document.getElementById('subjectRatioList');
+      container.innerHTML = '';
+
+      sorted.forEach(item => {
+        const pct = total > 0 ? (item.mins / total) * 100 : 0;
+        const row = document.createElement('div');
+        row.innerHTML = `
+          <div class="mb-1 flex items-center justify-between text-xs">
+            <span class="flex items-center gap-1.5 font-semibold">
+              <span class="inline-block h-2.5 w-2.5 rounded-full" style="background:${item.color}"></span>
+              ${escapeHTML(item.name)}
+            </span>
+            <span class="text-slate-500 dark:text-slate-400">
+              ${fmtHours(item.mins)}
+              <strong class="ml-1 font-bold text-slate-800 dark:text-slate-100">${pct.toFixed(1)}%</strong>
+            </span>
+          </div>
+          <div class="h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+            <div class="h-full rounded-full transition-all duration-500" style="width:${pct}%;background:${item.color}"></div>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function renderTodayEvents(data) {
+      const container = document.getElementById('todayEventsList');
+      const events = data.todayEvents;
+
+      if (!events) {
+        container.innerHTML = `
+          <div class="col-span-full rounded-xl bg-slate-50 p-4 text-xs leading-relaxed text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
+            <p class="mb-1 font-semibold text-slate-700 dark:text-slate-200">カレンダー予定の合計時間は連携済みです</p>
+            個別の予定タイトル一覧もここに表示したい場合は、GASの <code class="rounded bg-slate-200 px-1 dark:bg-slate-700">doGet</code> に <code class="rounded bg-slate-200 px-1 dark:bg-slate-700">todayEvents</code> を追加すると自動表示されます。
+          </div>`;
+        return;
+      }
+
+      if (events.length === 0) {
+        container.innerHTML = `<div class="col-span-full rounded-xl bg-slate-50 p-4 text-center text-xs text-slate-400 dark:bg-slate-800/60">今日の勉強予定はありません</div>`;
+        return;
+      }
+
+      container.innerHTML = '';
+      events.forEach(ev => {
+        const card = document.createElement('div');
+        card.className = 'flex items-center gap-3 rounded-xl border border-slate-200/80 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-800/50';
+        card.innerHTML = `
+          <div class="shrink-0 rounded-lg bg-blue-50 px-2.5 py-1.5 text-center text-[11px] font-bold text-blue-700 dark:bg-blue-950/70 dark:text-blue-300">
+            <div>${escapeHTML(ev.start)}</div>
+            <div class="text-[10px] opacity-70">〜${escapeHTML(ev.end)}</div>
+          </div>
+          <div class="min-w-0 text-xs font-bold leading-snug text-slate-800 dark:text-slate-100">
+            ${escapeHTML(ev.title)}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function renderSubjectGaps(actualMap, plannedMap) {
+      const container = document.getElementById('subjectGapList');
+      container.innerHTML = '';
+
+      SUBJECTS.forEach(s => {
+        const a = actualMap[s] || 0;
+        const p = plannedMap[s] || 0;
+        const diff = a - p;
+        const pct = p > 0 ? Math.min(100, Math.round((a / p) * 100)) : (a > 0 ? 100 : 0);
+        const diffClass = diff >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
+        const barColor = diff >= 0 ? 'bg-emerald-500' : 'bg-blue-600';
+
+        const row = document.createElement('div');
+        row.innerHTML = `
+          <div class="mb-1 flex items-center justify-between text-xs">
+            <span class="font-bold">${escapeHTML(s)}</span>
+            <span class="flex items-center gap-2">
+              <span class="text-slate-500 dark:text-slate-400">${fmtHours(a)} / ${fmtHours(p)}</span>
+              <span class="w-12 text-right font-extrabold ${diffClass}">${fmtSignedHours(diff)}</span>
+            </span>
+          </div>
+          <div class="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+            <div class="h-full rounded-full ${barColor} transition-all duration-500" style="width:${pct}%"></div>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    // =========================================================================
+    // 6. モーダル制御（設定・カウントダウン追加）
+    // =========================================================================
+    const settingsModal = document.getElementById('settingsModal');
+    function openSettingsModal() {
+      document.getElementById('inputGasUrl').value = settings.gasUrl || '';
+      document.getElementById('inputLoggerUrl').value = settings.loggerUrl || '';
+      document.getElementById('inputSheetUrl').value = settings.sheetUrl || '';
+      document.getElementById('inputCalendarUrl').value = settings.calendarUrl || '';
+      document.getElementById('inputNotebookUrl').value = settings.notebookUrl || '';
+      settingsModal.classList.remove('hidden');
+      settingsModal.classList.add('flex');
+    }
+    function closeSettingsModal() {
+      settingsModal.classList.add('hidden');
+      settingsModal.classList.remove('flex');
+    }
+
+    document.getElementById('openSettingsBtn').addEventListener('click', openSettingsModal);
+    document.getElementById('bannerOpenSettingsBtn').addEventListener('click', openSettingsModal);
+    document.getElementById('closeSettingsBtn').addEventListener('click', closeSettingsModal);
+    document.getElementById('cancelSettingsBtn').addEventListener('click', closeSettingsModal);
+    settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) closeSettingsModal(); });
+
+    document.getElementById('settingsForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      settings = {
+        gasUrl: document.getElementById('inputGasUrl').value.trim(),
+        loggerUrl: document.getElementById('inputLoggerUrl').value.trim(),
+        sheetUrl: document.getElementById('inputSheetUrl').value.trim(),
+        calendarUrl: document.getElementById('inputCalendarUrl').value.trim(),
+        notebookUrl: document.getElementById('inputNotebookUrl').value.trim(),
+      };
+      saveJSON(STORAGE_KEYS.SETTINGS, settings);
+      closeSettingsModal();
+      renderQuickLinks();
+      fetchAndRenderData();
+      showToast('設定を保存しました');
+    });
+
+    const countdownModal = document.getElementById('countdownModal');
+    function openCountdownModal() {
+      document.getElementById('inputEventName').value = '';
+      document.getElementById('inputEventDate').value = '';
+      countdownModal.classList.remove('hidden');
+      countdownModal.classList.add('flex');
+    }
+    function closeCountdownModal() {
+      countdownModal.classList.add('hidden');
+      countdownModal.classList.remove('flex');
+    }
+
+    document.getElementById('openAddCountdownBtn').addEventListener('click', openCountdownModal);
+    document.getElementById('closeCountdownBtn').addEventListener('click', closeCountdownModal);
+    document.getElementById('cancelCountdownBtn').addEventListener('click', closeCountdownModal);
+    countdownModal.addEventListener('click', (e) => { if (e.target === countdownModal) closeCountdownModal(); });
+
+    document.getElementById('countdownForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('inputEventName').value.trim();
+      const date = document.getElementById('inputEventDate').value;
+      const color = document.getElementById('inputEventColor').value;
+      if (!name || !date) return;
+
+      countdowns.push({ id: 'c_' + Date.now(), name, date, color });
+      saveJSON(STORAGE_KEYS.COUNTDOWNS, countdowns);
+      closeCountdownModal();
+      renderCountdowns();
+      showToast('日程を追加しました');
+    });
+
+    // =========================================================================
+    // 7. イベントリスナー（更新ボタン・期間切替タブ）
+    // =========================================================================
+    document.getElementById('refreshDataBtn').addEventListener('click', () => {
+      fetchAndRenderData();
+      showToast('最新データを読み込みました');
+    });
+
+    document.querySelectorAll('.period-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        selectedPeriod = btn.dataset.period;
+        document.querySelectorAll('.period-btn').forEach(b => {
+          b.classList.remove('bg-blue-600', 'text-white', 'shadow-sm');
+          b.classList.add('text-slate-600', 'hover:text-slate-900', 'dark:text-slate-400', 'dark:hover:text-white');
+        });
+        btn.classList.add('bg-blue-600', 'text-white', 'shadow-sm');
+        btn.classList.remove('text-slate-600', 'hover:text-slate-900', 'dark:text-slate-400', 'dark:hover:text-white');
+        if (currentData) renderDashboard(currentData, currentIsDemo);
+      });
+    });
+
+    // =========================================================================
+    // 8. 初期化実行
+    // =========================================================================
+    initTheme();
+    initHeaderDate();
+    renderCountdowns();
+    renderQuickLinks();
+    fetchAndRenderData();
+  </script>
+</body>
+</html>
