@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>プライバシーポリシー | CPA Study Hub</title>
+  <link rel="icon" type="image/png" href="icon2.png?v=2" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
+    rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Inter', 'Noto Sans JP', sans-serif;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-800 antialiased">
+  <header class="border-b border-slate-200 bg-white">
+    <div class="mx-auto flex max-w-3xl items-center justify-between px-4 py-4 sm:px-6">
+      <a href="./" class="flex items-center gap-2.5 text-base font-extrabold tracking-tight text-slate-900">
+        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-xs font-bold text-white">CPA</span>
+        <span>CPA Study Hub</span>
+      </a>
+      <a href="./" class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">
+        アプリに戻る
+      </a>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-3xl px-4 py-10 sm:px-6">
+    <article class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-10 space-y-7 text-sm leading-relaxed">
+      <div class="border-b border-slate-100 pb-5">
+        <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">プライバシーポリシー</h1>
+        <p class="mt-1.5 text-xs text-slate-400">最終更新日：2026年11月24日</p>
+      </div>
+
+      <section class="space-y-2">
+        <h2 class="text-base font-bold text-slate-900">1. 基本方針</h2>
+        <p class="text-slate-600">
+          CPA Study Hub（以下「本アプリ」）は、公認会計士試験等の学習時間管理および振り返りを支援するウェブアプリケーションです。本アプリはユーザーのプライバシーを尊重し、個人情報を適切に取り扱います。
+        </p>
+      </section>
+
+      <section class="space-y-2">
+        <h2 class="text-base font-bold text-slate-900">2. 取得する情報と利用目的</h2>
+        <p class="text-slate-600">
+          本アプリは、ユーザーの同意に基づき Google OAuth 2.0 を通じて以下の情報へアクセスします。
+        </p>
+        <ul class="list-disc space-y-1.5 pl-5 text-slate-600">
+          <li><strong>Google アカウントの基本情報（氏名・メールアドレス・プロフィール画像）</strong>：ログイン状態の表示およびアカウント管理のために利用します。</li>
+          <li><strong>Google ドライブおよび Google スプレッドシート（本アプリが作成したファイルのみ / <code>drive.file</code> スコープ）</strong>：ユーザー専用の学習記録スプレッドシート（<code>CPA Study Hub データ</code>）および答練PDF用フォルダ（<code>CPA答練PDF</code>）の作成・読み書きのために利用します。本アプリが作成していない他のドライブファイルにはアクセスしません。</li>
+          <li><strong>Google カレンダーの予定情報（読み取り専用 / <code>calendar.readonly</code> スコープ）</strong>：学習予定時間の集計および「今日の勉強予定」の表示のために利用します。カレンダーの予定を作成・変更・削除することはありません。</li>
+        </ul>
+      </section>
+
+      <section class="space-y-2">
+        <h2 class="text-base font-bold text-slate-900">3. データの保存場所と第三者提供</h2>
+        <ul class="list-disc space-y-1.5 pl-5 text-slate-600">
+          <li>本アプリはフロントエンド完結型で動作しており、<strong>開発者のサーバーにユーザーの学習記録・カレンダー予定・個人情報を収集・保存することはありません</strong>。</li>
+          <li>すべての学習データおよび設定は、ユーザー自身のブラウザ（localStorage）およびユーザー自身の Google ドライブ内のスプレッドシートに直接保存されます。</li>
+          <li>ユーザーの同意なく、取得したデータを第三者へ販売・提供・共有することはありません。</li>
+          <li>「ChatGPTに送る」「Geminiに送る」機能は、ユーザーが明示的にボタンを押した場合のみ、学習サマリーテキストをクリップボードへコピーまたは外部AI画面へ引き渡します。</li>
+        </ul>
+      </section>
+
+      <section class="space-y-2">
+        <h2 class="text-base font-bold text-slate-900">4. Google API サービスのユーザーデータポリシー（Limited Use）への準拠</h2>
+        <p class="text-slate-600">
+          本アプリによる Google API から受け取った情報の使用および他のアプリへの転送は、制限付き使用（Limited Use）の要件を含め、
+          <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer"
+            class="font-semibold text-blue-600 underline hover:text-blue-700">Google API サービスのユーザーデータに関するポリシー（Google API Services User Data Policy）</a>
+          に準拠します。本アプリは Google ユーザーデータを広告配信や汎用 AI・機械学習モデルの学習に利用することはありません。
+        </p>
+      </section>
+
+      <section class="space-y-2">
+        <h2 class="text-base font-bold text-slate-900">5. データの削除および連携解除</h2>
+        <p class="text-slate-600">
+          ユーザーはいつでも以下の方法で本アプリとの連携解除およびデータ削除を行えます。
+        </p>
+        <ul class="list-disc space-y-1.5 pl-5 text-slate-600">
+          <li>本アプリ内の「Googleアカウント管理」画面から「ログアウト」を実行する。</li>
+          <li><a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer"
+              class="font-semibold text-blue-600 underline hover:text-blue-700">Google アカウントのサードパーティ アクセス管理ページ</a>から本アプリのアクセス権限を取り消す。</li>
+          <li>Google ドライブ上の「CPA Study Hub データ」スプレッドシートおよび「CPA答練PDF」フォルダを削除する。</li>
+        </ul>
+      </section>
+
+      <section class="space-y-2">
+        <h2 class="text-base font-bold text-slate-900">6. プライバシーポリシーの変更</h2>
+        <p class="text-slate-600">
+          本ポリシーは必要に応じて改定することがあります。重要な変更がある場合は本ページ上でお知らせします。
+        </p>
+      </section>
+
+      <section class="space-y-2">
+        <h2 class="text-base font-bold text-slate-900">7. お問い合わせ</h2>
+        <p class="text-slate-600">
+          本ポリシーおよび本アプリに関するお問い合わせは、開発者連絡先（<a href="mailto:kaichikuwasoccer@gmail.com"
+            class="font-semibold text-blue-600 underline hover:text-blue-700">kaichikuwasoccer@gmail.com</a>）までご連絡ください。
+        </p>
+      </section>
+    </article>
+
+    <footer class="mt-8 flex items-center justify-center gap-4 text-xs text-slate-400">
+      <a href="./" class="hover:text-slate-600 hover:underline">トップ</a>
+      <span>·</span>
+      <a href="./terms.html" class="hover:text-slate-600 hover:underline">利用規約</a>
+    </footer>
+  </main>
+</body>
+
+</html>
