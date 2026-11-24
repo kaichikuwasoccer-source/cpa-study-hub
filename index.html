@@ -315,9 +315,9 @@
       <section>
         <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">直近の答練・模試成績（Drive
+            <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">直近の模試・答練・テスト成績（Drive
               OCR連携）</h2>
-            <p class="text-[11px] text-slate-400">Googleドライブの専用フォルダにPDFを入れるとOCRで自動取込され、AI反省プロンプトにも反映されます</p>
+            <p class="text-[11px] text-slate-400">模試・定期テスト・答練の成績を記録でき、GoogleドライブにPDFを入れてOCR取込やAI振り返りにも反映されます</p>
           </div>
           <div class="flex items-center gap-2">
             <button id="syncDriveOcrBtn" type="button"
@@ -389,8 +389,18 @@
         class="space-y-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 dark:border-slate-800 dark:bg-slate-900">
         <!-- 科目 -->
         <div>
-          <label class="mb-2 block text-xs font-bold text-slate-500 dark:text-slate-400">科目 *</label>
+          <div class="mb-2 flex items-center justify-between">
+            <label class="text-xs font-bold text-slate-500 dark:text-slate-400">科目 *</label>
+            <button type="button" id="editSubjectBtn"
+              class="text-xs font-bold text-blue-600 hover:underline dark:text-blue-400">編集</button>
+          </div>
           <div id="subjectChips" class="flex flex-wrap gap-2"></div>
+          <div id="addSubjectRow" class="mt-2.5 hidden gap-2">
+            <input type="text" id="newSubjectInput" placeholder="追加する科目名を入力（例：英語・数学・物理）"
+              class="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+            <button type="button" id="addSubjectBtn"
+              class="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 transition">追加</button>
+          </div>
         </div>
 
         <!-- 教材 -->
@@ -641,7 +651,7 @@
         </div>
         <div
           class="flex items-center justify-between rounded-xl border border-slate-200 px-3.5 py-2.5 dark:border-slate-800">
-          <span class="font-semibold text-slate-600 dark:text-slate-300">📁 CPA答練PDFフォルダ</span>
+          <span class="font-semibold text-slate-600 dark:text-slate-300">📁 成績PDFフォルダ</span>
           <a id="accountFolderLink" href="#" target="_blank" rel="noopener noreferrer"
             class="font-bold text-blue-600 hover:underline dark:text-blue-400">未作成</a>
         </div>
@@ -677,50 +687,85 @@
     </div>
   </div>
 
-  <!-- 初期設定ウィザードモーダル（3ステップ：ログイン → スプシ＆フォルダ自動作成 → 試験日） -->
+  <!-- 初期設定ウィザードモーダル（4ステップ：目的選択 → ログイン → スプシ＆フォルダ自動作成 → 試験日） -->
   <div id="onboardingModal"
     class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
     <div
-      class="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+      class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
       <div class="mb-4 flex items-center justify-between">
         <div>
-          <h3 class="text-base font-extrabold">CPA Study Hub 初期設定</h3>
-          <p class="text-[11px] text-slate-400">Googleアカウント連携と専用スプレッドシートを自動セットアップします</p>
+          <h3 class="text-base font-extrabold">Study Hub 初期設定</h3>
+          <p class="text-[11px] text-slate-400">学習目的に合わせた科目と専用スプレッドシートを自動セットアップします</p>
         </div>
         <button id="closeOnboardingBtn" type="button"
           class="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800">✕</button>
       </div>
 
       <!-- ステップインジケーター -->
-      <div class="mb-5 grid grid-cols-3 gap-2 text-center text-[11px] font-bold">
-        <div id="wizStepInd1" class="rounded-lg bg-blue-600 py-1.5 text-white">1. ログイン</div>
-        <div id="wizStepInd2" class="rounded-lg bg-slate-100 py-1.5 text-slate-400 dark:bg-slate-800">2. 自動作成</div>
-        <div id="wizStepInd3" class="rounded-lg bg-slate-100 py-1.5 text-slate-400 dark:bg-slate-800">3. 試験日設定</div>
+      <div class="mb-5 grid grid-cols-4 gap-1.5 text-center text-[10px] font-bold sm:text-[11px]">
+        <div id="wizStepInd1" class="rounded-lg bg-blue-600 py-1.5 text-white">1. 学習目的</div>
+        <div id="wizStepInd2" class="rounded-lg bg-slate-100 py-1.5 text-slate-400 dark:bg-slate-800">2. ログイン</div>
+        <div id="wizStepInd3" class="rounded-lg bg-slate-100 py-1.5 text-slate-400 dark:bg-slate-800">3. 自動作成</div>
+        <div id="wizStepInd4" class="rounded-lg bg-slate-100 py-1.5 text-slate-400 dark:bg-slate-800">4. 試験日</div>
       </div>
 
-      <!-- Step 1: Googleログイン -->
+      <!-- Step 1: 学習目的・科目プリセット選択 -->
       <div id="wizStep1" class="space-y-4">
+        <p class="text-xs text-slate-600 dark:text-slate-300">どの目的で使いますか？選んだ目的に合わせてデフォルト科目・教材・AI振り返りを最適化します（あとから自由に編集できます）。</p>
+        <div id="wizGoalGrid" class="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+          <button type="button" data-goal="univ_sci"
+            class="wiz-goal-btn flex flex-col items-start rounded-xl border-2 border-slate-200 bg-white p-3.5 text-left hover:border-blue-400 dark:border-slate-700 dark:bg-slate-800/60 transition">
+            <span class="text-sm font-extrabold">🎓 大学受験（理系）</span>
+            <span class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">英語・数学・物理・化学・国語・情報・社会</span>
+          </button>
+          <button type="button" data-goal="univ_hum"
+            class="wiz-goal-btn flex flex-col items-start rounded-xl border-2 border-slate-200 bg-white p-3.5 text-left hover:border-blue-400 dark:border-slate-700 dark:bg-slate-800/60 transition">
+            <span class="text-sm font-extrabold">📚 大学受験（文系）</span>
+            <span class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">英語・国語・数学・日本史/世界史・地理/政経・理科基礎・情報</span>
+          </button>
+          <button type="button" data-goal="cpa"
+            class="wiz-goal-btn flex flex-col items-start rounded-xl border-2 border-blue-600 bg-blue-50/70 p-3.5 text-left dark:border-blue-500 dark:bg-blue-950/40 transition">
+            <span class="text-sm font-extrabold">💼 公認会計士試験（CPA）</span>
+            <span class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">財務(計算)・財務(理論)・管理会計・監査論・企業法・租税法・選択</span>
+          </button>
+          <button type="button" data-goal="custom"
+            class="wiz-goal-btn flex flex-col items-start rounded-xl border-2 border-slate-200 bg-white p-3.5 text-left hover:border-blue-400 dark:border-slate-700 dark:bg-slate-800/60 transition">
+            <span class="text-sm font-extrabold">✨ その他の資格・自由設定</span>
+            <span class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">高校定期テスト・TOEIC・簿記など自由に科目をカスタマイズ</span>
+          </button>
+        </div>
+        <button id="wizToStep2Btn" type="button"
+          class="w-full rounded-xl bg-blue-600 py-3 text-xs font-bold text-white shadow-sm hover:bg-blue-700 transition">
+          この目的で次へ →
+        </button>
+      </div>
+
+      <!-- Step 2: Googleログイン -->
+      <div id="wizStep2" class="hidden space-y-4">
         <div
           class="rounded-xl bg-slate-50 p-4 text-xs leading-relaxed text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">
-          自分のGoogleアカウントでログインすると、<strong>あなた専用のスプレッドシートと答練PDFフォルダ</strong>をGoogleドライブへ自動作成します。データはあなたのドライブに保存されるため安心です。
+          自分のGoogleアカウントでログインすると、<strong>あなた専用のスプレッドシートと成績PDFフォルダ</strong>をGoogleドライブへ自動作成します。データはあなたのドライブに保存されるため安心です。
+          <p class="mt-2 text-[11px] text-slate-400">※ 初回ログイン時に「Googleで確認されていません」と出た場合は、左下の「詳細」→「cpa-study-hub.vercel.app に移動」を押してください。</p>
         </div>
-        <div id="wizStep1Status" class="text-center text-xs font-semibold text-slate-500"></div>
-        <div class="flex justify-end gap-2">
+        <div id="wizStep2Status" class="text-center text-xs font-semibold text-slate-500"></div>
+        <div class="flex gap-2">
+          <button id="wizBackTo1Btn" type="button"
+            class="rounded-xl border border-slate-200 px-4 py-3 text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">← 戻る</button>
           <button id="wizLoginBtn" type="button"
-            class="w-full rounded-xl bg-blue-600 py-3 text-xs font-bold text-white shadow-sm hover:bg-blue-700 transition">
+            class="flex-1 rounded-xl bg-blue-600 py-3 text-xs font-bold text-white shadow-sm hover:bg-blue-700 transition">
             Googleアカウントでログインして次へ →
           </button>
         </div>
       </div>
 
-      <!-- Step 2: スプレッドシート＆Driveフォルダ自動作成 -->
-      <div id="wizStep2" class="hidden space-y-4">
+      <!-- Step 3: スプレッドシート＆Driveフォルダ自動作成 -->
+      <div id="wizStep3" class="hidden space-y-4">
         <div
           class="rounded-xl bg-slate-50 p-4 text-xs leading-relaxed text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">
           以下の環境をあなたのGoogleドライブに自動作成します（すでに作成済みの場合は自動で引き継ぎます）：
           <ul class="mt-2 list-disc space-y-1 pl-4 font-semibold">
-            <li>スプレッドシート「CPA Study Hub データ」（log / materials / exams / config の4シート）</li>
-            <li>答練OCR用フォルダ「CPA答練PDF」（＋ 処理済みサブフォルダ）</li>
+            <li>専用スプレッドシート（log / materials / exams / config の4シート）</li>
+            <li>成績PDF用フォルダ（模試・答練・テストのOCR取込用）</li>
           </ul>
         </div>
         <div id="wizProvisionLog"
@@ -732,25 +777,25 @@
             class="flex-1 rounded-xl bg-blue-600 py-3 text-xs font-bold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60 transition">
             🚀 スプレッドシート＆フォルダを自動作成
           </button>
-          <button id="wizToStep3Btn" type="button"
+          <button id="wizToStep4Btn" type="button"
             class="hidden rounded-xl bg-emerald-600 px-5 py-3 text-xs font-bold text-white hover:bg-emerald-700 transition">
             次へ →
           </button>
         </div>
       </div>
 
-      <!-- Step 3: 目標試験日 -->
-      <div id="wizStep3" class="hidden space-y-4">
-        <p class="text-xs text-slate-500 dark:text-slate-400">目標とする本試験・模試の日程を1つ登録しましょう（あとから編集・追加できます）。</p>
+      <!-- Step 4: 目標試験日 -->
+      <div id="wizStep4" class="hidden space-y-4">
+        <p class="text-xs text-slate-500 dark:text-slate-400">目標とする本試験・共通テスト・模試の日程を1つ登録しましょう（あとから編集・追加できます）。</p>
         <div class="space-y-3">
           <div>
             <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">目標試験名</label>
-            <input id="wizExamName" type="text" value="第Ⅰ回 短答式試験"
+            <input id="wizExamName" type="text" value="大学入学共通テスト"
               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
           </div>
           <div>
             <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">試験日</label>
-            <input id="wizExamDate" type="date" value="2026-12-13"
+            <input id="wizExamDate" type="date" value="2027-01-16"
               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
           </div>
         </div>
@@ -768,7 +813,7 @@
     <div
       class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
       <div class="mb-4 flex items-center justify-between">
-        <h3 class="text-base font-bold">答練・模試の成績を追加</h3>
+        <h3 class="text-base font-bold">模試・答練・テストの成績を追加</h3>
         <button id="closeExamBtn" type="button"
           class="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800">✕</button>
       </div>
@@ -783,20 +828,12 @@
             <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">科目 *</label>
             <select id="inputExamSubject"
               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800">
-              <option value="財務(計算)">財務(計算)</option>
-              <option value="財務(理論)">財務(理論)</option>
-              <option value="管理会計">管理会計</option>
-              <option value="監査論">監査論</option>
-              <option value="企業法">企業法</option>
-              <option value="租税法">租税法</option>
-              <option value="選択科目">選択科目</option>
-              <option value="総合・短答模試">総合・短答模試</option>
             </select>
           </div>
         </div>
         <div>
-          <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">答練・模試名 *</label>
-          <input id="inputExamTitle" type="text" required placeholder="例：財務会計論 レギュラー答練 第5回"
+          <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">模試・答練・テスト名 *</label>
+          <input id="inputExamTitle" type="text" required placeholder="例：全統共通テスト模試 / 定期テスト / レギュラー答練"
             class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
         </div>
         <div class="grid grid-cols-3 gap-2.5">
@@ -812,13 +849,13 @@
           </div>
           <div>
             <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">偏差値/判定</label>
-            <input id="inputExamRank" type="text" placeholder="58.4 / A"
+            <input id="inputExamRank" type="text" placeholder="58.4 / A判定"
               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
           </div>
         </div>
         <div>
           <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">弱点・振り返りメモ</label>
-          <input id="inputExamNote" type="text" placeholder="例：連結キャッシュフローのタイムテーブルで失点"
+          <input id="inputExamNote" type="text" placeholder="例：長文読解で時間配分ミス / 計算のケアレスミス"
             class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
         </div>
         <div class="flex justify-end gap-2 pt-2">
@@ -839,6 +876,9 @@
       SETTINGS: 'cpa_hub_settings_v1',
       COUNTDOWNS: 'cpa_hub_countdowns_v1',
       EXAMS: 'cpa_hub_exams_v1',
+      GOAL: 'cpa_hub_goal_v1',
+      SUBJECTS: 'cpa_hub_subjects_v1',
+      MATERIALS: 'cpa_hub_materials_v1',
       GOOGLE_AUTH: 'cpa_google_auth_v1',
       GOOGLE_CLIENT_ID: 'cpa_google_client_id_v1',
       ONBOARDING_DISMISSED: 'cpa_onboarding_dismissed_v1',
@@ -859,16 +899,67 @@
       'https://www.googleapis.com/auth/calendar.readonly'
     ].join(' ');
 
-    const DEFAULT_MATERIALS = {
-      '財務(計算)': ['テキスト', '個別問題集', '短答問題集', '答練', '講義'],
-      '財務(理論)': ['テキスト', '短答問題集', 'コンサマ', '答練', '講義'],
-      '管理会計': ['テキスト', '個別問題集', '短答問題集', '原価計算基準', '答練'],
-      '監査論': ['テキスト', '短答問題集', '資料集', '答練', '講義'],
-      '企業法': ['テキスト', '短答問題集', '条文・ポケット六法', '答練', '講義'],
-      '租税法': ['テキスト', '個別問題集', '理論対策', '答練', '講義'],
-      '選択科目': ['テキスト', '問題集', '答練', '講義']
+    const GOAL_PRESETS = {
+      univ_sci: {
+        label: '大学受験（理系）',
+        coachRole: '大学受験（理系）の学習コーチ',
+        defaultExamName: '大学入学共通テスト',
+        defaultExamDate: '2027-01-16',
+        materials: {
+          '英語': ['単語帳', '文法・解釈', '長文問題集', 'リスニング', '過去問', '模試復習'],
+          '数学': ['青チャート/網羅系', '問題集', '過去問', '学校ワーク', '模試復習'],
+          '物理': ['参考書', '問題集', '過去問', '模試復習'],
+          '化学': ['参考書', '問題集', '過去問', '模試復習'],
+          '国語': ['現代文', '古文単語/文法', '漢文', '過去問'],
+          '情報': ['参考書', '問題集', '共通テスト対策'],
+          '社会': ['教科書/参考書', '一問一答', '過去問']
+        }
+      },
+      univ_hum: {
+        label: '大学受験（文系）',
+        coachRole: '大学受験（文系）の学習コーチ',
+        defaultExamName: '大学入学共通テスト',
+        defaultExamDate: '2027-01-16',
+        materials: {
+          '英語': ['単語帳', '文法・解釈', '長文問題集', 'リスニング', '過去問', '模試復習'],
+          '国語': ['現代文', '古文単語/文法', '漢文', '過去問', '模試復習'],
+          '数学': ['チャート/網羅系', '問題集', '過去問', '模試復習'],
+          '日本史/世界史': ['教科書/講義本', '一問一答', '問題集', '過去問'],
+          '地理/政経': ['参考書', '問題集', '過去問'],
+          '理科基礎': ['参考書', '問題集', '過去問'],
+          '情報': ['参考書', '問題集', '共通テスト対策']
+        }
+      },
+      cpa: {
+        label: '公認会計士試験（CPA）',
+        coachRole: '公認会計士（CPA）試験の学習コーチ',
+        defaultExamName: '第Ⅰ回 短答式試験',
+        defaultExamDate: '2026-12-13',
+        materials: {
+          '財務(計算)': ['テキスト', '個別問題集', '短答問題集', '答練', '講義'],
+          '財務(理論)': ['テキスト', '短答問題集', 'コンサマ', '答練', '講義'],
+          '管理会計': ['テキスト', '個別問題集', '短答問題集', '原価計算基準', '答練'],
+          '監査論': ['テキスト', '短答問題集', '資料集', '答練', '講義'],
+          '企業法': ['テキスト', '短答問題集', '条文・ポケット六法', '答練', '講義'],
+          '租税法': ['テキスト', '個別問題集', '理論対策', '答練', '講義'],
+          '選択科目': ['テキスト', '問題集', '答練', '講義']
+        }
+      },
+      custom: {
+        label: 'その他の資格・自由設定',
+        coachRole: '資格・受験の学習コーチ',
+        defaultExamName: '目標試験・定期テスト',
+        defaultExamDate: '2027-02-01',
+        materials: {
+          '英語': ['単語帳', '問題集', '過去問'],
+          '数学': ['教科書', '問題集', '過去問'],
+          '専門・資格': ['テキスト', '問題集', '過去問'],
+          'その他': ['参考書', 'ノートまとめ']
+        }
+      }
     };
-    const SUBJECTS = Object.keys(DEFAULT_MATERIALS);
+
+    const DEFAULT_MATERIALS = GOAL_PRESETS.cpa.materials;
     const SUBJECT_KEYWORDS = [
       { key: '財務(計算)', words: ['財務(計算)', '財務計算', '財計'] },
       { key: '財務(理論)', words: ['財務(理論)', '財務理論', '財理'] },
@@ -876,9 +967,19 @@
       { key: '監査論', words: ['監査論', '監査'] },
       { key: '企業法', words: ['企業法', '企業'] },
       { key: '租税法', words: ['租税法', '租税'] },
-      { key: '選択科目', words: ['選択科目', '経営学', '経済学', '民法', '統計学'] }
+      { key: '選択科目', words: ['選択科目', '経営学', '経済学', '民法', '統計学'] },
+      { key: '英語', words: ['英語', '英単語', 'リーディング', 'リスニング', '英作文', 'TOEIC'] },
+      { key: '数学', words: ['数学', '数Ⅰ', '数Ⅱ', '数Ⅲ', '数A', '数B', '数C', '数1', '数2', '数3'] },
+      { key: '国語', words: ['国語', '現代文', '古文', '漢文'] },
+      { key: '物理', words: ['物理'] },
+      { key: '化学', words: ['化学'] },
+      { key: '日本史/世界史', words: ['日本史', '世界史', '歴史'] },
+      { key: '地理/政経', words: ['地理', '政経', '公共', '倫理', '政治経済'] },
+      { key: '理科基礎', words: ['理科基礎', '生物基礎', '地学基礎', '物理基礎', '化学基礎'] },
+      { key: '情報', words: ['情報Ⅰ', '情報1', '情報'] },
+      { key: '社会', words: ['社会', '地理', '歴史', '公民', '公共'] }
     ];
-    const SUBJECT_COLORS = ['#2563eb', '#38bdf8', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#64748b'];
+    const SUBJECT_COLORS = ['#2563eb', '#38bdf8', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#64748b', '#ec4899', '#14b8a6', '#f97316', '#6366f1', '#84cc16'];
     const RATINGS = ['◎ 余裕', '○ 普通', '△ 要復習'];
 
     const DEFAULT_SETTINGS = {
@@ -954,13 +1055,18 @@
     }
 
     let settings = Object.assign({}, DEFAULT_SETTINGS, loadJSON(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS));
+    let studyGoal = (() => { try { return localStorage.getItem(STORAGE_KEYS.GOAL) || 'cpa'; } catch (e) { return 'cpa'; } })();
+    if (!GOAL_PRESETS[studyGoal]) studyGoal = 'cpa';
+    let materialsBySubject = loadJSON(STORAGE_KEYS.MATERIALS, GOAL_PRESETS[studyGoal].materials);
+    let SUBJECTS = loadJSON(STORAGE_KEYS.SUBJECTS, Object.keys(materialsBySubject));
+    if (!Array.isArray(SUBJECTS) || !SUBJECTS.length) SUBJECTS = Object.keys(GOAL_PRESETS[studyGoal].materials);
+
     let countdowns = loadJSON(STORAGE_KEYS.COUNTDOWNS, DEFAULT_COUNTDOWNS);
     let examResults = loadJSON(STORAGE_KEYS.EXAMS, [
       { id: 'ex_demo1', date: '2026-11-20', subject: '財務(計算)', title: '短答直前答練 第2回', score: 78, maxScore: 100, rank: '偏差値 58.2 / A', note: '退職給付の計算ミスあり', source: 'OCR' },
       { id: 'ex_demo2', date: '2026-11-18', subject: '管理会計', title: '短答直前答練 第2回', score: 62, maxScore: 100, rank: '偏差値 49.5 / C', note: '標準原価計算の差異分析で時間切れ', source: 'OCR' },
       { id: 'ex_demo3', date: '2026-11-15', subject: '監査論', title: '確認テスト 第4回', score: 85, maxScore: 100, rank: '偏差値 62.0 / A', note: 'リスクアプローチは安定', source: '手入力' },
     ]);
-    let materialsBySubject = JSON.parse(JSON.stringify(DEFAULT_MATERIALS));
     let selectedPeriod = 'week';
     let periodOffset = 0; // 0=現在, -1=前の期間, -2=2つ前...
     let activeAppTab = 'hubView';
@@ -973,6 +1079,7 @@
     let selectedSubject = '';
     let selectedMaterial = '';
     let selectedRating = '';
+    let isEditingSubjects = false;
     let isEditingMaterials = false;
     let timerInterval = null;
 
@@ -1140,6 +1247,8 @@
 
     async function saveHubConfigToCloud() {
       const hubConfig = {
+        goal: studyGoal,
+        subjects: SUBJECTS,
         countdowns,
         settings: {
           sheetUrl: settings.sheetUrl || '',
@@ -1279,23 +1388,41 @@
         }
         if (json.status !== 'ok') throw new Error(json.message || 'データ取得エラー');
 
-        // 教材リスト同期
+        // 教材リスト・科目リスト同期
         if (json.materials && Object.keys(json.materials).length > 0) {
           materialsBySubject = json.materials;
+          saveJSON(STORAGE_KEYS.MATERIALS, materialsBySubject);
+          const matKeys = Object.keys(json.materials);
+          if (!json.hubConfig?.subjects && matKeys.length > 0) {
+            SUBJECTS = matKeys;
+            saveJSON(STORAGE_KEYS.SUBJECTS, SUBJECTS);
+            renderSubjectChips();
+            renderExamSubjectOptions();
+          }
           if (selectedSubject) renderMaterials();
         }
         // 計測中タイマー同期
         if (json.activeTimer) {
           applyCloudTimer(json.activeTimer);
         }
-        // 答練・模試成績同期（Drive OCR結果含む）
+        // 模試・答練・テスト成績同期（Drive OCR結果含む）
         if (Array.isArray(json.examResults)) {
           examResults = json.examResults;
           saveJSON(STORAGE_KEYS.EXAMS, examResults);
         }
         renderExamResults();
-        // Hub設定・カウントダウン同期
+        // Hub設定・学習目的・科目・カウントダウン同期
         if (json.hubConfig) {
+          if (json.hubConfig.goal && GOAL_PRESETS[json.hubConfig.goal]) {
+            studyGoal = json.hubConfig.goal;
+            try { localStorage.setItem(STORAGE_KEYS.GOAL, studyGoal); } catch (e) { }
+          }
+          if (Array.isArray(json.hubConfig.subjects) && json.hubConfig.subjects.length > 0) {
+            SUBJECTS = json.hubConfig.subjects;
+            saveJSON(STORAGE_KEYS.SUBJECTS, SUBJECTS);
+            renderSubjectChips();
+            renderExamSubjectOptions();
+          }
           if (Array.isArray(json.hubConfig.countdowns)) {
             countdowns = json.hubConfig.countdowns;
             saveJSON(STORAGE_KEYS.COUNTDOWNS, countdowns);
@@ -1460,7 +1587,7 @@
           labels: sumHours > 0 ? SUBJECTS : ['記録なし'],
           datasets: [{
             data: sumHours > 0 ? actualHours : [1],
-            backgroundColor: sumHours > 0 ? SUBJECT_COLORS : [isDark ? '#1e293b' : '#e2e8f0'],
+            backgroundColor: sumHours > 0 ? SUBJECTS.map((_, i) => SUBJECT_COLORS[i % SUBJECT_COLORS.length]) : [isDark ? '#1e293b' : '#e2e8f0'],
             borderWidth: 2, borderColor: isDark ? '#0f172a' : '#ffffff'
           }]
         },
@@ -1479,7 +1606,7 @@
     }
 
     function renderSubjectRatios(actualMap) {
-      const items = SUBJECTS.map((name, i) => ({ name, mins: actualMap[name] || 0, color: SUBJECT_COLORS[i] }));
+      const items = SUBJECTS.map((name, i) => ({ name, mins: actualMap[name] || 0, color: SUBJECT_COLORS[i % SUBJECT_COLORS.length] }));
       const total = items.reduce((sum, x) => sum + x.mins, 0);
       document.getElementById('ratioTotalBadge').textContent = `合計 ${fmtHours(total)}`;
       const container = document.getElementById('subjectRatioList');
@@ -1552,11 +1679,43 @@
     const minutesInput = document.getElementById('minutesInput');
     const startTimeInput = document.getElementById('startTimeInput');
     const endTimeInput = document.getElementById('endTimeInput');
+    const editSubjectBtn = document.getElementById('editSubjectBtn');
+    const addSubjectRow = document.getElementById('addSubjectRow');
+    const newSubjectInput = document.getElementById('newSubjectInput');
     const editMaterialBtn = document.getElementById('editMaterialBtn');
     const addMaterialRow = document.getElementById('addMaterialRow');
     const newMaterialInput = document.getElementById('newMaterialInput');
 
     studyDateInput.value = fmtDateInput(new Date());
+
+    function applyGoalPreset(goalKey) {
+      const preset = GOAL_PRESETS[goalKey] || GOAL_PRESETS.cpa;
+      studyGoal = goalKey;
+      SUBJECTS = Object.keys(preset.materials);
+      materialsBySubject = JSON.parse(JSON.stringify(preset.materials));
+      selectedSubject = '';
+      selectedMaterial = '';
+      try { localStorage.setItem(STORAGE_KEYS.GOAL, studyGoal); } catch (e) { }
+      saveJSON(STORAGE_KEYS.SUBJECTS, SUBJECTS);
+      saveJSON(STORAGE_KEYS.MATERIALS, materialsBySubject);
+      const examNameEl = document.getElementById('wizExamName');
+      const examDateEl = document.getElementById('wizExamDate');
+      if (examNameEl) examNameEl.value = preset.defaultExamName;
+      if (examDateEl) examDateEl.value = preset.defaultExamDate;
+      renderSubjectChips();
+      renderMaterials();
+      renderExamSubjectOptions();
+      if (currentData) renderDashboard(currentData, currentIsDemo);
+    }
+
+    function renderExamSubjectOptions() {
+      const sel = document.getElementById('inputExamSubject');
+      if (!sel) return;
+      const prev = sel.value;
+      const opts = [...SUBJECTS, '総合・模試'];
+      sel.innerHTML = opts.map(s => `<option value="${escapeHTML(s)}">${escapeHTML(s)}</option>`).join('');
+      if (prev && opts.includes(prev)) sel.value = prev;
+    }
 
     function chipClass(active, editing = false) {
       if (editing) return 'rounded-full border border-dashed border-rose-400 bg-rose-50 px-3.5 py-1.5 text-xs font-semibold text-rose-600 dark:border-rose-700 dark:bg-rose-950/50 dark:text-rose-300 transition';
@@ -1568,21 +1727,68 @@
     function renderSubjectChips() {
       const el = document.getElementById('subjectChips');
       el.innerHTML = '';
-      SUBJECTS.forEach(subj => {
+      editSubjectBtn.textContent = isEditingSubjects ? '完了' : '編集';
+      addSubjectRow.classList.toggle('hidden', !isEditingSubjects);
+      addSubjectRow.classList.toggle('flex', isEditingSubjects);
+
+      SUBJECTS.forEach((subj, idx) => {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = chipClass(selectedSubject === subj);
-        btn.textContent = subj;
-        btn.onclick = () => {
-          selectedSubject = subj;
-          selectedMaterial = '';
-          isEditingMaterials = false;
-          renderSubjectChips();
-          renderMaterials();
-        };
+        if (isEditingSubjects) {
+          btn.className = chipClass(false, true);
+          btn.textContent = `${subj} ×`;
+          btn.onclick = () => {
+            if (SUBJECTS.length <= 1) {
+              showToast('科目は最低1つ残す必要があります');
+              return;
+            }
+            SUBJECTS.splice(idx, 1);
+            delete materialsBySubject[subj];
+            if (selectedSubject === subj) { selectedSubject = ''; selectedMaterial = ''; }
+            saveJSON(STORAGE_KEYS.SUBJECTS, SUBJECTS);
+            saveJSON(STORAGE_KEYS.MATERIALS, materialsBySubject);
+            renderSubjectChips();
+            renderMaterials();
+            renderExamSubjectOptions();
+            if (currentData) renderDashboard(currentData, currentIsDemo);
+            saveMaterialsToCloud();
+            saveHubConfigToCloud();
+          };
+        } else {
+          btn.className = chipClass(selectedSubject === subj);
+          btn.textContent = subj;
+          btn.onclick = () => {
+            selectedSubject = subj;
+            selectedMaterial = '';
+            isEditingMaterials = false;
+            renderSubjectChips();
+            renderMaterials();
+          };
+        }
         el.appendChild(btn);
       });
     }
+
+    editSubjectBtn.onclick = () => { isEditingSubjects = !isEditingSubjects; renderSubjectChips(); };
+    document.getElementById('addSubjectBtn').onclick = () => {
+      const name = newSubjectInput.value.trim();
+      if (!name) return;
+      if (SUBJECTS.includes(name)) {
+        showToast('その科目はすでに登録されています');
+        return;
+      }
+      SUBJECTS.push(name);
+      if (!materialsBySubject[name]) materialsBySubject[name] = ['テキスト', '問題集', '過去問', '模試・テスト'];
+      saveJSON(STORAGE_KEYS.SUBJECTS, SUBJECTS);
+      saveJSON(STORAGE_KEYS.MATERIALS, materialsBySubject);
+      newSubjectInput.value = '';
+      renderSubjectChips();
+      renderExamSubjectOptions();
+      if (currentData) renderDashboard(currentData, currentIsDemo);
+      saveMaterialsToCloud();
+      saveHubConfigToCloud();
+      showToast(`科目「${name}」を追加しました`);
+    };
 
     function renderRatingChips() {
       const el = document.getElementById('ratingChips');
@@ -1643,15 +1849,17 @@
     }
 
     async function saveMaterialsToCloud() {
+      saveJSON(STORAGE_KEYS.MATERIALS, materialsBySubject);
       if (useGoogleDirectMode()) {
         try {
           const matRows = [['subject', 'materials'], ...SUBJECTS.map(s => [s, (materialsBySubject[s] || []).join(',')])];
-          await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${googleAuth.spreadsheetId}/values/materials!A1:B8?valueInputOption=USER_ENTERED`, {
+          while (matRows.length < 30) matRows.push(['', '']);
+          await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${googleAuth.spreadsheetId}/values/materials!A1:B30?valueInputOption=USER_ENTERED`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ values: matRows })
           });
-          showToast('教材リストをGoogleスプレッドシートに同期しました');
+          showToast('科目・教材リストをGoogleスプレッドシートに同期しました');
         } catch (e) { }
         return;
       }
@@ -1830,7 +2038,7 @@
       }
       const hasGoogleDirect = useGoogleDirectMode();
       if (!hasGoogleDirect && !settings.gasUrl) {
-        openOnboardingModal(isGoogleSignedIn() ? 2 : 1);
+        openOnboardingModal(isGoogleSignedIn() ? 3 : 1);
         showToast('先にGoogleログイン＆スプレッドシート自動作成を完了してください');
         return;
       }
@@ -1977,7 +2185,7 @@
     });
 
     // =========================================================================
-    // 8. AI連携（勉強時間 ＋ 直近の答練成績を合わせて ChatGPT / Gemini へ送信）
+    // 8. AI連携（勉強時間 ＋ 直近の模試・答練・テスト成績を合わせて ChatGPT / Gemini へ送信）
     // =========================================================================
     function buildAiStudyPrompt() {
       const data = currentData || DEMO_DATA;
@@ -2010,8 +2218,9 @@
         .slice(0, 5)
         .map(ex => `- [${ex.date}] ${ex.subject}「${ex.title}」：${ex.score}/${ex.maxScore || 100}（${ex.rank || '-'}）${ex.note ? ` / メモ: ${ex.note}` : ''}`);
 
+      const coachRole = GOAL_PRESETS[studyGoal]?.coachRole || '資格・受験の学習コーチ';
       return [
-        `公認会計士（CPA）試験の学習コーチとして、以下の【${ctx.rangeLabel}の学習時間】と【直近の答練・模試成績】の両方を踏まえ、振り返り（反省）と次週の勉強時間の配分調整を提案してください。`,
+        `${coachRole}として、以下の【${ctx.rangeLabel}の学習時間】と【直近の模試・答練・テスト成績】の両方を踏まえ、振り返り（反省）と次週の勉強時間の配分調整を提案してください。`,
         '',
         `■ 基準日：${todayStr}`,
         '■ 試験・重要日程',
@@ -2021,11 +2230,11 @@
         '■ 科目別の予定 vs 実績',
         ...subjectLines,
         '',
-        '■ 直近の答練・模試成績',
+        '■ 直近の模試・答練・テスト成績',
         ...(examLines.length ? examLines : ['- まだ登録なし']),
         '',
         '■ お願いしたいこと',
-        '1. 勉強時間と答練成績の相関を踏まえた反省点・良かった点',
+        '1. 勉強時間と模試・テスト成績の相関を踏まえた反省点・良かった点',
         '2. 成績が伸び悩んでいる科目／予定遅れ科目のリカバリーを踏まえた、次週の科目別勉強時間の具体的な配分案',
         '3. 次週に最優先で取り組むべきアクション3点'
       ].join('\n');
@@ -2120,6 +2329,7 @@
     // 答練成績 手入力モーダル制御
     const examModal = document.getElementById('examModal');
     function openExamModal() {
+      renderExamSubjectOptions();
       document.getElementById('inputExamDate').value = fmtDateInput(new Date());
       document.getElementById('inputExamTitle').value = '';
       document.getElementById('inputExamScore').value = '';
@@ -2205,7 +2415,13 @@
 
     function matchSubjectKeyword(title) {
       const t = String(title || '');
+      // 1. ユーザーが登録している科目名に完全一致・部分一致するものを最優先
+      for (const subj of SUBJECTS) {
+        if (subj && t.includes(subj)) return subj;
+      }
+      // 2. 略称・関連キーワードで照合（ユーザーの科目リストに存在する場合のみ）
       for (const s of SUBJECT_KEYWORDS) {
+        if (!SUBJECTS.includes(s.key)) continue;
         for (const w of s.words) {
           if (t.includes(w)) return s.key;
         }
@@ -2475,27 +2691,27 @@
       return json;
     }
 
-    // ユーザーのGoogleドライブに専用スプレッドシート＆答練PDFフォルダを自動作成（既存があれば再利用）
+    // ユーザーのGoogleドライブに専用スプレッドシート＆成績PDFフォルダを自動作成（既存があれば再利用）
     async function autoProvisionUserWorkspace(logFn) {
       if (!isGoogleSignedIn()) throw new Error('先にGoogleアカウントでログインしてください');
 
       // 1. 専用スプレッドシートを検索または新規作成
       logFn('🔍 専用スプレッドシートを確認中...');
-      const qSheet = encodeURIComponent("name='CPA Study Hub データ' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false");
+      const qSheet = encodeURIComponent("(name='Study Hub データ' or name='CPA Study Hub データ') and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false");
       const foundSheets = await gApiFetch(`https://www.googleapis.com/drive/v3/files?q=${qSheet}&fields=files(id,name,webViewLink)`);
 
       if (foundSheets.files && foundSheets.files.length > 0) {
         const f = foundSheets.files[0];
         googleAuth.spreadsheetId = f.id;
         googleAuth.spreadsheetUrl = f.webViewLink || `https://docs.google.com/spreadsheets/d/${f.id}/edit`;
-        logFn(`✓ 既存のスプレッドシートを検出しました（自動引き継ぎ）`);
+        logFn(`✓ 既存のスプレッドシート（${f.name}）を検出しました（自動引き継ぎ）`);
       } else {
-        logFn('📊 スプレッドシート「CPA Study Hub データ」を新規作成中...');
+        logFn('📊 スプレッドシート「Study Hub データ」を新規作成中...');
         const created = await gApiFetch('https://sheets.googleapis.com/v4/spreadsheets', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            properties: { title: 'CPA Study Hub データ', locale: 'ja_JP', timeZone: 'Asia/Tokyo' },
+            properties: { title: 'Study Hub データ', locale: 'ja_JP', timeZone: 'Asia/Tokyo' },
             sheets: [
               { properties: { title: 'log' } },
               { properties: { title: 'materials' } },
@@ -2507,8 +2723,10 @@
         googleAuth.spreadsheetId = created.spreadsheetId;
         googleAuth.spreadsheetUrl = created.spreadsheetUrl;
 
-        // 初期ヘッダーとデフォルト教材を自動投入
-        const matRows = [['subject', 'materials'], ...SUBJECTS.map(s => [s, (DEFAULT_MATERIALS[s] || []).join(',')])];
+        // 選択した目的プリセットの科目・教材・初期設定を自動投入
+        const matRows = [['subject', 'materials'], ...SUBJECTS.map(s => [s, (materialsBySubject[s] || []).join(',')])];
+        while (matRows.length < 30) matRows.push(['', '']);
+        const initHubCfg = { goal: studyGoal, subjects: SUBJECTS, countdowns, settings: { sheetUrl: created.spreadsheetUrl, calendarUrl: settings.calendarUrl || '', notebookUrl: settings.notebookUrl || '' }, updatedAt: Date.now() };
         await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${created.spreadsheetId}/values:batchUpdate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -2516,29 +2734,29 @@
             valueInputOption: 'USER_ENTERED',
             data: [
               { range: 'log!A1:I1', values: [['date', 'subject', 'material', 'minutes', 'topic', 'rating', 'memo', 'start_time', 'end_time']] },
-              { range: 'materials!A1:B8', values: matRows },
+              { range: 'materials!A1:B30', values: matRows },
               { range: 'exams!A1:I1', values: [['id', 'date', 'subject', 'title', 'score', 'maxScore', 'rank', 'note', 'source']] },
-              { range: 'config!A1:B2', values: [['key', 'value'], ['created_at', new Date().toISOString()]] }
+              { range: 'config!A1:B3', values: [['key', 'value'], ['created_at', new Date().toISOString()], ['hubConfig', JSON.stringify(initHubCfg)]] }
             ]
           })
         });
-        logFn('✓ スプレッドシート＋4シート＋初期教材を作成しました');
+        logFn(`✓ スプレッドシート＋${SUBJECTS.length}科目・初期教材を作成しました`);
       }
 
-      // 2. CPA答練PDF フォルダを検索または新規作成
-      logFn('📁 答練OCR用フォルダ「CPA答練PDF」を確認中...');
-      const qFolder = encodeURIComponent("name='CPA答練PDF' and mimeType='application/vnd.google-apps.folder' and trashed=false");
+      // 2. 成績PDFフォルダを検索または新規作成
+      logFn('📁 成績PDF用フォルダを確認中...');
+      const qFolder = encodeURIComponent("(name='StudyHub_成績PDF' or name='CPA答練PDF') and mimeType='application/vnd.google-apps.folder' and trashed=false");
       const foundFolders = await gApiFetch(`https://www.googleapis.com/drive/v3/files?q=${qFolder}&fields=files(id,name,webViewLink)`);
       if (foundFolders.files && foundFolders.files.length > 0) {
         const fd = foundFolders.files[0];
         googleAuth.examFolderId = fd.id;
         googleAuth.examFolderUrl = fd.webViewLink || `https://drive.google.com/drive/folders/${fd.id}`;
-        logFn('✓ 既存の「CPA答練PDF」フォルダを検出しました');
+        logFn(`✓ 既存の「${fd.name}」フォルダを検出しました`);
       } else {
         const fd = await gApiFetch('https://www.googleapis.com/drive/v3/files?fields=id,webViewLink', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: 'CPA答練PDF', mimeType: 'application/vnd.google-apps.folder' })
+          body: JSON.stringify({ name: 'StudyHub_成績PDF', mimeType: 'application/vnd.google-apps.folder' })
         });
         googleAuth.examFolderId = fd.id;
         googleAuth.examFolderUrl = fd.webViewLink || `https://drive.google.com/drive/folders/${fd.id}`;
@@ -2548,7 +2766,7 @@
           body: JSON.stringify({ name: '処理済み', mimeType: 'application/vnd.google-apps.folder', parents: [fd.id] })
         });
         googleAuth.doneFolderId = doneFd.id;
-        logFn('✓ 「CPA答練PDF」＋「処理済み」フォルダを作成しました');
+        logFn('✓ 「StudyHub_成績PDF」＋「処理済み」フォルダを作成しました');
       }
 
       // 作成したスプレッドシートURLをクイックアクセスにも自動反映
@@ -2587,7 +2805,7 @@
         showToast(`${googleAuth.user?.name || 'Googleアカウント'} でログインしました`);
         if (!googleAuth.spreadsheetId) {
           closeAccountModal();
-          openOnboardingModal(2);
+          openOnboardingModal(3);
         } else {
           closeAccountModal();
           fetchAndRenderData(true);
@@ -2606,7 +2824,7 @@
     });
 
     document.getElementById('bannerStartOnboardingBtn').addEventListener('click', () => {
-      openOnboardingModal(isGoogleSignedIn() ? 2 : 1);
+      openOnboardingModal(1);
     });
     document.getElementById('bannerReconnectBtn').addEventListener('click', async () => {
       try {
@@ -2618,10 +2836,32 @@
       }
     });
 
-    // 初期設定ウィザード制御
+    // 初期設定ウィザード制御（4ステップ）
     const onboardingModal = document.getElementById('onboardingModal');
+    let pendingWizardGoal = studyGoal || 'univ_sci';
+
+    function renderWizardGoalCards() {
+      document.querySelectorAll('.wiz-goal-btn').forEach(btn => {
+        const active = btn.dataset.goal === pendingWizardGoal;
+        btn.classList.toggle('border-blue-600', active);
+        btn.classList.toggle('bg-blue-50/70', active);
+        btn.classList.toggle('dark:border-blue-500', active);
+        btn.classList.toggle('dark:bg-blue-950/40', active);
+        btn.classList.toggle('border-slate-200', !active);
+        btn.classList.toggle('bg-white', !active);
+        btn.classList.toggle('dark:border-slate-700', !active);
+        btn.classList.toggle('dark:bg-slate-800/60', !active);
+      });
+    }
+    document.querySelectorAll('.wiz-goal-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        pendingWizardGoal = btn.dataset.goal;
+        renderWizardGoalCards();
+      });
+    });
+
     function setWizardStep(step) {
-      [1, 2, 3].forEach(n => {
+      [1, 2, 3, 4].forEach(n => {
         document.getElementById(`wizStep${n}`).classList.toggle('hidden', n !== step);
         const ind = document.getElementById(`wizStepInd${n}`);
         if (n === step) ind.className = 'rounded-lg bg-blue-600 py-1.5 text-white';
@@ -2630,6 +2870,11 @@
       });
     }
     function openOnboardingModal(startStep = 1) {
+      pendingWizardGoal = studyGoal || 'univ_sci';
+      renderWizardGoalCards();
+      const preset = GOAL_PRESETS[pendingWizardGoal] || GOAL_PRESETS.cpa;
+      document.getElementById('wizExamName').value = preset.defaultExamName;
+      document.getElementById('wizExamDate').value = preset.defaultExamDate;
       setWizardStep(startStep);
       onboardingModal.classList.remove('hidden');
       onboardingModal.classList.add('flex');
@@ -2641,18 +2886,30 @@
     }
     document.getElementById('openOnboardingFromAccountBtn').addEventListener('click', () => {
       closeAccountModal();
-      openOnboardingModal(isGoogleSignedIn() ? 2 : 1);
+      openOnboardingModal(1);
     });
     document.getElementById('closeOnboardingBtn').addEventListener('click', closeOnboardingModal);
     onboardingModal.addEventListener('click', (e) => { if (e.target === onboardingModal) closeOnboardingModal(); });
 
+    document.getElementById('wizToStep2Btn').addEventListener('click', () => {
+      applyGoalPreset(pendingWizardGoal);
+      if (isGoogleSignedIn()) {
+        saveMaterialsToCloud();
+        saveHubConfigToCloud();
+        setWizardStep(3);
+      } else {
+        setWizardStep(2);
+      }
+    });
+    document.getElementById('wizBackTo1Btn').addEventListener('click', () => setWizardStep(1));
+
     document.getElementById('wizLoginBtn').addEventListener('click', async () => {
-      const st = document.getElementById('wizStep1Status');
+      const st = document.getElementById('wizStep2Status');
       st.textContent = 'Googleログイン画面を開いています...';
       try {
         await requestGoogleLogin();
         st.textContent = `✓ ${googleAuth.user?.email || 'ログイン完了'}`;
-        setWizardStep(2);
+        setWizardStep(3);
       } catch (err) {
         st.textContent = err.message;
       }
@@ -2670,7 +2927,7 @@
       btn.disabled = true;
       try {
         await autoProvisionUserWorkspace(appendLog);
-        document.getElementById('wizToStep3Btn').classList.remove('hidden');
+        document.getElementById('wizToStep4Btn').classList.remove('hidden');
         showToast('スプレッドシートとフォルダを自動作成しました');
         fetchAndRenderData(false);
       } catch (err) {
@@ -2680,7 +2937,7 @@
       }
     });
 
-    document.getElementById('wizToStep3Btn').addEventListener('click', () => setWizardStep(3));
+    document.getElementById('wizToStep4Btn').addEventListener('click', () => setWizardStep(4));
 
     document.getElementById('wizFinishBtn').addEventListener('click', () => {
       const name = document.getElementById('wizExamName').value.trim();
@@ -2690,6 +2947,7 @@
         saveJSON(STORAGE_KEYS.COUNTDOWNS, countdowns);
         renderCountdowns();
       }
+      saveMaterialsToCloud();
       saveHubConfigToCloud();
       closeOnboardingModal();
       fetchAndRenderData(false);
@@ -2703,6 +2961,7 @@
     renderQuickLinks();
     renderExamResults();
     renderSubjectChips();
+    renderExamSubjectOptions();
     renderRatingChips();
 
     if (localStorage.getItem(STORAGE_KEYS.TIMER_FIRST_START)) {
