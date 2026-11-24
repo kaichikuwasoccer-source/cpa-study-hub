@@ -160,40 +160,45 @@
         ※ 現在のGASからは「今日・今週」のデータのみ取得しています。「今月・年間」も本番データで集計したい場合は、GAS側の集計処理を追加すると自動反映されます。
       </div>
 
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <!-- 選択期間の勉強時間（実績） -->
-        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div class="flex items-center justify-between">
-            <span id="primaryKpiLabel" class="text-xs font-semibold text-slate-500 dark:text-slate-400">今週の勉強時間</span>
-            <span id="primaryPctBadge" class="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-700 dark:bg-blue-950 dark:text-blue-300">0%</span>
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <!-- 選択期間の勉強時間（実績・進捗ゲージ1本に集約） -->
+        <div class="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div>
+            <div class="flex items-center justify-between">
+              <span id="primaryKpiLabel" class="text-xs font-semibold text-slate-500 dark:text-slate-400">今週の勉強時間</span>
+              <span id="primaryPctBadge" class="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-700 dark:bg-blue-950 dark:text-blue-300">0%</span>
+            </div>
+            <div id="primaryActualVal" class="mt-2 text-3xl font-extrabold tracking-tight">--</div>
+            <div class="mt-1 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
+              <span id="primaryPlannedVal">カレンダー予定: --</span>
+              <span id="subQuickText" class="font-semibold text-slate-400 dark:text-slate-500"></span>
+            </div>
           </div>
-          <div id="primaryActualVal" class="mt-2 text-3xl font-extrabold tracking-tight">--</div>
-          <div id="primaryPlannedVal" class="mt-1 text-xs text-slate-500 dark:text-slate-400">カレンダー予定: --</div>
-          <div class="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+          <div class="mt-4 h-2.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
             <div id="primaryProgressBar" class="h-full rounded-full bg-blue-600 transition-all duration-500" style="width: 0%"></div>
           </div>
         </div>
 
-        <!-- 比較用サブKPI -->
-        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div class="flex items-center justify-between">
-            <span id="subKpiLabel" class="text-xs font-semibold text-slate-500 dark:text-slate-400">今日の勉強時間</span>
-            <span id="subPctBadge" class="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">0%</span>
+        <!-- 選択期間の分析インサイト ＋ AI送信ボタン -->
+        <div class="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div>
+            <span id="focusLabel" class="text-xs font-semibold text-slate-500 dark:text-slate-400">今週の科目フォーカス</span>
+            <div id="topSubjectVal" class="mt-2 text-xl font-bold tracking-tight">--</div>
+            <p id="insightText" class="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+              データを読み込むと、予定と実績のギャップや重点科目の分析が表示されます。
+            </p>
           </div>
-          <div id="subActualVal" class="mt-2 text-3xl font-extrabold tracking-tight">--</div>
-          <div id="subPlannedVal" class="mt-1 text-xs text-slate-500 dark:text-slate-400">カレンダー予定: --</div>
-          <div class="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-            <div id="subProgressBar" class="h-full rounded-full bg-emerald-500 transition-all duration-500" style="width: 0%"></div>
+          <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+            <span class="mr-auto text-[11px] font-semibold text-slate-400">AIで次週の計画を調整</span>
+            <button id="sendToChatGptBtn" type="button"
+                    class="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-slate-700 active:scale-[0.98] dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white transition">
+              <span>ChatGPTに送る ↗</span>
+            </button>
+            <button id="sendToGeminiBtn" type="button"
+                    class="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-700 active:scale-[0.98] transition">
+              <span>Geminiに送る ↗</span>
+            </button>
           </div>
-        </div>
-
-        <!-- 選択期間の分析インサイト -->
-        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <span id="focusLabel" class="text-xs font-semibold text-slate-500 dark:text-slate-400">今週の科目フォーカス</span>
-          <div id="topSubjectVal" class="mt-2 text-xl font-bold tracking-tight">--</div>
-          <p id="insightText" class="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-            データを読み込むと、予定と実績のギャップや重点科目の分析が表示されます。
-          </p>
         </div>
       </div>
     </section>
@@ -790,21 +795,14 @@
       document.getElementById('primaryPctBadge').textContent = `${primaryPct}%`;
       document.getElementById('primaryProgressBar').style.width = `${Math.min(100, primaryPct)}%`;
 
-      // サブKPI
+      // 比較用の簡易テキスト（ゲージなし）
       const subPeriodKey = selectedPeriod === 'today' ? 'week'
                          : selectedPeriod === 'week' ? 'today'
                          : selectedPeriod === 'month' ? 'week'
                          : 'month';
       const subSlice = resolvePeriodData(data, subPeriodKey).slice;
-      const subActual = subSlice.actual || 0;
-      const subPlanned = subSlice.planned || 0;
-      const subPct = subPlanned > 0 ? Math.round((subActual / subPlanned) * 100) : 0;
-
-      document.getElementById('subKpiLabel').textContent = meta.subLabel;
-      document.getElementById('subActualVal').textContent = fmtHours(subActual);
-      document.getElementById('subPlannedVal').textContent = `カレンダー予定: ${fmtHours(subPlanned)}`;
-      document.getElementById('subPctBadge').textContent = `${subPct}%`;
-      document.getElementById('subProgressBar').style.width = `${Math.min(100, subPct)}%`;
+      const subShortLabel = PERIOD_META[subPeriodKey]?.label || '';
+      document.getElementById('subQuickText').textContent = `${subShortLabel}: ${fmtHours(subSlice.actual || 0)}`;
 
       // インサイト
       const actualMap = slice.bySubject?.actual || {};
@@ -1104,7 +1102,89 @@
     });
 
     // =========================================================================
-    // 7. イベントリスナー（更新ボタン・期間切替タブ）
+    // 7. AI連携（ChatGPT / Gemini へ選択期間のデータを送信）
+    // =========================================================================
+    function buildAiStudyPrompt() {
+      const data = currentData || DEMO_DATA;
+      const meta = PERIOD_META[selectedPeriod] || PERIOD_META.week;
+      const { slice } = resolvePeriodData(data, selectedPeriod);
+      const actualMap = slice.bySubject?.actual || {};
+      const plannedMap = slice.bySubject?.planned || {};
+      const totalActual = slice.actual || 0;
+      const totalPlanned = slice.planned || 0;
+      const pct = totalPlanned > 0 ? Math.round((totalActual / totalPlanned) * 100) : 0;
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayStr = `${today.getFullYear()}/${today.getMonth() + 1}/${today.getDate()}`;
+
+      const countdownLines = [...countdowns]
+        .sort((a, b) => new Date(a.date) - new Date(b.date))
+        .map(c => {
+          const diff = Math.ceil((new Date(c.date + 'T00:00:00') - today) / 86400000);
+          return `- ${c.name}（${c.date.replace(/-/g, '/')}）：${diff > 0 ? `あと${diff}日` : diff === 0 ? '本日' : `${Math.abs(diff)}日経過`}`;
+        });
+
+      const subjectLines = SUBJECTS.map(s => {
+        const a = actualMap[s] || 0;
+        const p = plannedMap[s] || 0;
+        const diff = a - p;
+        return `- ${s}：実績 ${fmtHours(a)} / 予定 ${fmtHours(p)}（差 ${fmtSignedHours(diff)}）`;
+      });
+
+      return [
+        `公認会計士（CPA）試験の学習コーチとして、以下の【${meta.label}の学習実績】をもとに次週の勉強時間の配分調整を提案してください。`,
+        '',
+        `■ 基準日：${todayStr}`,
+        '■ 試験・重要日程',
+        ...(countdownLines.length ? countdownLines : ['- 未登録']),
+        '',
+        `■ ${meta.label}の合計：実績 ${fmtHours(totalActual)} / 予定 ${fmtHours(totalPlanned)}（達成率 ${pct}%）`,
+        '■ 科目別の予定 vs 実績',
+        ...subjectLines,
+        '',
+        '■ お願いしたいこと',
+        '1. 実績と予実ギャップの簡潔な振り返り',
+        '2. 遅れている科目のリカバリーを踏まえた、次週の科目別勉強時間の調整案',
+        '3. 次週に優先して意識すべきアクション3点'
+      ].join('\n');
+    }
+
+    async function copyToClipboard(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch (e) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        let ok = false;
+        try { ok = document.execCommand('copy'); } catch (err) {}
+        document.body.removeChild(ta);
+        return ok;
+      }
+    }
+
+    document.getElementById('sendToChatGptBtn').addEventListener('click', async () => {
+      const prompt = buildAiStudyPrompt();
+      await copyToClipboard(prompt);
+      const url = `https://chatgpt.com/?q=${encodeURIComponent(prompt)}`;
+      window.open(url, '_blank', 'noopener,noreferrer');
+      showToast('ChatGPTを開きました（入力済み・コピー済み）');
+    });
+
+    document.getElementById('sendToGeminiBtn').addEventListener('click', async () => {
+      const prompt = buildAiStudyPrompt();
+      const copied = await copyToClipboard(prompt);
+      window.open('https://gemini.google.com/app', '_blank', 'noopener,noreferrer');
+      showToast(copied ? 'データをコピーしました！Geminiに貼り付けて送信してください' : 'Geminiを開きました');
+    });
+
+    // =========================================================================
+    // 8. イベントリスナー（更新ボタン・期間切替タブ）
     // =========================================================================
     document.getElementById('refreshDataBtn').addEventListener('click', () => {
       fetchAndRenderData();
