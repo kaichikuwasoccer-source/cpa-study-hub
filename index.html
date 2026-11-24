@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -8,33 +9,55 @@
   <title>CPA Study Hub</title>
   <link rel="apple-touch-icon" href="icon2.png?v=2" />
   <link rel="icon" type="image/png" href="icon2.png?v=2" />
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Google Identity Services (OAuth 2.0) -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <!-- Google Fonts: Inter & Noto Sans JP -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
+    rel="stylesheet" />
   <script>
     tailwind.config = {
       darkMode: 'class',
-      theme: { extend: { fontFamily: { sans: ['Inter', '"Noto Sans JP"', 'sans-serif'] } } }
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '"Noto Sans JP"', 'sans-serif'],
+          },
+        },
+      },
     };
   </script>
 </head>
-<body class="min-h-screen bg-slate-50 text-slate-800 antialiased transition-colors duration-200 dark:bg-slate-950 dark:text-slate-100">
+
+<body
+  class="min-h-screen bg-slate-50 text-slate-800 antialiased transition-colors duration-200 dark:bg-slate-950 dark:text-slate-100">
 
   <!-- トースト通知 -->
-  <div id="toast" class="fixed bottom-20 right-4 z-50 hidden items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-xl sm:bottom-5 sm:right-5 dark:bg-slate-800">
-    <svg class="h-4 w-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+  <div id="toast"
+    class="fixed bottom-20 right-4 z-50 hidden items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-xl sm:bottom-5 sm:right-5 dark:bg-slate-800">
+    <svg class="h-4 w-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+    </svg>
     <span id="toastText">通知</span>
   </div>
 
   <!-- ヘッダー -->
-  <header class="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/90">
+  <header
+    class="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/90">
     <div class="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+      <!-- ブランド -->
       <div class="flex items-center gap-3">
         <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
-          <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342" /></svg>
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342" />
+          </svg>
         </div>
         <div>
           <h1 class="text-base font-extrabold tracking-tight sm:text-lg">CPA Study Hub</h1>
@@ -42,16 +65,25 @@
         </div>
       </div>
 
-      <!-- PC/タブレット用 上部切替バー -->
-      <nav aria-label="アプリ切替" class="hidden items-center rounded-xl border border-slate-200 bg-slate-100/80 p-1 sm:inline-flex dark:border-slate-800 dark:bg-slate-800/80">
-        <button type="button" data-app-tab="hubView" class="app-tab-btn inline-flex items-center gap-1.5 rounded-lg bg-white px-4 py-1.5 text-xs font-bold text-blue-600 shadow-sm dark:bg-slate-900 dark:text-blue-400 transition">
-          <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>
+      <!-- PC/タブレット用 上部ナビゲーション切替バー -->
+      <nav aria-label="アプリ切替"
+        class="hidden items-center rounded-xl border border-slate-200 bg-slate-100/80 p-1 sm:inline-flex dark:border-slate-800 dark:bg-slate-800/80">
+        <button type="button" data-app-tab="hubView"
+          class="app-tab-btn inline-flex items-center gap-1.5 rounded-lg bg-white px-4 py-1.5 text-xs font-bold text-blue-600 shadow-sm dark:bg-slate-900 dark:text-blue-400 transition">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+          </svg>
           <span>ハブ</span>
         </button>
-        <button type="button" data-app-tab="logView" class="app-tab-btn inline-flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition">
-          <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        <button type="button" data-app-tab="logView"
+          class="app-tab-btn inline-flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
           <span>記録</span>
-          <span class="nav-timer-badge hidden items-center gap-1 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-bold text-emerald-600 tabular-nums dark:text-emerald-400">
+          <span
+            class="nav-timer-badge hidden items-center gap-1 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-bold text-emerald-600 tabular-nums dark:text-emerald-400">
             <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500"></span>
             <span class="nav-timer-text">00:00</span>
           </span>
@@ -60,151 +92,229 @@
 
       <!-- アクションボタン群 -->
       <div class="flex items-center gap-2">
-        <button id="openAccountBtn" type="button" title="Googleアカウント管理・初期設定" class="inline-flex h-9 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition">
+        <!-- Googleアカウント管理ボタン -->
+        <button id="openAccountBtn" type="button" title="Googleアカウント管理・初期設定"
+          class="inline-flex h-9 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition">
           <img id="headerAvatarImg" src="" alt="" class="hidden h-5 w-5 rounded-full object-cover" />
           <span id="headerAccountDot" class="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600"></span>
           <span id="headerAccountLabel" class="hidden max-w-[96px] truncate sm:inline">アカウント</span>
         </button>
 
-        <button id="refreshDataBtn" type="button" title="最新データを再読み込み・同期" class="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition">
-          <svg id="refreshIcon" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
+        <button id="refreshDataBtn" type="button" title="最新データを再読み込み・同期"
+          class="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition">
+          <svg id="refreshIcon" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+          </svg>
         </button>
 
-        <button id="themeToggleBtn" type="button" title="ライト/ダーク切替" class="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition">
-          <svg class="h-4 w-4 dark:hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>
-          <svg class="hidden h-4 w-4 dark:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>
+        <button id="themeToggleBtn" type="button" title="ライト/ダーク切替"
+          class="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition">
+          <svg class="h-4 w-4 dark:hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+          </svg>
+          <svg class="hidden h-4 w-4 dark:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+          </svg>
         </button>
 
-        <button id="openSettingsBtn" type="button" title="連携URL設定" class="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition">
-          <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+        <button id="openSettingsBtn" type="button" title="連携URL設定"
+          class="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
         </button>
       </div>
     </div>
   </header>
 
+  <!-- メインコンテンツ -->
   <main class="mx-auto max-w-6xl px-4 pb-24 pt-6 sm:px-6 sm:pb-10">
 
-    <!-- ビュー1：ハブ -->
+    <!-- ===================================================================== -->
+    <!-- ビュー1：ハブ（ダッシュボード・分析） -->
+    <!-- ===================================================================== -->
     <div id="hubView" class="space-y-6">
-      <div id="demoBanner" class="hidden flex-col items-start justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900 sm:flex-row sm:items-center dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
-        <div><strong class="font-bold">デモデータ表示中：</strong>右上のアカウントボタンから初期設定を行うか、⚙からGAS URLを設定すると本番データが反映されます。</div>
-        <button id="bannerOpenSettingsBtn" type="button" class="shrink-0 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-700 transition">URLを設定する</button>
+
+      <!-- デモモード案内バナー -->
+      <div id="demoBanner"
+        class="hidden flex-col items-start justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900 sm:flex-row sm:items-center dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+        <div>
+          <strong class="font-bold">デモデータ表示中：</strong>
+          右上の歯車アイコン（⚙）からGASのウェブアプリURLを設定すると、スプレッドシートとGoogleカレンダーの本番データが反映されます。
+        </div>
+        <button id="bannerOpenSettingsBtn" type="button"
+          class="shrink-0 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-700 transition">
+          URLを設定する
+        </button>
       </div>
 
-      <!-- 1. カウントダウン -->
+      <!-- 1. 重要日程カウントダウン -->
       <section>
         <div class="mb-3 flex items-center justify-between">
           <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">試験・重要日程カウントダウン</h2>
-          <button id="openAddCountdownBtn" type="button" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 transition">＋ 日程を追加</button>
+          <button id="openAddCountdownBtn" type="button"
+            class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 transition">
+            ＋ 日程を追加
+          </button>
         </div>
         <div id="countdownGrid" class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"></div>
       </section>
 
-      <!-- 2. 今日の予定 -->
+      <!-- 2. 今日の勉強予定（カレンダー） -->
       <section>
         <div class="mb-3 flex items-center justify-between">
           <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">今日の勉強予定（カレンダー）</h2>
-          <a id="openCalendarLink" href="https://calendar.google.com/" target="_blank" rel="noopener noreferrer" class="text-xs font-semibold text-blue-600 hover:underline dark:text-blue-400">カレンダーを開く ↗</a>
+          <a id="openCalendarLink" href="https://calendar.google.com/" target="_blank" rel="noopener noreferrer"
+            class="text-xs font-semibold text-blue-600 hover:underline dark:text-blue-400">
+            カレンダーを開く ↗
+          </a>
         </div>
         <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div id="todayEventsList" class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"></div>
         </div>
       </section>
 
-      <!-- 3. 学習進捗・分析 -->
+      <!-- 3. 学習進捗・分析（1本ゲージ ＋ AI送信ボタン） -->
       <section>
         <div class="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div class="flex items-center gap-2">
             <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">学習進捗・分析</h2>
             <span id="lastUpdated" class="text-xs text-slate-400"></span>
           </div>
+
           <div class="flex flex-wrap items-center gap-2">
-            <div class="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-1.5 py-1 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              <button id="prevPeriodBtn" type="button" title="前の期間" class="flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition">◀</button>
-              <span id="periodRangeLabel" class="min-w-[104px] text-center text-xs font-bold text-slate-700 dark:text-slate-200">今週</span>
-              <button id="nextPeriodBtn" type="button" title="次の期間" class="flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100 disabled:opacity-30 dark:text-slate-300 dark:hover:bg-slate-800 transition">▶</button>
+            <!-- 過去期間ナビゲーション（◀ 期間ラベル ▶） -->
+            <div
+              class="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-1.5 py-1 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <button id="prevPeriodBtn" type="button" title="前の期間"
+                class="flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition">◀</button>
+              <span id="periodRangeLabel"
+                class="min-w-[104px] text-center text-xs font-bold text-slate-700 dark:text-slate-200">今週</span>
+              <button id="nextPeriodBtn" type="button" title="次の期間"
+                class="flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100 disabled:opacity-30 dark:text-slate-300 dark:hover:bg-slate-800 transition">▶</button>
             </div>
-            <div id="periodTabs" class="inline-flex self-start rounded-xl border border-slate-200 bg-white p-1 shadow-sm sm:self-auto dark:border-slate-800 dark:bg-slate-900">
-              <button type="button" data-period="today" class="period-btn rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition">今日</button>
-              <button type="button" data-period="week" class="period-btn rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition">今週</button>
-              <button type="button" data-period="month" class="period-btn rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition">今月</button>
-              <button type="button" data-period="year" class="period-btn rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition">年間</button>
+
+            <div id="periodTabs"
+              class="inline-flex self-start rounded-xl border border-slate-200 bg-white p-1 shadow-sm sm:self-auto dark:border-slate-800 dark:bg-slate-900">
+              <button type="button" data-period="today"
+                class="period-btn rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition">今日</button>
+              <button type="button" data-period="week"
+                class="period-btn rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition">今週</button>
+              <button type="button" data-period="month"
+                class="period-btn rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition">今月</button>
+              <button type="button" data-period="year"
+                class="period-btn rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition">年間</button>
             </div>
           </div>
         </div>
 
-        <div id="periodNotice" class="mb-3 hidden rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-xs text-blue-800 dark:border-blue-900/50 dark:bg-blue-950/40 dark:text-blue-200">
-          ※ 現在のGASからは「今日・今週」のデータのみ取得しています。最新GASコードへ更新すると過去期間・今月・年間も集計されます。
+        <div id="periodNotice"
+          class="mb-3 hidden rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-xs text-blue-800 dark:border-blue-900/50 dark:bg-blue-950/40 dark:text-blue-200">
+          ※ 現在のGASからは「今日・今週」のデータのみ取得しています。「今月・年間」も本番データで集計したい場合は、GAS側の集計処理を追加すると自動反映されます。
         </div>
 
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div class="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <!-- 選択期間の勉強時間（進捗ゲージ1本） -->
+          <div
+            class="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div>
               <div class="flex items-center justify-between">
-                <span id="primaryKpiLabel" class="text-xs font-semibold text-slate-500 dark:text-slate-400">今週の勉強時間</span>
-                <span id="primaryPctBadge" class="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-700 dark:bg-blue-950 dark:text-blue-300">0%</span>
+                <span id="primaryKpiLabel"
+                  class="text-xs font-semibold text-slate-500 dark:text-slate-400">今週の勉強時間</span>
+                <span id="primaryPctBadge"
+                  class="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-700 dark:bg-blue-950 dark:text-blue-300">0%</span>
               </div>
               <div id="primaryActualVal" class="mt-2 text-3xl font-extrabold tracking-tight">--</div>
-              <div class="mt-1 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
+              <div
+                class="mt-1 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
                 <span id="primaryPlannedVal">カレンダー予定: --</span>
                 <span id="subQuickText" class="font-semibold text-slate-400 dark:text-slate-500"></span>
               </div>
             </div>
             <div class="mt-4 h-2.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-              <div id="primaryProgressBar" class="h-full rounded-full bg-blue-600 transition-all duration-500" style="width: 0%"></div>
+              <div id="primaryProgressBar" class="h-full rounded-full bg-blue-600 transition-all duration-500"
+                style="width: 0%"></div>
             </div>
           </div>
 
-          <div class="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <!-- 科目フォーカス・インサイト ＋ AI送信ボタン -->
+          <div
+            class="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div>
               <span id="focusLabel" class="text-xs font-semibold text-slate-500 dark:text-slate-400">今週の科目フォーカス</span>
               <div id="topSubjectVal" class="mt-2 text-xl font-bold tracking-tight">--</div>
-              <p id="insightText" class="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">データを読み込むと、予定と実績のギャップや重点科目の分析が表示されます。</p>
+              <p id="insightText" class="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                データを読み込むと、予定と実績のギャップや重点科目の分析が表示されます。
+              </p>
             </div>
             <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
               <span class="mr-auto text-[11px] font-semibold text-slate-400">AIで次週の計画を調整</span>
-              <button id="sendToChatGptBtn" type="button" class="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-slate-700 active:scale-[0.98] dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white transition"><span>ChatGPTに送る ↗</span></button>
-              <button id="sendToGeminiBtn" type="button" class="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-700 active:scale-[0.98] transition"><span>Geminiに送る ↗</span></button>
+              <button id="sendToChatGptBtn" type="button"
+                class="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-slate-700 active:scale-[0.98] dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white transition">
+                <span>ChatGPTに送る ↗</span>
+              </button>
+              <button id="sendToGeminiBtn" type="button"
+                class="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-700 active:scale-[0.98] transition">
+                <span>Geminiに送る ↗</span>
+              </button>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- 4. 分析グラフ -->
+      <!-- 4. 分析グラフ（棒グラフ & 科目別割合） -->
       <section class="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div class="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2 dark:border-slate-800 dark:bg-slate-900">
+        <div
+          class="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2 dark:border-slate-800 dark:bg-slate-900">
           <div class="mb-4 flex items-center justify-between">
             <h3 id="barChartTitle" class="text-sm font-bold">今週の科目別：予定 vs 実績（時間）</h3>
             <span class="text-xs text-slate-400">カレンダー比較</span>
           </div>
-          <div class="relative min-h-[260px] w-full flex-1"><canvas id="barChart"></canvas></div>
+          <div class="relative min-h-[260px] w-full flex-1">
+            <canvas id="barChart"></canvas>
+          </div>
         </div>
+
         <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div class="mb-3 flex items-center justify-between">
             <h3 id="ratioChartTitle" class="text-sm font-bold">今週の科目別割合</h3>
             <span id="ratioTotalBadge" class="text-xs font-semibold text-slate-400">合計 --</span>
           </div>
-          <div class="relative flex h-44 w-full items-center justify-center"><canvas id="doughnutChart"></canvas></div>
+          <div class="relative flex h-44 w-full items-center justify-center">
+            <canvas id="doughnutChart"></canvas>
+          </div>
           <div id="subjectRatioList" class="mt-4 space-y-2"></div>
         </div>
       </section>
 
-      <!-- 5. 答練成績（Drive OCR連携） -->
+      <!-- 5. 答練・模試の成績（GoogleドライブOCR連携） -->
       <section>
         <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">直近の答練・模試成績（Drive OCR連携）</h2>
+            <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">直近の答練・模試成績（Drive
+              OCR連携）</h2>
             <p class="text-[11px] text-slate-400">Googleドライブの専用フォルダにPDFを入れるとOCRで自動取込され、AI反省プロンプトにも反映されます</p>
           </div>
           <div class="flex items-center gap-2">
-            <button id="syncDriveOcrBtn" type="button" class="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60 transition"><span>📄 DriveからOCR取込</span></button>
-            <button id="openAddExamBtn" type="button" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 transition">＋ 手入力</button>
+            <button id="syncDriveOcrBtn" type="button"
+              class="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60 transition">
+              <span>📄 DriveからOCR取込</span>
+            </button>
+            <button id="openAddExamBtn" type="button"
+              class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 transition">
+              ＋ 手入力
+            </button>
           </div>
         </div>
         <div id="examResultsGrid" class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"></div>
       </section>
 
-      <!-- 6. 予実ギャップ & クイックアクセス -->
+      <!-- 6. 科目別 予実ギャップ & クイックアクセス -->
       <section class="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div class="mb-4 flex items-center justify-between">
@@ -213,7 +323,9 @@
           </div>
           <div id="subjectGapList" class="space-y-3"></div>
         </div>
-        <div class="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+
+        <div
+          class="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div class="mb-4 flex items-center justify-between">
             <h3 class="text-sm font-bold">クイックアクセス</h3>
             <span class="text-xs text-slate-400">よく使うツール</span>
@@ -223,84 +335,145 @@
       </section>
     </div>
 
-    <!-- ビュー2：学習記録 -->
+    <!-- ===================================================================== -->
+    <!-- ビュー2：学習記録（タイマー・スプレッドシート送信） -->
+    <!-- ===================================================================== -->
     <div id="logView" class="mx-auto hidden max-w-xl space-y-5">
-      <div class="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
+
+      <!-- タイマーカード -->
+      <div
+        class="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div class="mb-1 flex items-center justify-center gap-2">
           <span id="timerStateDot" class="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600"></span>
           <span id="timerStateLabel" class="text-xs font-semibold text-slate-500 dark:text-slate-400">待機中</span>
         </div>
-        <div id="timerDisplay" class="my-2 text-5xl font-extrabold tracking-tight tabular-nums text-slate-900 dark:text-white">00:00:00</div>
+        <div id="timerDisplay"
+          class="my-2 text-5xl font-extrabold tracking-tight tabular-nums text-slate-900 dark:text-white">00:00:00</div>
         <div class="mt-4 flex flex-wrap items-center justify-center gap-2.5">
-          <button id="startStopBtn" type="button" class="min-w-[110px] rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-blue-700 active:scale-[0.98] transition">開始</button>
-          <button id="resetBtn" type="button" class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition">リセット</button>
-          <button id="syncTimerBtn" type="button" title="他端末のタイマー・教材状態を取得" class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition">同期</button>
+          <button id="startStopBtn" type="button"
+            class="min-w-[110px] rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-blue-700 active:scale-[0.98] transition">
+            開始
+          </button>
+          <button id="resetBtn" type="button"
+            class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition">
+            リセット
+          </button>
+          <button id="syncTimerBtn" type="button" title="他端末のタイマー・教材状態を取得"
+            class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition">
+            同期
+          </button>
         </div>
       </div>
 
-      <div class="space-y-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 dark:border-slate-800 dark:bg-slate-900">
+      <!-- 記録フォームカード -->
+      <div
+        class="space-y-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 dark:border-slate-800 dark:bg-slate-900">
+        <!-- 科目 -->
         <div>
           <label class="mb-2 block text-xs font-bold text-slate-500 dark:text-slate-400">科目 *</label>
           <div id="subjectChips" class="flex flex-wrap gap-2"></div>
         </div>
+
+        <!-- 教材 -->
         <div>
           <div class="mb-2 flex items-center justify-between">
             <label class="text-xs font-bold text-slate-500 dark:text-slate-400">教材 *</label>
-            <button type="button" id="editMaterialBtn" class="hidden text-xs font-bold text-blue-600 hover:underline dark:text-blue-400">編集</button>
+            <button type="button" id="editMaterialBtn"
+              class="hidden text-xs font-bold text-blue-600 hover:underline dark:text-blue-400">編集</button>
           </div>
-          <div id="materialChips" class="flex flex-wrap gap-2"><span class="text-xs text-slate-400">先に科目を選択してください</span></div>
+          <div id="materialChips" class="flex flex-wrap gap-2">
+            <span class="text-xs text-slate-400">先に科目を選択してください</span>
+          </div>
           <div id="addMaterialRow" class="mt-2.5 hidden gap-2">
-            <input type="text" id="newMaterialInput" placeholder="追加する教材名を入力" class="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
-            <button type="button" id="addMaterialBtn" class="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 transition">追加</button>
+            <input type="text" id="newMaterialInput" placeholder="追加する教材名を入力"
+              class="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+            <button type="button" id="addMaterialBtn"
+              class="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 transition">追加</button>
           </div>
         </div>
+
+        <!-- 学習日 ＆ 学習時間 -->
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label for="studyDateInput" class="mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400">学習日</label>
-            <input type="date" id="studyDateInput" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+            <label for="studyDateInput"
+              class="mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400">学習日</label>
+            <input type="date" id="studyDateInput"
+              class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
           </div>
           <div>
-            <label for="minutesInput" class="mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400">学習時間（分） *</label>
-            <input type="number" id="minutesInput" min="1" placeholder="停止で自動入力" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+            <label for="minutesInput" class="mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400">学習時間（分）
+              *</label>
+            <input type="number" id="minutesInput" min="1" placeholder="停止で自動入力"
+              class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
           </div>
         </div>
+
+        <!-- 時間帯 -->
         <div>
           <label class="mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400">時間帯（タイマーで自動入力／手入力も可）</label>
           <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-            <input type="time" id="startTimeInput" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+            <input type="time" id="startTimeInput"
+              class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
             <span class="text-xs font-semibold text-slate-400">〜</span>
-            <input type="time" id="endTimeInput" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+            <input type="time" id="endTimeInput"
+              class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
           </div>
         </div>
+
+        <!-- 単元・ページ -->
         <div>
-          <label for="topicInput" class="mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400">単元・ページ（任意）</label>
-          <input type="text" id="topicInput" placeholder="例：連結会計 P.45〜52" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+          <label for="topicInput"
+            class="mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400">単元・ページ（任意）</label>
+          <input type="text" id="topicInput" placeholder="例：連結会計 P.45〜52"
+            class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
         </div>
+
+        <!-- 手応え -->
         <div>
           <label class="mb-2 block text-xs font-bold text-slate-500 dark:text-slate-400">手応え（任意）</label>
           <div id="ratingChips" class="flex flex-wrap gap-2"></div>
         </div>
+
+        <!-- 一言メモ -->
         <div>
-          <label for="memoInput" class="mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400">一言メモ（任意）</label>
-          <textarea id="memoInput" rows="3" placeholder="つまずいた論点や次回の申し送りなど" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800"></textarea>
+          <label for="memoInput"
+            class="mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400">一言メモ（任意）</label>
+          <textarea id="memoInput" rows="3" placeholder="つまずいた論点や次回の申し送りなど"
+            class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800"></textarea>
         </div>
-        <button id="submitLogBtn" type="button" class="w-full rounded-xl bg-blue-600 py-3.5 text-sm font-bold text-white shadow-sm hover:bg-blue-700 active:scale-[0.99] disabled:opacity-60 transition">スプレッドシートに記録する</button>
-        <div id="logStatus" class="min-h-[1.2em] text-center text-xs font-medium text-slate-500 dark:text-slate-400"></div>
+
+        <!-- 送信ボタン -->
+        <button id="submitLogBtn" type="button"
+          class="w-full rounded-xl bg-blue-600 py-3.5 text-sm font-bold text-white shadow-sm hover:bg-blue-700 active:scale-[0.99] disabled:opacity-60 transition">
+          スプレッドシートに記録する
+        </button>
+        <div id="logStatus" class="min-h-[1.2em] text-center text-xs font-medium text-slate-500 dark:text-slate-400">
+        </div>
       </div>
     </div>
+
   </main>
 
-  <!-- モバイル下部固定ナビ -->
-  <nav aria-label="モバイルアプリ切替" class="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/90 bg-white/95 backdrop-blur-md sm:hidden dark:border-slate-800 dark:bg-slate-900/95">
+  <!-- スマホ用 下部固定ナビゲーションバー -->
+  <nav aria-label="モバイルアプリ切替"
+    class="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/90 bg-white/95 backdrop-blur-md sm:hidden dark:border-slate-800 dark:bg-slate-900/95">
     <div class="mx-auto grid max-w-md grid-cols-2 px-3 py-2">
-      <button type="button" data-app-tab="hubView" class="app-tab-mobile-btn flex flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 text-blue-600 dark:text-blue-400 transition">
-        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.1" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>
+      <button type="button" data-app-tab="hubView"
+        class="app-tab-mobile-btn flex flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 text-blue-600 dark:text-blue-400 transition">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.1" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+        </svg>
         <span class="text-[11px] font-bold">ハブ</span>
       </button>
-      <button type="button" data-app-tab="logView" class="app-tab-mobile-btn relative flex flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 text-slate-400 dark:text-slate-500 transition">
+      <button type="button" data-app-tab="logView"
+        class="app-tab-mobile-btn relative flex flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 text-slate-400 dark:text-slate-500 transition">
         <div class="relative">
-          <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.1" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-          <span class="nav-timer-dot hidden absolute -right-1 -top-0.5 h-2 w-2 animate-pulse rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900"></span>
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.1" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span
+            class="nav-timer-dot hidden absolute -right-1 -top-0.5 h-2 w-2 animate-pulse rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900"></span>
         </div>
         <span class="nav-mobile-log-label text-[11px] font-bold">記録</span>
       </button>
@@ -308,60 +481,80 @@
   </nav>
 
   <!-- 設定モーダル -->
-  <div id="settingsModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
-    <div class="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+  <div id="settingsModal"
+    class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+    <div
+      class="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
       <div class="mb-4 flex items-center justify-between">
         <h3 class="text-base font-bold">連携URL設定</h3>
-        <button id="closeSettingsBtn" type="button" class="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800">✕</button>
+        <button id="closeSettingsBtn" type="button"
+          class="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800">✕</button>
       </div>
       <form id="settingsForm" class="space-y-4 text-sm">
         <div>
           <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">GAS ウェブアプリURL *</label>
-          <input id="inputGasUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+          <input id="inputGasUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec"
+            class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
         </div>
         <div>
           <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">スプレッドシートURL</label>
-          <input id="inputSheetUrl" type="url" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+          <input id="inputSheetUrl" type="url"
+            class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
         </div>
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">GoogleカレンダーURL</label>
-            <input id="inputCalendarUrl" type="url" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+            <input id="inputCalendarUrl" type="url"
+              class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
           </div>
           <div>
-            <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">Gemini Notebook URL</label>
-            <input id="inputNotebookUrl" type="url" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+            <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">Gemini Notebook
+              URL</label>
+            <input id="inputNotebookUrl" type="url"
+              class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
           </div>
         </div>
         <div class="flex justify-end gap-2 pt-2">
-          <button id="cancelSettingsBtn" type="button" class="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">キャンセル</button>
-          <button type="submit" class="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 transition">保存して反映</button>
+          <button id="cancelSettingsBtn" type="button"
+            class="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
+            キャンセル
+          </button>
+          <button type="submit"
+            class="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 transition">
+            保存して反映
+          </button>
         </div>
       </form>
     </div>
   </div>
 
   <!-- カウントダウン追加・編集モーダル -->
-  <div id="countdownModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
-    <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+  <div id="countdownModal"
+    class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+    <div
+      class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
       <div class="mb-4 flex items-center justify-between">
         <h3 id="countdownModalTitle" class="text-base font-bold">重要日程を追加</h3>
-        <button id="closeCountdownBtn" type="button" class="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800">✕</button>
+        <button id="closeCountdownBtn" type="button"
+          class="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800">✕</button>
       </div>
       <form id="countdownForm" class="space-y-4 text-sm">
         <input id="inputEventId" type="hidden" value="" />
         <div>
           <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">試験・イベント名 *</label>
-          <input id="inputEventName" type="text" required placeholder="例：第Ⅰ回 短答式試験" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+          <input id="inputEventName" type="text" required placeholder="例：第Ⅰ回 短答式試験"
+            class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">日付 *</label>
-            <input id="inputEventDate" type="date" required class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+            <input id="inputEventDate" type="date" required
+              class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
           </div>
           <div>
             <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">カラー</label>
-            <select id="inputEventColor" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800">
+            <select id="inputEventColor"
+              class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800">
               <option value="rose">赤（本試験）</option>
               <option value="blue">青（模試・答練）</option>
               <option value="emerald">緑（マイルストーン）</option>
@@ -370,172 +563,273 @@
           </div>
         </div>
         <div class="flex justify-end gap-2 pt-2">
-          <button id="cancelCountdownBtn" type="button" class="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">キャンセル</button>
-          <button id="countdownSubmitBtn" type="submit" class="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 transition">追加する</button>
+          <button id="cancelCountdownBtn" type="button"
+            class="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
+            キャンセル
+          </button>
+          <button id="countdownSubmitBtn" type="submit"
+            class="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 transition">
+            追加する
+          </button>
         </div>
       </form>
     </div>
   </div>
 
   <!-- Googleアカウント管理モーダル -->
-  <div id="accountModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
-    <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+  <div id="accountModal"
+    class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+    <div
+      class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
       <div class="mb-4 flex items-center justify-between">
         <h3 class="text-base font-bold">Googleアカウント管理</h3>
-        <button id="closeAccountBtn" type="button" class="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800">✕</button>
+        <button id="closeAccountBtn" type="button"
+          class="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800">✕</button>
       </div>
-      <div class="mb-4 flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 dark:border-slate-800 dark:bg-slate-800/60">
-        <img id="accountAvatar" src="" alt="" class="hidden h-11 w-11 rounded-full object-cover ring-2 ring-blue-500/30" />
-        <div id="accountAvatarFallback" class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-100 text-base font-bold text-blue-600 dark:bg-blue-950 dark:text-blue-300">G</div>
+
+      <!-- ログイン状態カード -->
+      <div
+        class="mb-4 flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 dark:border-slate-800 dark:bg-slate-800/60">
+        <img id="accountAvatar" src="" alt=""
+          class="hidden h-11 w-11 rounded-full object-cover ring-2 ring-blue-500/30" />
+        <div id="accountAvatarFallback"
+          class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-100 text-base font-bold text-blue-600 dark:bg-blue-950 dark:text-blue-300">
+          G</div>
         <div class="min-w-0 flex-1">
           <div id="accountName" class="truncate text-sm font-bold">未ログイン</div>
           <div id="accountEmail" class="truncate text-xs text-slate-500 dark:text-slate-400">Googleアカウントでログインして同期</div>
         </div>
-        <span id="accountStatusBadge" class="rounded-full bg-slate-200 px-2.5 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-700 dark:text-slate-300">未接続</span>
+        <span id="accountStatusBadge"
+          class="rounded-full bg-slate-200 px-2.5 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-700 dark:text-slate-300">未接続</span>
       </div>
+
+      <!-- 自動作成リソースのリンク -->
       <div class="mb-4 space-y-2 text-xs">
-        <div class="flex items-center justify-between rounded-xl border border-slate-200 px-3.5 py-2.5 dark:border-slate-800">
+        <div
+          class="flex items-center justify-between rounded-xl border border-slate-200 px-3.5 py-2.5 dark:border-slate-800">
           <span class="font-semibold text-slate-600 dark:text-slate-300">📊 専用スプレッドシート</span>
-          <a id="accountSheetLink" href="#" target="_blank" rel="noopener noreferrer" class="font-bold text-blue-600 hover:underline dark:text-blue-400">未作成</a>
+          <a id="accountSheetLink" href="#" target="_blank" rel="noopener noreferrer"
+            class="font-bold text-blue-600 hover:underline dark:text-blue-400">未作成</a>
         </div>
-        <div class="flex items-center justify-between rounded-xl border border-slate-200 px-3.5 py-2.5 dark:border-slate-800">
+        <div
+          class="flex items-center justify-between rounded-xl border border-slate-200 px-3.5 py-2.5 dark:border-slate-800">
           <span class="font-semibold text-slate-600 dark:text-slate-300">📁 CPA答練PDFフォルダ</span>
-          <a id="accountFolderLink" href="#" target="_blank" rel="noopener noreferrer" class="font-bold text-blue-600 hover:underline dark:text-blue-400">未作成</a>
+          <a id="accountFolderLink" href="#" target="_blank" rel="noopener noreferrer"
+            class="font-bold text-blue-600 hover:underline dark:text-blue-400">未作成</a>
         </div>
       </div>
+
+      <!-- OAuth Client ID 設定（公開・テスト用） -->
       <details class="mb-4 rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs dark:border-slate-800">
-        <summary class="cursor-pointer font-semibold text-slate-500 dark:text-slate-400">Google OAuth クライアントID設定</summary>
+        <summary class="cursor-pointer font-semibold text-slate-500 dark:text-slate-400">Google OAuth クライアントID設定
+        </summary>
         <div class="mt-2.5 space-y-2">
-          <input id="inputGoogleClientId" type="text" placeholder="xxxx-xxxx.apps.googleusercontent.com" class="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
-          <button id="saveClientIdBtn" type="button" class="rounded-lg bg-slate-800 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-slate-700 dark:bg-slate-200 dark:text-slate-900 transition">クライアントIDを保存</button>
+          <input id="inputGoogleClientId" type="text" placeholder="xxxx-xxxx.apps.googleusercontent.com"
+            class="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+          <button id="saveClientIdBtn" type="button"
+            class="rounded-lg bg-slate-800 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-slate-700 dark:bg-slate-200 dark:text-slate-900 transition">クライアントIDを保存</button>
         </div>
       </details>
+
+      <!-- アクションボタン -->
       <div class="space-y-2">
-        <button id="googleSignInBtn" type="button" class="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-blue-700 transition"><span>Googleアカウントでログイン / 再接続</span></button>
-        <button id="openOnboardingFromAccountBtn" type="button" class="w-full rounded-xl border border-blue-200 bg-blue-50 py-2.5 text-xs font-bold text-blue-700 hover:bg-blue-100 dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-300 transition">✨ 初期設定ウィザード（スプシ＆フォルダ自動作成）を開く</button>
-        <button id="googleSignOutBtn" type="button" class="hidden w-full rounded-xl border border-rose-200 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:border-rose-900/60 dark:text-rose-400 dark:hover:bg-rose-950/40 transition">ログアウト</button>
+        <button id="googleSignInBtn" type="button"
+          class="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-blue-700 transition">
+          <span>Googleアカウントでログイン / 再接続</span>
+        </button>
+        <button id="openOnboardingFromAccountBtn" type="button"
+          class="w-full rounded-xl border border-blue-200 bg-blue-50 py-2.5 text-xs font-bold text-blue-700 hover:bg-blue-100 dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-300 transition">
+          ✨ 初期設定ウィザード（スプシ＆フォルダ自動作成）を開く
+        </button>
+        <button id="googleSignOutBtn" type="button"
+          class="hidden w-full rounded-xl border border-rose-200 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:border-rose-900/60 dark:text-rose-400 dark:hover:bg-rose-950/40 transition">
+          ログアウト
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- 初期設定ウィザードモーダル -->
-  <div id="onboardingModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
-    <div class="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+  <!-- 初期設定ウィザードモーダル（3ステップ：ログイン → スプシ＆フォルダ自動作成 → 試験日） -->
+  <div id="onboardingModal"
+    class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
+    <div
+      class="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
       <div class="mb-4 flex items-center justify-between">
         <div>
           <h3 class="text-base font-extrabold">CPA Study Hub 初期設定</h3>
           <p class="text-[11px] text-slate-400">Googleアカウント連携と専用スプレッドシートを自動セットアップします</p>
         </div>
-        <button id="closeOnboardingBtn" type="button" class="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800">✕</button>
+        <button id="closeOnboardingBtn" type="button"
+          class="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800">✕</button>
       </div>
+
+      <!-- ステップインジケーター -->
       <div class="mb-5 grid grid-cols-3 gap-2 text-center text-[11px] font-bold">
         <div id="wizStepInd1" class="rounded-lg bg-blue-600 py-1.5 text-white">1. ログイン</div>
         <div id="wizStepInd2" class="rounded-lg bg-slate-100 py-1.5 text-slate-400 dark:bg-slate-800">2. 自動作成</div>
         <div id="wizStepInd3" class="rounded-lg bg-slate-100 py-1.5 text-slate-400 dark:bg-slate-800">3. 試験日設定</div>
       </div>
+
+      <!-- Step 1: Googleログイン -->
       <div id="wizStep1" class="space-y-4">
-        <div class="rounded-xl bg-slate-50 p-4 text-xs leading-relaxed text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">
-          自分のGoogleアカウントでログインすると、あなた専用のスプレッドシートと答練PDFフォルダをGoogleドライブへ自動作成します。データはあなたのドライブに保存されるため安心です。
+        <div
+          class="rounded-xl bg-slate-50 p-4 text-xs leading-relaxed text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">
+          自分のGoogleアカウントでログインすると、**あなた専用のスプレッドシートと答練PDFフォルダ**をGoogleドライブへ自動作成します。データはあなたのドライブに保存されるため安心です。
         </div>
         <div id="wizStep1Status" class="text-center text-xs font-semibold text-slate-500"></div>
-        <button id="wizLoginBtn" type="button" class="w-full rounded-xl bg-blue-600 py-3 text-xs font-bold text-white shadow-sm hover:bg-blue-700 transition">Googleアカウントでログインして次へ →</button>
+        <div class="flex justify-end gap-2">
+          <button id="wizLoginBtn" type="button"
+            class="w-full rounded-xl bg-blue-600 py-3 text-xs font-bold text-white shadow-sm hover:bg-blue-700 transition">
+            Googleアカウントでログインして次へ →
+          </button>
+        </div>
       </div>
+
+      <!-- Step 2: スプレッドシート＆Driveフォルダ自動作成 -->
       <div id="wizStep2" class="hidden space-y-4">
-        <div class="rounded-xl bg-slate-50 p-4 text-xs leading-relaxed text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">
+        <div
+          class="rounded-xl bg-slate-50 p-4 text-xs leading-relaxed text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">
           以下の環境をあなたのGoogleドライブに自動作成します（すでに作成済みの場合は自動で引き継ぎます）：
           <ul class="mt-2 list-disc space-y-1 pl-4 font-semibold">
             <li>スプレッドシート「CPA Study Hub データ」（log / materials / exams / config の4シート）</li>
             <li>答練OCR用フォルダ「CPA答練PDF」（＋ 処理済みサブフォルダ）</li>
           </ul>
         </div>
-        <div id="wizProvisionLog" class="min-h-[64px] space-y-1 rounded-xl border border-slate-200 bg-white p-3 font-mono text-[11px] text-slate-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">待機中... 下のボタンを押してください</div>
+        <div id="wizProvisionLog"
+          class="min-h-[64px] space-y-1 rounded-xl border border-slate-200 bg-white p-3 font-mono text-[11px] text-slate-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">
+          待機中... 下のボタンを押してください
+        </div>
         <div class="flex gap-2">
-          <button id="wizAutoCreateBtn" type="button" class="flex-1 rounded-xl bg-blue-600 py-3 text-xs font-bold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60 transition">🚀 スプレッドシート＆フォルダを自動作成</button>
-          <button id="wizToStep3Btn" type="button" class="hidden rounded-xl bg-emerald-600 px-5 py-3 text-xs font-bold text-white hover:bg-emerald-700 transition">次へ →</button>
+          <button id="wizAutoCreateBtn" type="button"
+            class="flex-1 rounded-xl bg-blue-600 py-3 text-xs font-bold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60 transition">
+            🚀 スプレッドシート＆フォルダを自動作成
+          </button>
+          <button id="wizToStep3Btn" type="button"
+            class="hidden rounded-xl bg-emerald-600 px-5 py-3 text-xs font-bold text-white hover:bg-emerald-700 transition">
+            次へ →
+          </button>
         </div>
       </div>
+
+      <!-- Step 3: 目標試験日 -->
       <div id="wizStep3" class="hidden space-y-4">
         <p class="text-xs text-slate-500 dark:text-slate-400">目標とする本試験・模試の日程を1つ登録しましょう（あとから編集・追加できます）。</p>
         <div class="space-y-3">
           <div>
             <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">目標試験名</label>
-            <input id="wizExamName" type="text" value="第Ⅰ回 短答式試験" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+            <input id="wizExamName" type="text" value="第Ⅰ回 短答式試験"
+              class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
           </div>
           <div>
             <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">試験日</label>
-            <input id="wizExamDate" type="date" value="2026-12-13" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+            <input id="wizExamDate" type="date" value="2026-12-13"
+              class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
           </div>
         </div>
-        <button id="wizFinishBtn" type="button" class="w-full rounded-xl bg-blue-600 py-3 text-xs font-bold text-white shadow-sm hover:bg-blue-700 transition">🎉 セットアップを完了して使い始める</button>
+        <button id="wizFinishBtn" type="button"
+          class="w-full rounded-xl bg-blue-600 py-3 text-xs font-bold text-white shadow-sm hover:bg-blue-700 transition">
+          🎉 セットアップを完了して使い始める
+        </button>
       </div>
     </div>
   </div>
 
   <!-- 答練成績 手入力モーダル -->
-  <div id="examModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
-    <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+  <div id="examModal"
+    class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+    <div
+      class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
       <div class="mb-4 flex items-center justify-between">
         <h3 class="text-base font-bold">答練・模試の成績を追加</h3>
-        <button id="closeExamBtn" type="button" class="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800">✕</button>
+        <button id="closeExamBtn" type="button"
+          class="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800">✕</button>
       </div>
       <form id="examForm" class="space-y-3.5 text-sm">
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">実施日 *</label>
-            <input id="inputExamDate" type="date" required class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+            <input id="inputExamDate" type="date" required
+              class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
           </div>
           <div>
             <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">科目 *</label>
-            <select id="inputExamSubject" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800">
-              <option value="財務(計算)">財務(計算)</option><option value="財務(理論)">財務(理論)</option><option value="管理会計">管理会計</option><option value="監査論">監査論</option><option value="企業法">企業法</option><option value="租税法">租税法</option><option value="選択科目">選択科目</option><option value="総合・短答模試">総合・短答模試</option>
+            <select id="inputExamSubject"
+              class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800">
+              <option value="財務(計算)">財務(計算)</option>
+              <option value="財務(理論)">財務(理論)</option>
+              <option value="管理会計">管理会計</option>
+              <option value="監査論">監査論</option>
+              <option value="企業法">企業法</option>
+              <option value="租税法">租税法</option>
+              <option value="選択科目">選択科目</option>
+              <option value="総合・短答模試">総合・短答模試</option>
             </select>
           </div>
         </div>
         <div>
           <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">答練・模試名 *</label>
-          <input id="inputExamTitle" type="text" required placeholder="例：財務会計論 レギュラー答練 第5回" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+          <input id="inputExamTitle" type="text" required placeholder="例：財務会計論 レギュラー答練 第5回"
+            class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
         </div>
         <div class="grid grid-cols-3 gap-2.5">
           <div>
             <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">得点 *</label>
-            <input id="inputExamScore" type="number" required placeholder="78" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+            <input id="inputExamScore" type="number" required placeholder="78"
+              class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
           </div>
           <div>
             <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">満点</label>
-            <input id="inputExamMax" type="number" value="100" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+            <input id="inputExamMax" type="number" value="100"
+              class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
           </div>
           <div>
             <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">偏差値/判定</label>
-            <input id="inputExamRank" type="text" placeholder="58.4 / A" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+            <input id="inputExamRank" type="text" placeholder="58.4 / A"
+              class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
           </div>
         </div>
         <div>
           <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">弱点・振り返りメモ</label>
-          <input id="inputExamNote" type="text" placeholder="例：連結キャッシュフローのタイムテーブルで失点" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+          <input id="inputExamNote" type="text" placeholder="例：連結キャッシュフローのタイムテーブルで失点"
+            class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
         </div>
         <div class="flex justify-end gap-2 pt-2">
-          <button id="cancelExamBtn" type="button" class="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">キャンセル</button>
-          <button type="submit" class="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 transition">保存する</button>
+          <button id="cancelExamBtn" type="button"
+            class="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">キャンセル</button>
+          <button type="submit"
+            class="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 transition">保存する</button>
         </div>
       </form>
     </div>
   </div>
 
   <script>
+    // =========================================================================
+    // 1. 定数・初期データ・状態管理
+    // =========================================================================
     const STORAGE_KEYS = {
-      SETTINGS: 'cpa_hub_settings_v1', COUNTDOWNS: 'cpa_hub_countdowns_v1', EXAMS: 'cpa_hub_exams_v1',
-      GOOGLE_AUTH: 'cpa_google_auth_v1', GOOGLE_CLIENT_ID: 'cpa_google_client_id_v1',
-      THEME: 'cpa_hub_theme_v1', ACTIVE_TAB: 'cpa_unified_tab_v1',
-      TIMER_START: 'cpa_timer_start', TIMER_ACCUM: 'cpa_timer_accum',
-      TIMER_FIRST_START: 'cpa_timer_first_start', TIMER_UPDATED: 'cpa_timer_updated',
+      SETTINGS: 'cpa_hub_settings_v1',
+      COUNTDOWNS: 'cpa_hub_countdowns_v1',
+      EXAMS: 'cpa_hub_exams_v1',
+      GOOGLE_AUTH: 'cpa_google_auth_v1',
+      GOOGLE_CLIENT_ID: 'cpa_google_client_id_v1',
+      THEME: 'cpa_hub_theme_v1',
+      ACTIVE_TAB: 'cpa_unified_tab_v1',
+      TIMER_START: 'cpa_timer_start',
+      TIMER_ACCUM: 'cpa_timer_accum',
+      TIMER_FIRST_START: 'cpa_timer_first_start',
+      TIMER_UPDATED: 'cpa_timer_updated',
     };
-    const DEFAULT_GOOGLE_CLIENT_ID = '';
+
+    // 複数人公開用 Google OAuth クライアントID（Google Cloud Console で発行したIDをここかアカウント設定画面に入力）
+    const DEFAULT_GOOGLE_CLIENT_ID = '821337474921-neisfd7oa82qjmf2q7vghks2412arhau.apps.googleusercontent.com';
     const GOOGLE_SCOPES = [
       'https://www.googleapis.com/auth/userinfo.profile',
       'https://www.googleapis.com/auth/userinfo.email',
       'https://www.googleapis.com/auth/drive.file',
       'https://www.googleapis.com/auth/calendar.readonly'
     ].join(' ');
+
     const DEFAULT_MATERIALS = {
       '財務(計算)': ['テキスト', '個別問題集', '短答問題集', '答練', '講義'],
       '財務(理論)': ['テキスト', '短答問題集', 'コンサマ', '答練', '講義'],
@@ -548,25 +842,59 @@
     const SUBJECTS = Object.keys(DEFAULT_MATERIALS);
     const SUBJECT_COLORS = ['#2563eb', '#38bdf8', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#64748b'];
     const RATINGS = ['◎ 余裕', '○ 普通', '△ 要復習'];
+
     const DEFAULT_SETTINGS = {
       gasUrl: 'https://script.google.com/macros/s/AKfycbzE8uqAzZaCao5IIh2P-9HtpbRxPpCO_hDPfG5tsFb7lxA9iXtgaxp5tI0Zi4VVtvb9/exec',
       sheetUrl: 'https://docs.google.com/spreadsheets/d/1t2HtZSgPttHl-ek01fI0rGpC1I-07gggdw8Xv7_uF7s/edit',
       calendarUrl: 'https://calendar.google.com/',
       notebookUrl: 'https://notebooklm.google.com/',
     };
+
     const DEFAULT_COUNTDOWNS = [
       { id: 'c1', name: '第Ⅰ回 短答式試験', date: '2026-12-13', color: 'rose' },
       { id: 'c2', name: '第Ⅱ回 短答式試験', date: '2027-05-23', color: 'blue' },
       { id: 'c3', name: '論文式試験（本試験）', date: '2027-08-20', color: 'emerald' },
     ];
-    const PERIOD_META = { today: { label: '今日' }, week: { label: '今週' }, month: { label: '今月' }, year: { label: '年間' } };
+
+    const PERIOD_META = {
+      today: { label: '今日' },
+      week: { label: '今週' },
+      month: { label: '今月' },
+      year: { label: '年間' },
+    };
+
     const DEMO_DATA = {
-      today: { actual: 265, planned: 360 }, week: { actual: 1840, planned: 2400 },
+      today: { actual: 265, planned: 360 },
+      week: { actual: 1840, planned: 2400 },
       periods: {
-        today: { actual: 265, planned: 360, bySubject: { planned: { '財務(計算)': 150, '管理会計': 120, '監査論': 90 }, actual: { '財務(計算)': 135, '管理会計': 90, '監査論': 40 } } },
-        week: { actual: 1840, planned: 2400, bySubject: { planned: { '財務(計算)': 600, '財務(理論)': 360, '管理会計': 480, '監査論': 360, '企業法': 360, '租税法': 180, '選択科目': 60 }, actual: { '財務(計算)': 540, '財務(理論)': 290, '管理会計': 420, '監査論': 250, '企業法': 220, '租税法': 120, '選択科目': 0 } } },
-        month: { actual: 7420, planned: 9000, bySubject: { planned: { '財務(計算)': 2400, '財務(理論)': 1320, '管理会計': 1800, '監査論': 1260, '企業法': 1260, '租税法': 660, '選択科目': 300 }, actual: { '財務(計算)': 2150, '財務(理論)': 1120, '管理会計': 1580, '監査論': 980, '企業法': 910, '租税法': 480, '選択科目': 200 } } },
-        year: { actual: 68400, planned: 75000, bySubject: { planned: { '財務(計算)': 21000, '財務(理論)': 10800, '管理会計': 15000, '監査論': 10200, '企業法': 10200, '租税法': 5400, '選択科目': 2400 }, actual: { '財務(計算)': 19800, '財務(理論)': 9900, '管理会計': 13900, '監査論': 9100, '企業法': 8900, '租税法': 4700, '選択科目': 2100 } } }
+        today: {
+          actual: 265, planned: 360,
+          bySubject: {
+            planned: { '財務(計算)': 150, '財務(理論)': 0, '管理会計': 120, '監査論': 90, '企業法': 0, '租税法': 0, '選択科目': 0 },
+            actual: { '財務(計算)': 135, '財務(理論)': 0, '管理会計': 90, '監査論': 40, '企業法': 0, '租税法': 0, '選択科目': 0 }
+          }
+        },
+        week: {
+          actual: 1840, planned: 2400,
+          bySubject: {
+            planned: { '財務(計算)': 600, '財務(理論)': 360, '管理会計': 480, '監査論': 360, '企業法': 360, '租税法': 180, '選択科目': 60 },
+            actual: { '財務(計算)': 540, '財務(理論)': 290, '管理会計': 420, '監査論': 250, '企業法': 220, '租税法': 120, '選択科目': 0 }
+          }
+        },
+        month: {
+          actual: 7420, planned: 9000,
+          bySubject: {
+            planned: { '財務(計算)': 2400, '財務(理論)': 1320, '管理会計': 1800, '監査論': 1260, '企業法': 1260, '租税法': 660, '選択科目': 300 },
+            actual: { '財務(計算)': 2150, '財務(理論)': 1120, '管理会計': 1580, '監査論': 980, '企業法': 910, '租税法': 480, '選択科目': 200 }
+          }
+        },
+        year: {
+          actual: 68400, planned: 75000,
+          bySubject: {
+            planned: { '財務(計算)': 21000, '財務(理論)': 10800, '管理会計': 15000, '監査論': 10200, '企業法': 10200, '租税法': 5400, '選択科目': 2400 },
+            actual: { '財務(計算)': 19800, '財務(理論)': 9900, '管理会計': 13900, '監査論': 9100, '企業法': 8900, '租税法': 4700, '選択科目': 2100 }
+          }
+        }
       },
       todayEvents: [
         { title: '財務(計算) 連結会計・総合問題', start: '09:00', end: '11:30' },
@@ -575,8 +903,17 @@
       ]
     };
 
-    function loadJSON(key, fallback) { try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : JSON.parse(JSON.stringify(fallback)); } catch (e) { return JSON.parse(JSON.stringify(fallback)); } }
-    function saveJSON(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {} }
+    function loadJSON(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : JSON.parse(JSON.stringify(fallback));
+      } catch (e) {
+        return JSON.parse(JSON.stringify(fallback));
+      }
+    }
+    function saveJSON(key, val) {
+      try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) { }
+    }
 
     let settings = Object.assign({}, DEFAULT_SETTINGS, loadJSON(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS));
     let countdowns = loadJSON(STORAGE_KEYS.COUNTDOWNS, DEFAULT_COUNTDOWNS);
@@ -586,60 +923,117 @@
       { id: 'ex_demo3', date: '2026-11-15', subject: '監査論', title: '確認テスト 第4回', score: 85, maxScore: 100, rank: '偏差値 62.0 / A', note: 'リスクアプローチは安定', source: '手入力' },
     ]);
     let materialsBySubject = JSON.parse(JSON.stringify(DEFAULT_MATERIALS));
-    let selectedPeriod = 'week', periodOffset = 0, activeAppTab = 'hubView';
-    let barChartInstance = null, doughnutChartInstance = null, currentData = null, currentIsDemo = true;
-    let selectedSubject = '', selectedMaterial = '', selectedRating = '', isEditingMaterials = false, timerInterval = null;
+    let selectedPeriod = 'week';
+    let periodOffset = 0; // 0=現在, -1=前の期間, -2=2つ前...
+    let activeAppTab = 'hubView';
+    let barChartInstance = null;
+    let doughnutChartInstance = null;
+    let currentData = null;
+    let currentIsDemo = true;
 
+    // 記録フォーム状態
+    let selectedSubject = '';
+    let selectedMaterial = '';
+    let selectedRating = '';
+    let isEditingMaterials = false;
+    let timerInterval = null;
+
+    // =========================================================================
+    // 2. ユーティリティ＆ナビゲーション切替（ハブ ⇔ 記録）
+    // =========================================================================
     function initHeaderDate() {
-      const now = new Date(), days = ['日', '月', '火', '水', '木', '金', '土'];
-      document.getElementById('headerDate').textContent = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日（${days[now.getDay()]}）`;
+      const now = new Date();
+      const days = ['日', '月', '火', '水', '木', '金', '土'];
+      document.getElementById('headerDate').textContent =
+        `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日（${days[now.getDay()]}）`;
     }
-    function fmtHours(mins) { const m = Math.max(0, Math.round(mins || 0)), h = Math.floor(m / 60), r = m % 60; return h > 0 ? `${h}h ${r}m` : `${r}m`; }
-    function fmtSignedHours(d) { return `${d > 0 ? '+' : d < 0 ? '-' : ''}${(Math.abs(d) / 60).toFixed(1)}h`; }
-    function fmtTime(d) { return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
-    function fmtDateInput(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
-    function escapeHTML(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+    function fmtHours(mins) {
+      const m = Math.max(0, Math.round(mins || 0));
+      const h = Math.floor(m / 60);
+      const r = m % 60;
+      return h > 0 ? `${h}h ${r}m` : `${r}m`;
+    }
+    function fmtSignedHours(diffMins) {
+      const sign = diffMins > 0 ? '+' : diffMins < 0 ? '-' : '';
+      return `${sign}${(Math.abs(diffMins) / 60).toFixed(1)}h`;
+    }
+    function fmtTime(dateObj) {
+      return `${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`;
+    }
+    function fmtDateInput(dateObj) {
+      return `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+    }
+    function escapeHTML(str) {
+      return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
 
     let toastTimer = null;
     function showToast(msg) {
-      const t = document.getElementById('toast');
+      const toast = document.getElementById('toast');
       document.getElementById('toastText').textContent = msg;
-      t.classList.remove('hidden'); t.classList.add('flex');
+      toast.classList.remove('hidden');
+      toast.classList.add('flex');
       clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => { t.classList.add('hidden'); t.classList.remove('flex'); }, 2800);
+      toastTimer = setTimeout(() => {
+        toast.classList.add('hidden');
+        toast.classList.remove('flex');
+      }, 2800);
     }
 
     function switchAppTab(tabId) {
       activeAppTab = tabId === 'logView' ? 'logView' : 'hubView';
-      try { localStorage.setItem(STORAGE_KEYS.ACTIVE_TAB, activeAppTab); } catch (e) {}
+      try { localStorage.setItem(STORAGE_KEYS.ACTIVE_TAB, activeAppTab); } catch (e) { }
+
       document.getElementById('hubView').classList.toggle('hidden', activeAppTab !== 'hubView');
       document.getElementById('logView').classList.toggle('hidden', activeAppTab !== 'logView');
+
+      // PC上部タブ
       document.querySelectorAll('.app-tab-btn').forEach(btn => {
-        const a = btn.dataset.appTab === activeAppTab;
-        btn.classList.toggle('bg-white', a); btn.classList.toggle('dark:bg-slate-900', a);
-        btn.classList.toggle('text-blue-600', a); btn.classList.toggle('dark:text-blue-400', a);
-        btn.classList.toggle('shadow-sm', a); btn.classList.toggle('text-slate-500', !a); btn.classList.toggle('dark:text-slate-400', !a);
+        const active = btn.dataset.appTab === activeAppTab;
+        btn.classList.toggle('bg-white', active);
+        btn.classList.toggle('dark:bg-slate-900', active);
+        btn.classList.toggle('text-blue-600', active);
+        btn.classList.toggle('dark:text-blue-400', active);
+        btn.classList.toggle('shadow-sm', active);
+        btn.classList.toggle('text-slate-500', !active);
+        btn.classList.toggle('dark:text-slate-400', !active);
       });
+
+      // モバイル下部タブ
       document.querySelectorAll('.app-tab-mobile-btn').forEach(btn => {
-        const a = btn.dataset.appTab === activeAppTab;
-        btn.classList.toggle('text-blue-600', a); btn.classList.toggle('dark:text-blue-400', a);
-        btn.classList.toggle('text-slate-400', !a); btn.classList.toggle('dark:text-slate-500', !a);
+        const active = btn.dataset.appTab === activeAppTab;
+        btn.classList.toggle('text-blue-600', active);
+        btn.classList.toggle('dark:text-blue-400', active);
+        btn.classList.toggle('text-slate-400', !active);
+        btn.classList.toggle('dark:text-slate-500', !active);
       });
-      if (activeAppTab === 'hubView' && currentData) renderCharts(resolvePeriodData(currentData, selectedPeriod).slice);
+
+      if (activeAppTab === 'hubView' && currentData) {
+        renderCharts(resolvePeriodData(currentData, selectedPeriod).slice);
+      }
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-    document.querySelectorAll('[data-app-tab]').forEach(btn => btn.addEventListener('click', () => switchAppTab(btn.dataset.appTab)));
+
+    document.querySelectorAll('[data-app-tab]').forEach(btn => {
+      btn.addEventListener('click', () => switchAppTab(btn.dataset.appTab));
+    });
 
     function initTheme() {
-      let saved = null; try { saved = localStorage.getItem(STORAGE_KEYS.THEME); } catch (e) {}
-      if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark');
+      let saved = null;
+      try { saved = localStorage.getItem(STORAGE_KEYS.THEME); } catch (e) { }
+      if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      }
     }
     document.getElementById('themeToggleBtn').addEventListener('click', () => {
       const isDark = document.documentElement.classList.toggle('dark');
-      try { localStorage.setItem(STORAGE_KEYS.THEME, isDark ? 'dark' : 'light'); } catch (e) {}
+      try { localStorage.setItem(STORAGE_KEYS.THEME, isDark ? 'dark' : 'light'); } catch (e) { }
       if (currentData) renderDashboard(currentData, currentIsDemo);
     });
 
+    // =========================================================================
+    // 3. カウントダウン描画・追加・編集・削除・GAS同期
+    // =========================================================================
     const COLOR_STYLES = {
       rose: { border: 'border-l-rose-500', num: 'text-rose-600 dark:text-rose-400' },
       blue: { border: 'border-l-blue-500', num: 'text-blue-600 dark:text-blue-400' },
@@ -648,38 +1042,89 @@
     };
 
     function renderCountdowns() {
-      const grid = document.getElementById('countdownGrid'); grid.innerHTML = '';
+      const grid = document.getElementById('countdownGrid');
+      grid.innerHTML = '';
       if (!countdowns.length) {
-        grid.innerHTML = `<div class="col-span-full rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center text-xs text-slate-400 dark:border-slate-700 dark:bg-slate-900">日程が登録されていません。</div>`;
+        grid.innerHTML = `<div class="col-span-full rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center text-xs text-slate-400 dark:border-slate-700 dark:bg-slate-900">日程が登録されていません。「＋ 日程を追加」から試験日や模試の日程を登録できます。</div>`;
         return;
       }
-      const today = new Date(); today.setHours(0, 0, 0, 0);
-      [...countdowns].sort((a, b) => new Date(a.date) - new Date(b.date)).forEach(item => {
-        const diffDays = Math.ceil((new Date(item.date + 'T00:00:00') - today) / 86400000);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const sorted = [...countdowns].sort((a, b) => new Date(a.date) - new Date(b.date));
+      sorted.forEach(item => {
+        const target = new Date(item.date + 'T00:00:00');
+        const diffDays = Math.ceil((target - today) / 86400000);
         const st = COLOR_STYLES[item.color] || COLOR_STYLES.blue;
-        const daysHtml = diffDays > 0 ? `<span class="text-xs font-semibold text-slate-500">あと </span><span class="text-3xl font-extrabold ${st.num}">${diffDays}</span><span class="text-xs font-semibold text-slate-500"> 日</span>`
-          : diffDays === 0 ? `<span class="text-xl font-extrabold ${st.num}">本日</span>` : `<span class="text-xs font-semibold text-slate-400">${Math.abs(diffDays)}日経過</span>`;
+        let daysHtml = diffDays > 0
+          ? `<span class="text-xs font-semibold text-slate-500">あと </span><span class="text-3xl font-extrabold ${st.num}">${diffDays}</span><span class="text-xs font-semibold text-slate-500"> 日</span>`
+          : diffDays === 0
+            ? `<span class="text-xl font-extrabold ${st.num}">本日</span>`
+            : `<span class="text-xs font-semibold text-slate-400">${Math.abs(diffDays)}日経過</span>`;
+
         const card = document.createElement('div');
         card.className = `group relative flex items-center justify-between rounded-2xl border border-slate-200 border-l-4 ${st.border} bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900`;
-        card.innerHTML = `<div class="min-w-0 pr-3"><div class="text-xs font-semibold text-slate-400">${escapeHTML(item.date.replace(/-/g, '/'))}</div><div class="mt-0.5 truncate text-sm font-bold">${escapeHTML(item.name)}</div></div><div class="flex shrink-0 items-center gap-2"><div class="text-right">${daysHtml}</div><div class="flex flex-col gap-1"><button type="button" data-edit-id="${escapeHTML(item.id)}" title="編集" class="flex h-6 w-6 items-center justify-center rounded-md bg-slate-100 text-[11px] text-slate-500 hover:bg-blue-100 hover:text-blue-600 dark:bg-slate-800 dark:text-slate-400 transition">✎</button><button type="button" data-del-id="${escapeHTML(item.id)}" title="削除" class="flex h-6 w-6 items-center justify-center rounded-md bg-slate-100 text-[11px] text-slate-500 hover:bg-rose-100 hover:text-rose-600 dark:bg-slate-800 dark:text-slate-400 transition">✕</button></div></div>`;
+        card.innerHTML = `
+          <div class="min-w-0 pr-3">
+            <div class="text-xs font-semibold text-slate-400">${escapeHTML(item.date.replace(/-/g, '/'))}</div>
+            <div class="mt-0.5 truncate text-sm font-bold">${escapeHTML(item.name)}</div>
+          </div>
+          <div class="flex shrink-0 items-center gap-2">
+            <div class="text-right">${daysHtml}</div>
+            <div class="flex flex-col gap-1">
+              <button type="button" data-edit-id="${escapeHTML(item.id)}" title="編集"
+                      class="flex h-6 w-6 items-center justify-center rounded-md bg-slate-100 text-[11px] text-slate-500 hover:bg-blue-100 hover:text-blue-600 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-blue-950 dark:hover:text-blue-300 transition">✎</button>
+              <button type="button" data-del-id="${escapeHTML(item.id)}" title="削除"
+                      class="flex h-6 w-6 items-center justify-center rounded-md bg-slate-100 text-[11px] text-slate-500 hover:bg-rose-100 hover:text-rose-600 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-rose-950 dark:hover:text-rose-400 transition">✕</button>
+            </div>
+          </div>`;
         grid.appendChild(card);
       });
-      grid.querySelectorAll('[data-edit-id]').forEach(btn => btn.addEventListener('click', () => { const it = countdowns.find(c => c.id === btn.dataset.editId); if (it) openCountdownModal(it); }));
-      grid.querySelectorAll('[data-del-id]').forEach(btn => btn.addEventListener('click', () => {
-        const id = btn.dataset.delId, target = countdowns.find(c => c.id === id);
-        if (target && !confirm(`「${target.name}」を削除しますか？`)) return;
-        countdowns = countdowns.filter(c => c.id !== id);
-        saveJSON(STORAGE_KEYS.COUNTDOWNS, countdowns); renderCountdowns(); saveHubConfigToCloud(); showToast('日程を削除しました');
-      }));
+
+      grid.querySelectorAll('[data-edit-id]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const item = countdowns.find(c => c.id === btn.dataset.editId);
+          if (item) openCountdownModal(item);
+        });
+      });
+      grid.querySelectorAll('[data-del-id]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.delId;
+          const targetItem = countdowns.find(c => c.id === id);
+          if (targetItem && !confirm(`「${targetItem.name}」を削除しますか？`)) return;
+          countdowns = countdowns.filter(c => c.id !== id);
+          saveJSON(STORAGE_KEYS.COUNTDOWNS, countdowns);
+          renderCountdowns();
+          saveHubConfigToCloud();
+          showToast('日程を削除しました');
+        });
+      });
     }
 
     async function saveHubConfigToCloud() {
       if (!settings.gasUrl) return;
       try {
-        await fetch(settings.gasUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'saveHubConfig', hubConfig: { countdowns, settings: { sheetUrl: settings.sheetUrl || '', calendarUrl: settings.calendarUrl || '', notebookUrl: settings.notebookUrl || '' }, updatedAt: Date.now() } }) });
-      } catch (e) {}
+        await fetch(settings.gasUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({
+            action: 'saveHubConfig',
+            hubConfig: {
+              countdowns,
+              settings: {
+                sheetUrl: settings.sheetUrl || '',
+                calendarUrl: settings.calendarUrl || '',
+                notebookUrl: settings.notebookUrl || '',
+              },
+              updatedAt: Date.now()
+            }
+          })
+        });
+      } catch (e) { }
     }
 
+    // =========================================================================
+    // 4. クイックアクセス描画
+    // =========================================================================
     function renderQuickLinks() {
       document.getElementById('openCalendarLink').href = settings.calendarUrl || 'https://calendar.google.com/';
       const links = [
@@ -688,20 +1133,36 @@
         { title: 'Googleカレンダー', sub: '週間スケジュール管理', url: settings.calendarUrl, icon: '📅', bg: 'bg-amber-50 dark:bg-amber-950/60' },
         { title: 'Gemini Notebook', sub: '論点まとめ・復習ノート', url: settings.notebookUrl, icon: '✨', bg: 'bg-violet-50 dark:bg-violet-950/60' },
       ];
-      const grid = document.getElementById('quickLinksGrid'); grid.innerHTML = '';
+      const grid = document.getElementById('quickLinksGrid');
+      grid.innerHTML = '';
       links.forEach(link => {
         const a = document.createElement('a');
         a.className = 'flex items-center gap-3 rounded-xl border border-slate-200/80 bg-slate-50/70 p-3.5 hover:border-blue-300 hover:bg-white hover:shadow-sm dark:border-slate-800 dark:bg-slate-800/50 dark:hover:border-blue-700 dark:hover:bg-slate-800 transition cursor-pointer';
-        if (link.internalTab) { a.href = '#'; a.onclick = (e) => { e.preventDefault(); switchAppTab(link.internalTab); }; }
-        else if (link.url) { a.href = link.url; a.target = '_blank'; a.rel = 'noopener noreferrer'; }
-        else { a.href = '#'; a.onclick = (e) => { e.preventDefault(); openSettingsModal(); showToast(`${link.title}のURLを設定してください`); }; }
-        a.innerHTML = `<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg ${link.bg}">${link.icon}</div><div class="min-w-0"><div class="truncate text-xs font-bold sm:text-sm">${escapeHTML(link.title)}</div><div class="truncate text-[11px] text-slate-500 dark:text-slate-400">${escapeHTML(link.sub)}</div></div>`;
+        if (link.internalTab) {
+          a.href = '#';
+          a.onclick = (e) => { e.preventDefault(); switchAppTab(link.internalTab); };
+        } else if (link.url) {
+          a.href = link.url;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+        } else {
+          a.href = '#';
+          a.onclick = (e) => { e.preventDefault(); openSettingsModal(); showToast(`${link.title}のURLを設定してください`); };
+        }
+        a.innerHTML = `
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg ${link.bg}">${link.icon}</div>
+          <div class="min-w-0">
+            <div class="truncate text-xs font-bold sm:text-sm">${escapeHTML(link.title)}</div>
+            <div class="truncate text-[11px] text-slate-500 dark:text-slate-400">${escapeHTML(link.sub)}</div>
+          </div>`;
         grid.appendChild(a);
       });
     }
 
+    // 選択期間とオフセットから基準日（YYYY-MM-DD）と表示ラベルを算出
     function getPeriodContext(period, offset) {
-      const base = new Date(); base.setHours(0, 0, 0, 0);
+      const base = new Date();
+      base.setHours(0, 0, 0, 0);
       if (period === 'today') {
         base.setDate(base.getDate() + offset);
         const days = ['日', '月', '火', '水', '木', '金', '土'];
@@ -710,74 +1171,131 @@
       }
       if (period === 'week') {
         base.setDate(base.getDate() + offset * 7);
-        const day = base.getDay(), diffToMon = day === 0 ? -6 : 1 - day;
+        const day = base.getDay();
+        const diffToMon = day === 0 ? -6 : 1 - day;
         const mon = new Date(base); mon.setDate(base.getDate() + diffToMon);
         const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
         const range = `${mon.getMonth() + 1}/${mon.getDate()}〜${sun.getMonth() + 1}/${sun.getDate()}`;
         return { baseDate: fmtDateInput(base), rangeLabel: offset === 0 ? `今週 (${range})` : range, headingPrefix: offset === 0 ? '今週' : `${range}週` };
       }
       if (period === 'month') {
-        base.setDate(1); base.setMonth(base.getMonth() + offset);
+        base.setDate(1);
+        base.setMonth(base.getMonth() + offset);
         const label = `${base.getFullYear()}年${base.getMonth() + 1}月`;
         return { baseDate: fmtDateInput(base), rangeLabel: label, headingPrefix: offset === 0 ? '今月' : label };
       }
-      base.setMonth(0, 1); base.setFullYear(base.getFullYear() + offset);
+      // year
+      base.setMonth(0, 1);
+      base.setFullYear(base.getFullYear() + offset);
       const label = `${base.getFullYear()}年`;
       return { baseDate: fmtDateInput(base), rangeLabel: label, headingPrefix: offset === 0 ? '年間' : label };
     }
+
     function updatePeriodNavUI() {
       const ctx = getPeriodContext(selectedPeriod, periodOffset);
       document.getElementById('periodRangeLabel').textContent = ctx.rangeLabel;
       document.getElementById('nextPeriodBtn').disabled = periodOffset >= 0;
     }
 
+    // =========================================================================
+    // 5. データ取得（ハブ・教材・タイマー・答練成績をまとめて同期）＆ ダッシュボード描画
+    // =========================================================================
     async function fetchAndRenderData(showSyncToast = false) {
-      const refreshIcon = document.getElementById('refreshIcon'), demoBanner = document.getElementById('demoBanner');
-      refreshIcon.classList.add('animate-spin'); updatePeriodNavUI();
+      const refreshIcon = document.getElementById('refreshIcon');
+      const demoBanner = document.getElementById('demoBanner');
+      refreshIcon.classList.add('animate-spin');
+      updatePeriodNavUI();
+
       if (!settings.gasUrl) {
-        demoBanner.classList.remove('hidden'); demoBanner.classList.add('flex');
-        currentData = DEMO_DATA; currentIsDemo = true; renderDashboard(currentData, true); renderExamResults();
-        refreshIcon.classList.remove('animate-spin'); return;
+        demoBanner.classList.remove('hidden');
+        demoBanner.classList.add('flex');
+        currentData = DEMO_DATA;
+        currentIsDemo = true;
+        renderDashboard(currentData, true);
+        renderExamResults();
+        refreshIcon.classList.remove('animate-spin');
+        return;
       }
-      demoBanner.classList.add('hidden'); demoBanner.classList.remove('flex');
+
+      demoBanner.classList.add('hidden');
+      demoBanner.classList.remove('flex');
+
       try {
         const ctx = getPeriodContext(selectedPeriod, periodOffset);
         const sep = settings.gasUrl.includes('?') ? '&' : '?';
-        const res = await fetch(`${settings.gasUrl}${sep}baseDate=${encodeURIComponent(ctx.baseDate)}&period=${encodeURIComponent(selectedPeriod)}`);
+        const reqUrl = `${settings.gasUrl}${sep}baseDate=${encodeURIComponent(ctx.baseDate)}&period=${encodeURIComponent(selectedPeriod)}`;
+        const res = await fetch(reqUrl);
         const json = await res.json();
         if (json.status !== 'ok') throw new Error(json.message || 'データ取得エラー');
-        if (json.materials && Object.keys(json.materials).length > 0) { materialsBySubject = json.materials; if (selectedSubject) renderMaterials(); }
-        if (json.activeTimer) applyCloudTimer(json.activeTimer);
-        if (Array.isArray(json.examResults)) { examResults = json.examResults; saveJSON(STORAGE_KEYS.EXAMS, examResults); }
+
+        // 教材リスト同期
+        if (json.materials && Object.keys(json.materials).length > 0) {
+          materialsBySubject = json.materials;
+          if (selectedSubject) renderMaterials();
+        }
+        // 計測中タイマー同期
+        if (json.activeTimer) {
+          applyCloudTimer(json.activeTimer);
+        }
+        // 答練・模試成績同期（Drive OCR結果含む）
+        if (Array.isArray(json.examResults)) {
+          examResults = json.examResults;
+          saveJSON(STORAGE_KEYS.EXAMS, examResults);
+        }
         renderExamResults();
+        // Hub設定・カウントダウン同期
         if (json.hubConfig) {
-          if (Array.isArray(json.hubConfig.countdowns)) { countdowns = json.hubConfig.countdowns; saveJSON(STORAGE_KEYS.COUNTDOWNS, countdowns); renderCountdowns(); }
+          if (Array.isArray(json.hubConfig.countdowns)) {
+            countdowns = json.hubConfig.countdowns;
+            saveJSON(STORAGE_KEYS.COUNTDOWNS, countdowns);
+            renderCountdowns();
+          }
           if (json.hubConfig.settings) {
             const cs = json.hubConfig.settings;
-            settings = Object.assign({}, settings, { sheetUrl: cs.sheetUrl || settings.sheetUrl, calendarUrl: cs.calendarUrl || settings.calendarUrl, notebookUrl: cs.notebookUrl || settings.notebookUrl });
-            saveJSON(STORAGE_KEYS.SETTINGS, settings); renderQuickLinks();
+            settings = Object.assign({}, settings, {
+              sheetUrl: cs.sheetUrl || settings.sheetUrl,
+              calendarUrl: cs.calendarUrl || settings.calendarUrl,
+              notebookUrl: cs.notebookUrl || settings.notebookUrl,
+            });
+            saveJSON(STORAGE_KEYS.SETTINGS, settings);
+            renderQuickLinks();
           }
         }
-        currentData = json; currentIsDemo = false; renderDashboard(currentData, false);
+
+        currentData = json;
+        currentIsDemo = false;
+        renderDashboard(currentData, false);
         const now = new Date();
-        document.getElementById('lastUpdated').textContent = `最終更新 ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        document.getElementById('lastUpdated').textContent =
+          `最終更新 ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
         if (showSyncToast) showToast('最新データと他端末の状態を同期しました');
       } catch (err) {
-        console.error(err); showToast('データ取得に失敗しました（デモを表示します）');
-        currentData = DEMO_DATA; currentIsDemo = true; renderDashboard(currentData, true);
-      } finally { refreshIcon.classList.remove('animate-spin'); }
+        console.error(err);
+        showToast('データ取得に失敗しました（デモを表示します）');
+        currentData = DEMO_DATA;
+        currentIsDemo = true;
+        renderDashboard(currentData, true);
+      } finally {
+        refreshIcon.classList.remove('animate-spin');
+      }
     }
 
     function resolvePeriodData(data, period) {
       if (data.periods && data.periods[period]) return { slice: data.periods[period], unsupported: false };
-      if (period === 'week') return { slice: { actual: data.week?.actual || 0, planned: data.week?.planned || 0, bySubject: data.bySubject || { actual: {}, planned: {} } }, unsupported: false };
-      if (period === 'today') return { slice: { actual: data.today?.actual || 0, planned: data.today?.planned || 0, bySubject: data.today?.bySubject || { actual: {}, planned: {} } }, unsupported: !data.today?.bySubject };
+      if (period === 'week') {
+        return { slice: { actual: data.week?.actual || 0, planned: data.week?.planned || 0, bySubject: data.bySubject || { actual: {}, planned: {} } }, unsupported: false };
+      }
+      if (period === 'today') {
+        return { slice: { actual: data.today?.actual || 0, planned: data.today?.planned || 0, bySubject: data.today?.bySubject || { actual: {}, planned: {} } }, unsupported: !data.today?.bySubject };
+      }
       return { slice: { actual: 0, planned: 0, bySubject: { actual: {}, planned: {} } }, unsupported: true };
     }
 
     function renderDashboard(data, isDemo) {
-      const ctx = getPeriodContext(selectedPeriod, periodOffset), { slice, unsupported } = resolvePeriodData(data, selectedPeriod);
+      const ctx = getPeriodContext(selectedPeriod, periodOffset);
+      const { slice, unsupported } = resolvePeriodData(data, selectedPeriod);
       updatePeriodNavUI();
+
       document.getElementById('periodNotice').classList.toggle('hidden', isDemo || !unsupported);
       document.getElementById('primaryKpiLabel').textContent = `${ctx.headingPrefix}の勉強時間`;
       document.getElementById('focusLabel').textContent = `${ctx.headingPrefix}の科目フォーカス`;
@@ -785,8 +1303,10 @@
       document.getElementById('ratioChartTitle').textContent = `${ctx.headingPrefix}の科目別割合`;
       document.getElementById('gapTitle').textContent = `${ctx.headingPrefix}の科目別 予実ギャップ`;
 
-      const primaryActual = slice.actual || 0, primaryPlanned = slice.planned || 0;
+      const primaryActual = slice.actual || 0;
+      const primaryPlanned = slice.planned || 0;
       const primaryPct = primaryPlanned > 0 ? Math.round((primaryActual / primaryPlanned) * 100) : 0;
+
       document.getElementById('primaryActualVal').textContent = fmtHours(primaryActual);
       document.getElementById('primaryPlannedVal').textContent = `カレンダー予定: ${fmtHours(primaryPlanned)}`;
       document.getElementById('primaryPctBadge').textContent = `${primaryPct}%`;
@@ -796,361 +1316,894 @@
       const subSlice = resolvePeriodData(data, subPeriodKey).slice;
       document.getElementById('subQuickText').textContent = `${PERIOD_META[subPeriodKey]?.label || ''}: ${fmtHours(subSlice.actual || 0)}`;
 
-      const actualMap = slice.bySubject?.actual || {}, plannedMap = slice.bySubject?.planned || {};
+      const actualMap = slice.bySubject?.actual || {};
+      const plannedMap = slice.bySubject?.planned || {};
       let topSubj = 'まだ記録なし', topMins = 0, behindSubj = null, worstGap = 0;
+
       SUBJECTS.forEach(s => {
-        const a = actualMap[s] || 0, p = plannedMap[s] || 0;
+        const a = actualMap[s] || 0;
+        const p = plannedMap[s] || 0;
         if (a > topMins) { topMins = a; topSubj = `${s}（${fmtHours(a)}）`; }
-        if (p > 0 && a - p < worstGap) { worstGap = a - p; behindSubj = s; }
+        const gap = a - p;
+        if (p > 0 && gap < worstGap) { worstGap = gap; behindSubj = s; }
       });
+
       document.getElementById('topSubjectVal').textContent = topSubj;
       document.getElementById('insightText').textContent = behindSubj
         ? `${ctx.headingPrefix}の予定に対して最も遅れているのは「${behindSubj}」（${fmtSignedHours(worstGap)}）です。空き時間で優先的にリカバリーしましょう。`
-        : primaryActual > 0 ? `${ctx.headingPrefix}は予定通りのペースで進められています。この調子で科目バランスをキープしましょう。`
-        : `まだ${ctx.headingPrefix}の記録がありません。「記録」タブから学習をスタートしましょう。`;
+        : primaryActual > 0
+          ? `${ctx.headingPrefix}は予定通りのペースで進められています。この調子で科目バランスをキープしましょう。`
+          : `まだ${ctx.headingPrefix}の記録がありません。「記録」タブから学習をスタートしましょう。`;
 
-      renderCharts(slice); renderSubjectRatios(actualMap); renderTodayEvents(data); renderSubjectGaps(actualMap, plannedMap);
+      renderCharts(slice);
+      renderSubjectRatios(actualMap);
+      renderTodayEvents(data);
+      renderSubjectGaps(actualMap, plannedMap);
     }
 
     function renderExamResults() {
-      const grid = document.getElementById('examResultsGrid'); if (!grid) return; grid.innerHTML = '';
+      const grid = document.getElementById('examResultsGrid');
+      if (!grid) return;
+      grid.innerHTML = '';
       if (!examResults.length) {
         grid.innerHTML = `<div class="col-span-full rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center text-xs text-slate-400 dark:border-slate-700 dark:bg-slate-900">成績データがありません。Googleドライブの専用フォルダにPDFを入れて「DriveからOCR取込」を押すか、「＋ 手入力」から登録できます。</div>`;
         return;
       }
-      [...examResults].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 6).forEach(ex => {
+      const sorted = [...examResults].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 6);
+      sorted.forEach(ex => {
         const pct = ex.maxScore > 0 ? Math.round((ex.score / ex.maxScore) * 100) : 0;
         const badgeColor = pct >= 75 ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
-          : pct >= 60 ? 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300' : 'bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300';
+          : pct >= 60 ? 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300'
+            : 'bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300';
         const card = document.createElement('div');
         card.className = 'flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900';
-        card.innerHTML = `<div><div class="flex items-center justify-between gap-2"><span class="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">${escapeHTML(ex.subject)}</span><span class="text-[10px] font-semibold text-slate-400">${escapeHTML(String(ex.date || '').replace(/-/g, '/'))}${ex.source ? ` · ${escapeHTML(ex.source)}` : ''}</span></div><div class="mt-2 truncate text-sm font-bold">${escapeHTML(ex.title)}</div>${ex.note ? `<p class="mt-1 line-clamp-2 text-[11px] text-slate-500 dark:text-slate-400">${escapeHTML(ex.note)}</p>` : ''}</div><div class="mt-3 flex items-baseline justify-between border-t border-slate-100 pt-2.5 dark:border-slate-800"><div><span class="text-xl font-extrabold">${escapeHTML(ex.score)}</span><span class="text-xs text-slate-400"> / ${escapeHTML(ex.maxScore || 100)}</span></div><span class="rounded-full px-2.5 py-0.5 text-[11px] font-bold ${badgeColor}">${escapeHTML(ex.rank || `${pct}%`)}</span></div>`;
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between gap-2">
+              <span class="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">${escapeHTML(ex.subject)}</span>
+              <span class="text-[10px] font-semibold text-slate-400">${escapeHTML(String(ex.date || '').replace(/-/g, '/'))}${ex.source ? ` · ${escapeHTML(ex.source)}` : ''}</span>
+            </div>
+            <div class="mt-2 truncate text-sm font-bold">${escapeHTML(ex.title)}</div>
+            ${ex.note ? `<p class="mt-1 line-clamp-2 text-[11px] text-slate-500 dark:text-slate-400">${escapeHTML(ex.note)}</p>` : ''}
+          </div>
+          <div class="mt-3 flex items-baseline justify-between border-t border-slate-100 pt-2.5 dark:border-slate-800">
+            <div><span class="text-xl font-extrabold">${escapeHTML(ex.score)}</span><span class="text-xs text-slate-400"> / ${escapeHTML(ex.maxScore || 100)}</span></div>
+            <span class="rounded-full px-2.5 py-0.5 text-[11px] font-bold ${badgeColor}">${escapeHTML(ex.rank || `${pct}%`)}</span>
+          </div>`;
         grid.appendChild(card);
       });
     }
 
     function renderCharts(slice) {
       const isDark = document.documentElement.classList.contains('dark');
-      const gridColor = isDark ? 'rgba(148, 163, 184, 0.15)' : 'rgba(148, 163, 184, 0.2)', textColor = isDark ? '#94a3b8' : '#64748b';
+      const gridColor = isDark ? 'rgba(148, 163, 184, 0.15)' : 'rgba(148, 163, 184, 0.2)';
+      const textColor = isDark ? '#94a3b8' : '#64748b';
       const plannedHours = SUBJECTS.map(s => Number((((slice.bySubject?.planned?.[s]) || 0) / 60).toFixed(2)));
       const actualHours = SUBJECTS.map(s => Number((((slice.bySubject?.actual?.[s]) || 0) / 60).toFixed(2)));
+
       if (barChartInstance) barChartInstance.destroy();
       barChartInstance = new Chart(document.getElementById('barChart'), {
         type: 'bar',
-        data: { labels: SUBJECTS, datasets: [{ label: '予定 (h)', data: plannedHours, backgroundColor: isDark ? '#334155' : '#cbd5e1', borderRadius: 6 }, { label: '実績 (h)', data: actualHours, backgroundColor: '#2563eb', borderRadius: 6 }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: textColor, font: { size: 11 } } } }, scales: { x: { ticks: { color: textColor, font: { size: 11 } }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: textColor, font: { size: 11 } }, grid: { color: gridColor } } } }
+        data: {
+          labels: SUBJECTS,
+          datasets: [
+            { label: '予定 (h)', data: plannedHours, backgroundColor: isDark ? '#334155' : '#cbd5e1', borderRadius: 6 },
+            { label: '実績 (h)', data: actualHours, backgroundColor: '#2563eb', borderRadius: 6 }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: textColor, font: { size: 11 } } } },
+          scales: {
+            x: { ticks: { color: textColor, font: { size: 11 } }, grid: { display: false } },
+            y: { beginAtZero: true, ticks: { color: textColor, font: { size: 11 } }, grid: { color: gridColor } }
+          }
+        }
       });
+
       const sumHours = actualHours.reduce((a, b) => a + b, 0);
       if (doughnutChartInstance) doughnutChartInstance.destroy();
       doughnutChartInstance = new Chart(document.getElementById('doughnutChart'), {
         type: 'doughnut',
-        data: { labels: sumHours > 0 ? SUBJECTS : ['記録なし'], datasets: [{ data: sumHours > 0 ? actualHours : [1], backgroundColor: sumHours > 0 ? SUBJECT_COLORS : [isDark ? '#1e293b' : '#e2e8f0'], borderWidth: 2, borderColor: isDark ? '#0f172a' : '#ffffff' }] },
-        options: { responsive: true, maintainAspectRatio: false, cutout: '66%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => sumHours === 0 ? ' まだ記録がありません' : ` ${ctx.label}: ${ctx.raw}h (${((ctx.raw / sumHours) * 100).toFixed(1)}%)` } } } }
+        data: {
+          labels: sumHours > 0 ? SUBJECTS : ['記録なし'],
+          datasets: [{
+            data: sumHours > 0 ? actualHours : [1],
+            backgroundColor: sumHours > 0 ? SUBJECT_COLORS : [isDark ? '#1e293b' : '#e2e8f0'],
+            borderWidth: 2, borderColor: isDark ? '#0f172a' : '#ffffff'
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false, cutout: '66%',
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => sumHours === 0 ? ' まだ記録がありません' : ` ${ctx.label}: ${ctx.raw}h (${((ctx.raw / sumHours) * 100).toFixed(1)}%)`
+              }
+            }
+          }
+        }
       });
     }
 
     function renderSubjectRatios(actualMap) {
       const items = SUBJECTS.map((name, i) => ({ name, mins: actualMap[name] || 0, color: SUBJECT_COLORS[i] }));
-      const total = items.reduce((s, x) => s + x.mins, 0);
+      const total = items.reduce((sum, x) => sum + x.mins, 0);
       document.getElementById('ratioTotalBadge').textContent = `合計 ${fmtHours(total)}`;
-      const c = document.getElementById('subjectRatioList'); c.innerHTML = '';
+      const container = document.getElementById('subjectRatioList');
+      container.innerHTML = '';
       [...items].sort((a, b) => b.mins - a.mins).forEach(item => {
-        const pct = total > 0 ? (item.mins / total) * 100 : 0, row = document.createElement('div');
-        row.innerHTML = `<div class="mb-1 flex items-center justify-between text-xs"><span class="flex items-center gap-1.5 font-semibold"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:${item.color}"></span>${escapeHTML(item.name)}</span><span class="text-slate-500 dark:text-slate-400">${fmtHours(item.mins)} <strong class="ml-1 font-bold text-slate-800 dark:text-slate-100">${pct.toFixed(1)}%</strong></span></div><div class="h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div class="h-full rounded-full transition-all duration-500" style="width:${pct}%;background:${item.color}"></div></div>`;
-        c.appendChild(row);
+        const pct = total > 0 ? (item.mins / total) * 100 : 0;
+        const row = document.createElement('div');
+        row.innerHTML = `
+          <div class="mb-1 flex items-center justify-between text-xs">
+            <span class="flex items-center gap-1.5 font-semibold"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:${item.color}"></span>${escapeHTML(item.name)}</span>
+            <span class="text-slate-500 dark:text-slate-400">${fmtHours(item.mins)} <strong class="ml-1 font-bold text-slate-800 dark:text-slate-100">${pct.toFixed(1)}%</strong></span>
+          </div>
+          <div class="h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div class="h-full rounded-full transition-all duration-500" style="width:${pct}%;background:${item.color}"></div></div>`;
+        container.appendChild(row);
       });
     }
 
     function renderTodayEvents(data) {
-      const c = document.getElementById('todayEventsList'), events = data.todayEvents;
-      if (!events) { c.innerHTML = `<div class="col-span-full rounded-xl bg-slate-50 p-4 text-xs text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">カレンダー予定の合計時間は連携済みです</div>`; return; }
-      if (!events.length) { c.innerHTML = `<div class="col-span-full rounded-xl bg-slate-50 p-4 text-center text-xs text-slate-400 dark:bg-slate-800/60">今日の勉強予定はありません</div>`; return; }
-      c.innerHTML = '';
+      const container = document.getElementById('todayEventsList');
+      const events = data.todayEvents;
+      if (!events) {
+        container.innerHTML = `<div class="col-span-full rounded-xl bg-slate-50 p-4 text-xs leading-relaxed text-slate-500 dark:bg-slate-800/60 dark:text-slate-400"><p class="mb-1 font-semibold text-slate-700 dark:text-slate-200">カレンダー予定の合計時間は連携済みです</p>個別の予定タイトル一覧を表示するには、GASの <code class="rounded bg-slate-200 px-1 dark:bg-slate-700">doGet</code> に <code class="rounded bg-slate-200 px-1 dark:bg-slate-700">todayEvents</code> を追加してください。</div>`;
+        return;
+      }
+      if (events.length === 0) {
+        container.innerHTML = `<div class="col-span-full rounded-xl bg-slate-50 p-4 text-center text-xs text-slate-400 dark:bg-slate-800/60">今日の勉強予定はありません</div>`;
+        return;
+      }
+      container.innerHTML = '';
       events.forEach(ev => {
         const card = document.createElement('div');
         card.className = 'flex items-center gap-3 rounded-xl border border-slate-200/80 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-800/50';
-        card.innerHTML = `<div class="shrink-0 rounded-lg bg-blue-50 px-2.5 py-1.5 text-center text-[11px] font-bold text-blue-700 dark:bg-blue-950/70 dark:text-blue-300"><div>${escapeHTML(ev.start)}</div><div class="text-[10px] opacity-70">〜${escapeHTML(ev.end)}</div></div><div class="min-w-0 text-xs font-bold leading-snug text-slate-800 dark:text-slate-100">${escapeHTML(ev.title)}</div>`;
-        c.appendChild(card);
+        card.innerHTML = `
+          <div class="shrink-0 rounded-lg bg-blue-50 px-2.5 py-1.5 text-center text-[11px] font-bold text-blue-700 dark:bg-blue-950/70 dark:text-blue-300">
+            <div>${escapeHTML(ev.start)}</div>
+            <div class="text-[10px] opacity-70">〜${escapeHTML(ev.end)}</div>
+          </div>
+          <div class="min-w-0 text-xs font-bold leading-snug text-slate-800 dark:text-slate-100">${escapeHTML(ev.title)}</div>`;
+        container.appendChild(card);
       });
     }
 
     function renderSubjectGaps(actualMap, plannedMap) {
-      const c = document.getElementById('subjectGapList'); c.innerHTML = '';
+      const container = document.getElementById('subjectGapList');
+      container.innerHTML = '';
       SUBJECTS.forEach(s => {
         const a = actualMap[s] || 0, p = plannedMap[s] || 0, diff = a - p;
         const pct = p > 0 ? Math.min(100, Math.round((a / p) * 100)) : (a > 0 ? 100 : 0);
         const diffClass = diff >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
         const barColor = diff >= 0 ? 'bg-emerald-500' : 'bg-blue-600';
         const row = document.createElement('div');
-        row.innerHTML = `<div class="mb-1 flex items-center justify-between text-xs"><span class="font-bold">${escapeHTML(s)}</span><span class="flex items-center gap-2"><span class="text-slate-500 dark:text-slate-400">${fmtHours(a)} / ${fmtHours(p)}</span><span class="w-12 text-right font-extrabold ${diffClass}">${fmtSignedHours(diff)}</span></span></div><div class="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div class="h-full rounded-full ${barColor} transition-all duration-500" style="width:${pct}%"></div></div>`;
-        c.appendChild(row);
+        row.innerHTML = `
+          <div class="mb-1 flex items-center justify-between text-xs">
+            <span class="font-bold">${escapeHTML(s)}</span>
+            <span class="flex items-center gap-2"><span class="text-slate-500 dark:text-slate-400">${fmtHours(a)} / ${fmtHours(p)}</span><span class="w-12 text-right font-extrabold ${diffClass}">${fmtSignedHours(diff)}</span></span>
+          </div>
+          <div class="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div class="h-full rounded-full ${barColor} transition-all duration-500" style="width:${pct}%"></div></div>`;
+        container.appendChild(row);
       });
     }
 
-    // 学習記録ビュー
-    const timerDisplay = document.getElementById('timerDisplay'), timerStateDot = document.getElementById('timerStateDot'), timerStateLabel = document.getElementById('timerStateLabel');
-    const startStopBtn = document.getElementById('startStopBtn'), studyDateInput = document.getElementById('studyDateInput'), minutesInput = document.getElementById('minutesInput');
-    const startTimeInput = document.getElementById('startTimeInput'), endTimeInput = document.getElementById('endTimeInput');
-    const editMaterialBtn = document.getElementById('editMaterialBtn'), addMaterialRow = document.getElementById('addMaterialRow'), newMaterialInput = document.getElementById('newMaterialInput');
+    // =========================================================================
+    // 6. 学習記録ビュー（タイマー・チップ選択・GAS送信）
+    // =========================================================================
+    const timerDisplay = document.getElementById('timerDisplay');
+    const timerStateDot = document.getElementById('timerStateDot');
+    const timerStateLabel = document.getElementById('timerStateLabel');
+    const startStopBtn = document.getElementById('startStopBtn');
+    const studyDateInput = document.getElementById('studyDateInput');
+    const minutesInput = document.getElementById('minutesInput');
+    const startTimeInput = document.getElementById('startTimeInput');
+    const endTimeInput = document.getElementById('endTimeInput');
+    const editMaterialBtn = document.getElementById('editMaterialBtn');
+    const addMaterialRow = document.getElementById('addMaterialRow');
+    const newMaterialInput = document.getElementById('newMaterialInput');
+
     studyDateInput.value = fmtDateInput(new Date());
 
     function chipClass(active, editing = false) {
       if (editing) return 'rounded-full border border-dashed border-rose-400 bg-rose-50 px-3.5 py-1.5 text-xs font-semibold text-rose-600 dark:border-rose-700 dark:bg-rose-950/50 dark:text-rose-300 transition';
-      return active ? 'rounded-full border border-blue-600 bg-blue-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition'
-        : 'rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:border-blue-300 hover:text-blue-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 transition';
+      return active
+        ? 'rounded-full border border-blue-600 bg-blue-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition'
+        : 'rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:border-blue-300 hover:text-blue-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-blue-600 transition';
     }
+
     function renderSubjectChips() {
-      const el = document.getElementById('subjectChips'); el.innerHTML = '';
+      const el = document.getElementById('subjectChips');
+      el.innerHTML = '';
       SUBJECTS.forEach(subj => {
-        const btn = document.createElement('button'); btn.type = 'button'; btn.className = chipClass(selectedSubject === subj); btn.textContent = subj;
-        btn.onclick = () => { selectedSubject = subj; selectedMaterial = ''; isEditingMaterials = false; renderSubjectChips(); renderMaterials(); };
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = chipClass(selectedSubject === subj);
+        btn.textContent = subj;
+        btn.onclick = () => {
+          selectedSubject = subj;
+          selectedMaterial = '';
+          isEditingMaterials = false;
+          renderSubjectChips();
+          renderMaterials();
+        };
         el.appendChild(btn);
       });
     }
+
     function renderRatingChips() {
-      const el = document.getElementById('ratingChips'); el.innerHTML = '';
+      const el = document.getElementById('ratingChips');
+      el.innerHTML = '';
       RATINGS.forEach(r => {
-        const code = r.split(' ')[0], btn = document.createElement('button'); btn.type = 'button'; btn.className = chipClass(selectedRating === code); btn.textContent = r;
-        btn.onclick = () => { selectedRating = selectedRating === code ? '' : code; renderRatingChips(); };
+        const code = r.split(' ')[0];
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = chipClass(selectedRating === code);
+        btn.textContent = r;
+        btn.onclick = () => {
+          selectedRating = selectedRating === code ? '' : code;
+          renderRatingChips();
+        };
         el.appendChild(btn);
       });
     }
+
     function renderMaterials() {
       const el = document.getElementById('materialChips');
-      if (!selectedSubject) { el.innerHTML = '<span class="text-xs text-slate-400">先に科目を選択してください</span>'; editMaterialBtn.classList.add('hidden'); addMaterialRow.classList.add('hidden'); addMaterialRow.classList.remove('flex'); return; }
-      editMaterialBtn.classList.remove('hidden'); editMaterialBtn.textContent = isEditingMaterials ? '完了' : '編集';
-      addMaterialRow.classList.toggle('hidden', !isEditingMaterials); addMaterialRow.classList.toggle('flex', isEditingMaterials);
-      const list = materialsBySubject[selectedSubject] || []; el.innerHTML = '';
-      if (!list.length) { el.innerHTML = '<span class="text-xs text-slate-400">教材がありません。「編集」から追加してください</span>'; return; }
+      if (!selectedSubject) {
+        el.innerHTML = '<span class="text-xs text-slate-400">先に科目を選択してください</span>';
+        editMaterialBtn.classList.add('hidden');
+        addMaterialRow.classList.add('hidden');
+        addMaterialRow.classList.remove('flex');
+        return;
+      }
+      editMaterialBtn.classList.remove('hidden');
+      editMaterialBtn.textContent = isEditingMaterials ? '完了' : '編集';
+      addMaterialRow.classList.toggle('hidden', !isEditingMaterials);
+      addMaterialRow.classList.toggle('flex', isEditingMaterials);
+
+      const list = materialsBySubject[selectedSubject] || [];
+      el.innerHTML = '';
+      if (!list.length) {
+        el.innerHTML = '<span class="text-xs text-slate-400">教材がありません。「編集」から追加してください</span>';
+        return;
+      }
       list.forEach((item, idx) => {
-        const btn = document.createElement('button'); btn.type = 'button';
-        if (isEditingMaterials) { btn.className = chipClass(false, true); btn.textContent = `${item} ×`; btn.onclick = () => { materialsBySubject[selectedSubject].splice(idx, 1); if (selectedMaterial === item) selectedMaterial = ''; renderMaterials(); saveMaterialsToCloud(); }; }
-        else { btn.className = chipClass(selectedMaterial === item); btn.textContent = item; btn.onclick = () => { selectedMaterial = item; renderMaterials(); }; }
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        if (isEditingMaterials) {
+          btn.className = chipClass(false, true);
+          btn.textContent = `${item} ×`;
+          btn.onclick = () => {
+            materialsBySubject[selectedSubject].splice(idx, 1);
+            if (selectedMaterial === item) selectedMaterial = '';
+            renderMaterials();
+            saveMaterialsToCloud();
+          };
+        } else {
+          btn.className = chipClass(selectedMaterial === item);
+          btn.textContent = item;
+          btn.onclick = () => { selectedMaterial = item; renderMaterials(); };
+        }
         el.appendChild(btn);
       });
     }
+
     async function saveMaterialsToCloud() {
       if (!settings.gasUrl) return;
-      try { await fetch(settings.gasUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'saveMaterials', materials: materialsBySubject }) }); showToast('教材リストを全デバイスに同期しました'); } catch (e) {}
+      try {
+        await fetch(settings.gasUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'saveMaterials', materials: materialsBySubject })
+        });
+        showToast('教材リストを全デバイスに同期しました');
+      } catch (e) { }
     }
+
     editMaterialBtn.onclick = () => { isEditingMaterials = !isEditingMaterials; renderMaterials(); };
     document.getElementById('addMaterialBtn').onclick = () => {
-      const name = newMaterialInput.value.trim(); if (!name || !selectedSubject) return;
+      const name = newMaterialInput.value.trim();
+      if (!name || !selectedSubject) return;
       if (!materialsBySubject[selectedSubject]) materialsBySubject[selectedSubject] = [];
-      if (!materialsBySubject[selectedSubject].includes(name)) { materialsBySubject[selectedSubject].push(name); saveMaterialsToCloud(); }
-      newMaterialInput.value = ''; renderMaterials();
+      if (!materialsBySubject[selectedSubject].includes(name)) {
+        materialsBySubject[selectedSubject].push(name);
+        saveMaterialsToCloud();
+      }
+      newMaterialInput.value = '';
+      renderMaterials();
     };
 
     function getElapsedSec() {
-      const accum = Number(localStorage.getItem(STORAGE_KEYS.TIMER_ACCUM) || 0), start = Number(localStorage.getItem(STORAGE_KEYS.TIMER_START) || 0);
+      const accum = Number(localStorage.getItem(STORAGE_KEYS.TIMER_ACCUM) || 0);
+      const start = Number(localStorage.getItem(STORAGE_KEYS.TIMER_START) || 0);
       return start ? accum + Math.floor((Date.now() - start) / 1000) : accum;
     }
+
     function updateTimerUI() {
-      const sec = getElapsedSec(), running = !!localStorage.getItem(STORAGE_KEYS.TIMER_START);
-      const h = String(Math.floor(sec / 3600)).padStart(2, '0'), m = String(Math.floor((sec % 3600) / 60)).padStart(2, '0'), s = String(sec % 60).padStart(2, '0');
+      const sec = getElapsedSec();
+      const running = !!localStorage.getItem(STORAGE_KEYS.TIMER_START);
+      const h = String(Math.floor(sec / 3600)).padStart(2, '0');
+      const m = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
+      const s = String(sec % 60).padStart(2, '0');
       timerDisplay.textContent = `${h}:${m}:${s}`;
-      timerStateDot.className = running ? 'h-2 w-2 animate-pulse rounded-full bg-emerald-500' : sec > 0 ? 'h-2 w-2 rounded-full bg-amber-400' : 'h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600';
+
+      // ステータス表示
+      timerStateDot.className = running
+        ? 'h-2 w-2 animate-pulse rounded-full bg-emerald-500'
+        : sec > 0 ? 'h-2 w-2 rounded-full bg-amber-400' : 'h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600';
       timerStateLabel.textContent = running ? '計測中' : sec > 0 ? '一時停止中' : '待機中';
+
+      // ナビバーの計測中インジケーター
       const shortTime = Math.floor(sec / 3600) > 0 ? `${h}:${m}` : `${m}:${s}`;
-      document.querySelectorAll('.nav-timer-badge').forEach(b => { b.classList.toggle('hidden', !running); b.classList.toggle('inline-flex', running); });
+      document.querySelectorAll('.nav-timer-badge').forEach(b => {
+        b.classList.toggle('hidden', !running);
+        b.classList.toggle('inline-flex', running);
+      });
       document.querySelectorAll('.nav-timer-text').forEach(t => { t.textContent = shortTime; });
       document.querySelectorAll('.nav-timer-dot').forEach(d => d.classList.toggle('hidden', !running));
-      document.querySelectorAll('.nav-mobile-log-label').forEach(l => { l.textContent = running ? shortTime : '記録'; });
+      document.querySelectorAll('.nav-mobile-log-label').forEach(l => {
+        l.textContent = running ? shortTime : '記録';
+      });
     }
+
     async function saveTimerToCloud() {
       if (!settings.gasUrl) return;
-      const updatedAt = Date.now(); localStorage.setItem(STORAGE_KEYS.TIMER_UPDATED, String(updatedAt));
-      const timerState = { start: Number(localStorage.getItem(STORAGE_KEYS.TIMER_START) || 0), accum: Number(localStorage.getItem(STORAGE_KEYS.TIMER_ACCUM) || 0), firstStart: Number(localStorage.getItem(STORAGE_KEYS.TIMER_FIRST_START) || 0), subject: selectedSubject || '', material: selectedMaterial || '', updatedAt };
-      try { await fetch(settings.gasUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'saveTimer', timer: timerState }) }); } catch (e) {}
+      const updatedAt = Date.now();
+      localStorage.setItem(STORAGE_KEYS.TIMER_UPDATED, String(updatedAt));
+      const timerState = {
+        start: Number(localStorage.getItem(STORAGE_KEYS.TIMER_START) || 0),
+        accum: Number(localStorage.getItem(STORAGE_KEYS.TIMER_ACCUM) || 0),
+        firstStart: Number(localStorage.getItem(STORAGE_KEYS.TIMER_FIRST_START) || 0),
+        subject: selectedSubject || '',
+        material: selectedMaterial || '',
+        updatedAt
+      };
+      try {
+        await fetch(settings.gasUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'saveTimer', timer: timerState })
+        });
+      } catch (e) { }
     }
+
     function applyCloudTimer(ct) {
       const localUpdated = Number(localStorage.getItem(STORAGE_KEYS.TIMER_UPDATED) || 0);
       if (!ct || !ct.updatedAt || ct.updatedAt <= localUpdated) return;
-      clearInterval(timerInterval); localStorage.setItem(STORAGE_KEYS.TIMER_UPDATED, String(ct.updatedAt));
-      if (ct.start) localStorage.setItem(STORAGE_KEYS.TIMER_START, String(ct.start)); else localStorage.removeItem(STORAGE_KEYS.TIMER_START);
-      if (ct.accum) localStorage.setItem(STORAGE_KEYS.TIMER_ACCUM, String(ct.accum)); else localStorage.removeItem(STORAGE_KEYS.TIMER_ACCUM);
-      if (ct.firstStart) { localStorage.setItem(STORAGE_KEYS.TIMER_FIRST_START, String(ct.firstStart)); startTimeInput.value = fmtTime(new Date(ct.firstStart)); } else { localStorage.removeItem(STORAGE_KEYS.TIMER_FIRST_START); startTimeInput.value = ''; }
-      if (ct.subject && SUBJECTS.includes(ct.subject)) { selectedSubject = ct.subject; selectedMaterial = ct.material || ''; renderSubjectChips(); renderMaterials(); }
-      if (ct.start) { startStopBtn.textContent = '停止'; timerInterval = setInterval(updateTimerUI, 500); }
-      else if (ct.accum > 0) { startStopBtn.textContent = '再開'; minutesInput.value = Math.max(1, Math.round(ct.accum / 60)); }
-      else { startStopBtn.textContent = '開始'; }
+
+      clearInterval(timerInterval);
+      localStorage.setItem(STORAGE_KEYS.TIMER_UPDATED, String(ct.updatedAt));
+      if (ct.start) localStorage.setItem(STORAGE_KEYS.TIMER_START, String(ct.start));
+      else localStorage.removeItem(STORAGE_KEYS.TIMER_START);
+      if (ct.accum) localStorage.setItem(STORAGE_KEYS.TIMER_ACCUM, String(ct.accum));
+      else localStorage.removeItem(STORAGE_KEYS.TIMER_ACCUM);
+      if (ct.firstStart) {
+        localStorage.setItem(STORAGE_KEYS.TIMER_FIRST_START, String(ct.firstStart));
+        startTimeInput.value = fmtTime(new Date(ct.firstStart));
+      } else {
+        localStorage.removeItem(STORAGE_KEYS.TIMER_FIRST_START);
+        startTimeInput.value = '';
+      }
+      if (ct.subject && SUBJECTS.includes(ct.subject)) {
+        selectedSubject = ct.subject;
+        selectedMaterial = ct.material || '';
+        renderSubjectChips();
+        renderMaterials();
+      }
+      if (ct.start) {
+        startStopBtn.textContent = '停止';
+        timerInterval = setInterval(updateTimerUI, 500);
+      } else if (ct.accum > 0) {
+        startStopBtn.textContent = '再開';
+        minutesInput.value = Math.max(1, Math.round(ct.accum / 60));
+      } else {
+        startStopBtn.textContent = '開始';
+      }
       updateTimerUI();
     }
+
     function startTimer(sync = true) {
       const now = Date.now();
       if (!localStorage.getItem(STORAGE_KEYS.TIMER_START)) localStorage.setItem(STORAGE_KEYS.TIMER_START, String(now));
-      if (!localStorage.getItem(STORAGE_KEYS.TIMER_FIRST_START)) { localStorage.setItem(STORAGE_KEYS.TIMER_FIRST_START, String(now)); startTimeInput.value = fmtTime(new Date(now)); }
-      startStopBtn.textContent = '停止'; clearInterval(timerInterval); timerInterval = setInterval(updateTimerUI, 500); updateTimerUI(); if (sync) saveTimerToCloud();
-    }
-    function stopTimer(sync = true) {
-      const total = getElapsedSec(); localStorage.setItem(STORAGE_KEYS.TIMER_ACCUM, String(total)); localStorage.removeItem(STORAGE_KEYS.TIMER_START);
-      clearInterval(timerInterval); startStopBtn.textContent = '再開'; updateTimerUI();
-      if (total > 0) { minutesInput.value = Math.max(1, Math.round(total / 60)); endTimeInput.value = fmtTime(new Date()); }
+      if (!localStorage.getItem(STORAGE_KEYS.TIMER_FIRST_START)) {
+        localStorage.setItem(STORAGE_KEYS.TIMER_FIRST_START, String(now));
+        startTimeInput.value = fmtTime(new Date(now));
+      }
+      startStopBtn.textContent = '停止';
+      clearInterval(timerInterval);
+      timerInterval = setInterval(updateTimerUI, 500);
+      updateTimerUI();
       if (sync) saveTimerToCloud();
     }
-    function resetTimer(sync = true) {
-      clearInterval(timerInterval); localStorage.removeItem(STORAGE_KEYS.TIMER_START); localStorage.removeItem(STORAGE_KEYS.TIMER_ACCUM); localStorage.removeItem(STORAGE_KEYS.TIMER_FIRST_START);
-      startStopBtn.textContent = '開始'; updateTimerUI(); if (sync) saveTimerToCloud();
+
+    function stopTimer(sync = true) {
+      const total = getElapsedSec();
+      localStorage.setItem(STORAGE_KEYS.TIMER_ACCUM, String(total));
+      localStorage.removeItem(STORAGE_KEYS.TIMER_START);
+      clearInterval(timerInterval);
+      startStopBtn.textContent = '再開';
+      updateTimerUI();
+      if (total > 0) {
+        minutesInput.value = Math.max(1, Math.round(total / 60));
+        endTimeInput.value = fmtTime(new Date());
+      }
+      if (sync) saveTimerToCloud();
     }
+
+    function resetTimer(sync = true) {
+      clearInterval(timerInterval);
+      localStorage.removeItem(STORAGE_KEYS.TIMER_START);
+      localStorage.removeItem(STORAGE_KEYS.TIMER_ACCUM);
+      localStorage.removeItem(STORAGE_KEYS.TIMER_FIRST_START);
+      startStopBtn.textContent = '開始';
+      updateTimerUI();
+      if (sync) saveTimerToCloud();
+    }
+
     startStopBtn.onclick = () => localStorage.getItem(STORAGE_KEYS.TIMER_START) ? stopTimer(true) : startTimer(true);
-    document.getElementById('resetBtn').onclick = () => { resetTimer(true); minutesInput.value = ''; startTimeInput.value = ''; endTimeInput.value = ''; };
+    document.getElementById('resetBtn').onclick = () => {
+      resetTimer(true);
+      minutesInput.value = '';
+      startTimeInput.value = '';
+      endTimeInput.value = '';
+    };
     document.getElementById('syncTimerBtn').onclick = () => fetchAndRenderData(true);
 
     document.getElementById('submitLogBtn').onclick = async () => {
       const statusEl = document.getElementById('logStatus');
       if (localStorage.getItem(STORAGE_KEYS.TIMER_START)) stopTimer(false);
+
       const minutes = Number(minutesInput.value);
-      if (!selectedSubject || !selectedMaterial || !minutes) { statusEl.textContent = '科目・教材・学習時間（分）を入力してください。'; return; }
-      if (!settings.gasUrl) { openSettingsModal(); showToast('GASのURLを設定してください'); return; }
-      const now = new Date(), dateStr = studyDateInput.value ? studyDateInput.value.replace(/-/g, '/') : `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`;
-      const endTime = endTimeInput.value || fmtTime(now), startTime = startTimeInput.value || fmtTime(new Date(now.getTime() - minutes * 60000));
-      const payload = { date: dateStr, subject: selectedSubject, material: selectedMaterial, minutes, topic: document.getElementById('topicInput').value.trim(), rating: selectedRating, memo: document.getElementById('memoInput').value.trim(), start_time: startTime, end_time: endTime };
-      const btn = document.getElementById('submitLogBtn'); btn.disabled = true; statusEl.textContent = '送信中...';
+      if (!selectedSubject || !selectedMaterial || !minutes) {
+        statusEl.textContent = '科目・教材・学習時間（分）を入力してください。';
+        return;
+      }
+      if (!settings.gasUrl) {
+        openSettingsModal();
+        showToast('GASのURLを設定してください');
+        return;
+      }
+
+      const now = new Date();
+      const dateStr = studyDateInput.value
+        ? studyDateInput.value.replace(/-/g, '/')
+        : `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`;
+      const endTime = endTimeInput.value || fmtTime(now);
+      const startTime = startTimeInput.value || fmtTime(new Date(now.getTime() - minutes * 60000));
+
+      const payload = {
+        date: dateStr,
+        subject: selectedSubject,
+        material: selectedMaterial,
+        minutes,
+        topic: document.getElementById('topicInput').value.trim(),
+        rating: selectedRating,
+        memo: document.getElementById('memoInput').value.trim(),
+        start_time: startTime,
+        end_time: endTime
+      };
+
+      const btn = document.getElementById('submitLogBtn');
+      btn.disabled = true;
+      statusEl.textContent = '送信中...';
+
       try {
-        const res = await fetch(settings.gasUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
+        const res = await fetch(settings.gasUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify(payload)
+        });
         const json = await res.json();
         if (json.status === 'ok') {
           statusEl.textContent = `記録しました（${dateStr} ${startTime}〜${endTime} / ${selectedSubject} / ${minutes}分）`;
           showToast(`${selectedSubject} ${minutes}分を記録しました`);
-          resetTimer(true); studyDateInput.value = fmtDateInput(new Date()); minutesInput.value = ''; startTimeInput.value = ''; endTimeInput.value = ''; document.getElementById('topicInput').value = ''; document.getElementById('memoInput').value = '';
+          resetTimer(true);
+          studyDateInput.value = fmtDateInput(new Date());
+          minutesInput.value = '';
+          startTimeInput.value = '';
+          endTimeInput.value = '';
+          document.getElementById('topicInput').value = '';
+          document.getElementById('memoInput').value = '';
           fetchAndRenderData(false);
-        } else throw new Error(json.message);
-      } catch (err) { statusEl.textContent = '送信エラー：GASを新バージョンで再デプロイしたか確認してください。'; } finally { btn.disabled = false; }
+        } else {
+          throw new Error(json.message);
+        }
+      } catch (err) {
+        statusEl.textContent = '送信エラー：GASを新バージョンで再デプロイしたか確認してください。';
+      } finally {
+        btn.disabled = false;
+      }
     };
 
-    // モーダル制御
+    // =========================================================================
+    // 7. モーダル制御（設定・カウントダウン追加／編集）
+    // =========================================================================
     const settingsModal = document.getElementById('settingsModal');
-    function openSettingsModal() { document.getElementById('inputGasUrl').value = settings.gasUrl || ''; document.getElementById('inputSheetUrl').value = settings.sheetUrl || ''; document.getElementById('inputCalendarUrl').value = settings.calendarUrl || ''; document.getElementById('inputNotebookUrl').value = settings.notebookUrl || ''; settingsModal.classList.remove('hidden'); settingsModal.classList.add('flex'); }
-    function closeSettingsModal() { settingsModal.classList.add('hidden'); settingsModal.classList.remove('flex'); }
+    function openSettingsModal() {
+      document.getElementById('inputGasUrl').value = settings.gasUrl || '';
+      document.getElementById('inputSheetUrl').value = settings.sheetUrl || '';
+      document.getElementById('inputCalendarUrl').value = settings.calendarUrl || '';
+      document.getElementById('inputNotebookUrl').value = settings.notebookUrl || '';
+      settingsModal.classList.remove('hidden');
+      settingsModal.classList.add('flex');
+    }
+    function closeSettingsModal() {
+      settingsModal.classList.add('hidden');
+      settingsModal.classList.remove('flex');
+    }
     document.getElementById('openSettingsBtn').addEventListener('click', openSettingsModal);
     document.getElementById('bannerOpenSettingsBtn').addEventListener('click', openSettingsModal);
     document.getElementById('closeSettingsBtn').addEventListener('click', closeSettingsModal);
     document.getElementById('cancelSettingsBtn').addEventListener('click', closeSettingsModal);
     settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) closeSettingsModal(); });
+
     document.getElementById('settingsForm').addEventListener('submit', (e) => {
       e.preventDefault();
-      settings = { gasUrl: document.getElementById('inputGasUrl').value.trim(), sheetUrl: document.getElementById('inputSheetUrl').value.trim(), calendarUrl: document.getElementById('inputCalendarUrl').value.trim(), notebookUrl: document.getElementById('inputNotebookUrl').value.trim() };
-      saveJSON(STORAGE_KEYS.SETTINGS, settings); closeSettingsModal(); renderQuickLinks(); saveHubConfigToCloud(); fetchAndRenderData(false); showToast('設定を保存・同期しました');
+      settings = {
+        gasUrl: document.getElementById('inputGasUrl').value.trim(),
+        sheetUrl: document.getElementById('inputSheetUrl').value.trim(),
+        calendarUrl: document.getElementById('inputCalendarUrl').value.trim(),
+        notebookUrl: document.getElementById('inputNotebookUrl').value.trim(),
+      };
+      saveJSON(STORAGE_KEYS.SETTINGS, settings);
+      closeSettingsModal();
+      renderQuickLinks();
+      saveHubConfigToCloud();
+      fetchAndRenderData(false);
+      showToast('設定を保存・同期しました');
     });
 
     const countdownModal = document.getElementById('countdownModal');
     function openCountdownModal(editItem = null) {
       document.getElementById('countdownModalTitle').textContent = editItem ? '重要日程を編集' : '重要日程を追加';
       document.getElementById('countdownSubmitBtn').textContent = editItem ? '更新する' : '追加する';
-      document.getElementById('inputEventId').value = editItem?.id || ''; document.getElementById('inputEventName').value = editItem?.name || '';
-      document.getElementById('inputEventDate').value = editItem?.date || ''; document.getElementById('inputEventColor').value = editItem?.color || 'blue';
-      countdownModal.classList.remove('hidden'); countdownModal.classList.add('flex');
+      document.getElementById('inputEventId').value = editItem?.id || '';
+      document.getElementById('inputEventName').value = editItem?.name || '';
+      document.getElementById('inputEventDate').value = editItem?.date || '';
+      document.getElementById('inputEventColor').value = editItem?.color || 'blue';
+      countdownModal.classList.remove('hidden');
+      countdownModal.classList.add('flex');
     }
-    function closeCountdownModal() { countdownModal.classList.add('hidden'); countdownModal.classList.remove('flex'); }
+    function closeCountdownModal() {
+      countdownModal.classList.add('hidden');
+      countdownModal.classList.remove('flex');
+    }
     document.getElementById('openAddCountdownBtn').addEventListener('click', () => openCountdownModal(null));
     document.getElementById('closeCountdownBtn').addEventListener('click', closeCountdownModal);
     document.getElementById('cancelCountdownBtn').addEventListener('click', closeCountdownModal);
     countdownModal.addEventListener('click', (e) => { if (e.target === countdownModal) closeCountdownModal(); });
+
     document.getElementById('countdownForm').addEventListener('submit', (e) => {
       e.preventDefault();
-      const editId = document.getElementById('inputEventId').value, name = document.getElementById('inputEventName').value.trim(), date = document.getElementById('inputEventDate').value, color = document.getElementById('inputEventColor').value;
+      const editId = document.getElementById('inputEventId').value;
+      const name = document.getElementById('inputEventName').value.trim();
+      const date = document.getElementById('inputEventDate').value;
+      const color = document.getElementById('inputEventColor').value;
       if (!name || !date) return;
-      if (editId) { countdowns = countdowns.map(c => c.id === editId ? { ...c, name, date, color } : c); showToast('日程を更新・同期しました'); }
-      else { countdowns.push({ id: 'c_' + Date.now(), name, date, color }); showToast('日程を追加・同期しました'); }
-      saveJSON(STORAGE_KEYS.COUNTDOWNS, countdowns); closeCountdownModal(); renderCountdowns(); saveHubConfigToCloud();
+      if (editId) {
+        countdowns = countdowns.map(c => c.id === editId ? { ...c, name, date, color } : c);
+        showToast('日程を更新・同期しました');
+      } else {
+        countdowns.push({ id: 'c_' + Date.now(), name, date, color });
+        showToast('日程を追加・同期しました');
+      }
+      saveJSON(STORAGE_KEYS.COUNTDOWNS, countdowns);
+      closeCountdownModal();
+      renderCountdowns();
+      saveHubConfigToCloud();
     });
 
-    // AI連携
+    // =========================================================================
+    // 8. AI連携（勉強時間 ＋ 直近の答練成績を合わせて ChatGPT / Gemini へ送信）
+    // =========================================================================
     function buildAiStudyPrompt() {
-      const data = currentData || DEMO_DATA, ctx = getPeriodContext(selectedPeriod, periodOffset), { slice } = resolvePeriodData(data, selectedPeriod);
-      const actualMap = slice.bySubject?.actual || {}, plannedMap = slice.bySubject?.planned || {};
-      const totalActual = slice.actual || 0, totalPlanned = slice.planned || 0, pct = totalPlanned > 0 ? Math.round((totalActual / totalPlanned) * 100) : 0;
-      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const data = currentData || DEMO_DATA;
+      const ctx = getPeriodContext(selectedPeriod, periodOffset);
+      const { slice } = resolvePeriodData(data, selectedPeriod);
+      const actualMap = slice.bySubject?.actual || {};
+      const plannedMap = slice.bySubject?.planned || {};
+      const totalActual = slice.actual || 0;
+      const totalPlanned = slice.planned || 0;
+      const pct = totalPlanned > 0 ? Math.round((totalActual / totalPlanned) * 100) : 0;
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
       const todayStr = `${today.getFullYear()}/${today.getMonth() + 1}/${today.getDate()}`;
-      const countdownLines = [...countdowns].sort((a, b) => new Date(a.date) - new Date(b.date)).map(c => { const diff = Math.ceil((new Date(c.date + 'T00:00:00') - today) / 86400000); return `- ${c.name}（${c.date.replace(/-/g, '/')}）：${diff > 0 ? `あと${diff}日` : diff === 0 ? '本日' : `${Math.abs(diff)}日経過`}`; });
-      const subjectLines = SUBJECTS.map(s => { const a = actualMap[s] || 0, p = plannedMap[s] || 0; return `- ${s}：実績 ${fmtHours(a)} / 予定 ${fmtHours(p)}（差 ${fmtSignedHours(a - p)}）`; });
-      const examLines = [...examResults].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5).map(ex => `- [${ex.date}] ${ex.subject}「${ex.title}」：${ex.score}/${ex.maxScore || 100}（${ex.rank || '-'}）${ex.note ? ` / メモ: ${ex.note}` : ''}`);
-      return [`公認会計士（CPA）試験の学習コーチとして、以下の【${ctx.rangeLabel}の学習時間】と【直近の答練・模試成績】の両方を踏まえ、振り返り（反省）と次週の勉強時間の配分調整を提案してください。`, '', `■ 基準日：${todayStr}`, '■ 試験・重要日程', ...(countdownLines.length ? countdownLines : ['- 未登録']), '', `■ ${ctx.rangeLabel}の勉強時間合計：実績 ${fmtHours(totalActual)} / 予定 ${fmtHours(totalPlanned)}（達成率 ${pct}%）`, '■ 科目別の予定 vs 実績', ...subjectLines, '', '■ 直近の答練・模試成績', ...(examLines.length ? examLines : ['- まだ登録なし']), '', '■ お願いしたいこと', '1. 勉強時間と答練成績の相関を踏まえた反省点・良かった点', '2. 成績が伸び悩んでいる科目／予定遅れ科目のリカバリーを踏まえた、次週の科目別勉強時間の具体的な配分案', '3. 次週に最優先で取り組むべきアクション3点'].join('\n');
+
+      const countdownLines = [...countdowns]
+        .sort((a, b) => new Date(a.date) - new Date(b.date))
+        .map(c => {
+          const diff = Math.ceil((new Date(c.date + 'T00:00:00') - today) / 86400000);
+          return `- ${c.name}（${c.date.replace(/-/g, '/')}）：${diff > 0 ? `あと${diff}日` : diff === 0 ? '本日' : `${Math.abs(diff)}日経過`}`;
+        });
+
+      const subjectLines = SUBJECTS.map(s => {
+        const a = actualMap[s] || 0, p = plannedMap[s] || 0;
+        return `- ${s}：実績 ${fmtHours(a)} / 予定 ${fmtHours(p)}（差 ${fmtSignedHours(a - p)}）`;
+      });
+
+      const examLines = [...examResults]
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .slice(0, 5)
+        .map(ex => `- [${ex.date}] ${ex.subject}「${ex.title}」：${ex.score}/${ex.maxScore || 100}（${ex.rank || '-'}）${ex.note ? ` / メモ: ${ex.note}` : ''}`);
+
+      return [
+        `公認会計士（CPA）試験の学習コーチとして、以下の【${ctx.rangeLabel}の学習時間】と【直近の答練・模試成績】の両方を踏まえ、振り返り（反省）と次週の勉強時間の配分調整を提案してください。`,
+        '',
+        `■ 基準日：${todayStr}`,
+        '■ 試験・重要日程',
+        ...(countdownLines.length ? countdownLines : ['- 未登録']),
+        '',
+        `■ ${ctx.rangeLabel}の勉強時間合計：実績 ${fmtHours(totalActual)} / 予定 ${fmtHours(totalPlanned)}（達成率 ${pct}%）`,
+        '■ 科目別の予定 vs 実績',
+        ...subjectLines,
+        '',
+        '■ 直近の答練・模試成績',
+        ...(examLines.length ? examLines : ['- まだ登録なし']),
+        '',
+        '■ お願いしたいこと',
+        '1. 勉強時間と答練成績の相関を踏まえた反省点・良かった点',
+        '2. 成績が伸び悩んでいる科目／予定遅れ科目のリカバリーを踏まえた、次週の科目別勉強時間の具体的な配分案',
+        '3. 次週に最優先で取り組むべきアクション3点'
+      ].join('\n');
     }
+
     async function copyToClipboard(text) {
-      try { await navigator.clipboard.writeText(text); return true; } catch (e) { const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); let ok = false; try { ok = document.execCommand('copy'); } catch (err) {} document.body.removeChild(ta); return ok; }
+      try { await navigator.clipboard.writeText(text); return true; }
+      catch (e) {
+        const ta = document.createElement('textarea');
+        ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        let ok = false; try { ok = document.execCommand('copy'); } catch (err) { }
+        document.body.removeChild(ta); return ok;
+      }
     }
-    document.getElementById('sendToChatGptBtn').addEventListener('click', async () => { const p = buildAiStudyPrompt(); await copyToClipboard(p); window.open(`https://chatgpt.com/?q=${encodeURIComponent(p)}`, '_blank', 'noopener,noreferrer'); showToast('ChatGPTを開きました（入力済み・コピー済み）'); });
-    document.getElementById('sendToGeminiBtn').addEventListener('click', async () => { const p = buildAiStudyPrompt(); const ok = await copyToClipboard(p); window.open('https://gemini.google.com/app', '_blank', 'noopener,noreferrer'); showToast(ok ? 'データをコピーしました！Geminiに貼り付けて送信してください' : 'Geminiを開きました'); });
 
-    document.getElementById('refreshDataBtn').addEventListener('click', () => fetchAndRenderData(true));
-    document.getElementById('prevPeriodBtn').addEventListener('click', () => { periodOffset -= 1; fetchAndRenderData(false); });
-    document.getElementById('nextPeriodBtn').addEventListener('click', () => { if (periodOffset >= 0) return; periodOffset += 1; fetchAndRenderData(false); });
-    document.querySelectorAll('.period-btn').forEach(btn => btn.addEventListener('click', () => {
-      selectedPeriod = btn.dataset.period; periodOffset = 0;
-      document.querySelectorAll('.period-btn').forEach(b => { b.classList.remove('bg-blue-600', 'text-white', 'shadow-sm'); b.classList.add('text-slate-600', 'hover:text-slate-900', 'dark:text-slate-400', 'dark:hover:text-white'); });
-      btn.classList.add('bg-blue-600', 'text-white', 'shadow-sm'); btn.classList.remove('text-slate-600', 'hover:text-slate-900', 'dark:text-slate-400', 'dark:hover:text-white');
-      fetchAndRenderData(false);
-    }));
-
-    document.getElementById('syncDriveOcrBtn').addEventListener('click', async () => {
-      if (!settings.gasUrl) { openSettingsModal(); showToast('先にGASのURLを設定してください'); return; }
-      const btn = document.getElementById('syncDriveOcrBtn'), orig = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<span>⏳ OCR解析中...</span>';
-      try {
-        const res = await fetch(settings.gasUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'syncExamPdfs' }) });
-        const json = await res.json();
-        if (json.status === 'ok') { showToast(json.importedCount > 0 ? `${json.importedCount}件の成績PDFをOCR取込しました` : '新しい成績PDFはありませんでした'); fetchAndRenderData(false); }
-        else throw new Error(json.message);
-      } catch (e) { showToast('GAS側へのOCRスクリプト追加・再デプロイを確認してください'); } finally { btn.disabled = false; btn.innerHTML = orig; }
+    document.getElementById('sendToChatGptBtn').addEventListener('click', async () => {
+      const prompt = buildAiStudyPrompt();
+      await copyToClipboard(prompt);
+      window.open(`https://chatgpt.com/?q=${encodeURIComponent(prompt)}`, '_blank', 'noopener,noreferrer');
+      showToast('ChatGPTを開きました（入力済み・コピー済み）');
     });
 
+    document.getElementById('sendToGeminiBtn').addEventListener('click', async () => {
+      const prompt = buildAiStudyPrompt();
+      const copied = await copyToClipboard(prompt);
+      window.open('https://gemini.google.com/app', '_blank', 'noopener,noreferrer');
+      showToast(copied ? 'データをコピーしました！Geminiに貼り付けて送信してください' : 'Geminiを開きました');
+    });
+
+    // =========================================================================
+    // 9. イベントリスナー（期間切替・過去ナビ・Drive OCR・答練手入力）＆ 初期化
+    // =========================================================================
+    document.getElementById('refreshDataBtn').addEventListener('click', () => fetchAndRenderData(true));
+
+    document.getElementById('prevPeriodBtn').addEventListener('click', () => {
+      periodOffset -= 1;
+      fetchAndRenderData(false);
+    });
+    document.getElementById('nextPeriodBtn').addEventListener('click', () => {
+      if (periodOffset >= 0) return;
+      periodOffset += 1;
+      fetchAndRenderData(false);
+    });
+
+    document.querySelectorAll('.period-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        selectedPeriod = btn.dataset.period;
+        periodOffset = 0;
+        document.querySelectorAll('.period-btn').forEach(b => {
+          b.classList.remove('bg-blue-600', 'text-white', 'shadow-sm');
+          b.classList.add('text-slate-600', 'hover:text-slate-900', 'dark:text-slate-400', 'dark:hover:text-white');
+        });
+        btn.classList.add('bg-blue-600', 'text-white', 'shadow-sm');
+        btn.classList.remove('text-slate-600', 'hover:text-slate-900', 'dark:text-slate-400', 'dark:hover:text-white');
+        fetchAndRenderData(false);
+      });
+    });
+
+    // Googleドライブ専用フォルダからPDFをOCR取込
+    document.getElementById('syncDriveOcrBtn').addEventListener('click', async () => {
+      if (!settings.gasUrl) {
+        openSettingsModal();
+        showToast('先にGASのURLを設定してください');
+        return;
+      }
+      const btn = document.getElementById('syncDriveOcrBtn');
+      const origText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span>⏳ OCR解析中...</span>';
+      try {
+        const res = await fetch(settings.gasUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'syncExamPdfs' })
+        });
+        const json = await res.json();
+        if (json.status === 'ok') {
+          showToast(json.importedCount > 0 ? `${json.importedCount}件の成績PDFをOCR取込しました` : '新しい成績PDFはありませんでした');
+          fetchAndRenderData(false);
+        } else {
+          throw new Error(json.message || 'OCR未設定');
+        }
+      } catch (e) {
+        showToast('GAS側へのOCRスクリプト追加・再デプロイを確認してください');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = origText;
+      }
+    });
+
+    // 答練成績 手入力モーダル制御
     const examModal = document.getElementById('examModal');
-    function openExamModal() { document.getElementById('inputExamDate').value = fmtDateInput(new Date()); document.getElementById('inputExamTitle').value = ''; document.getElementById('inputExamScore').value = ''; document.getElementById('inputExamMax').value = '100'; document.getElementById('inputExamRank').value = ''; document.getElementById('inputExamNote').value = ''; examModal.classList.remove('hidden'); examModal.classList.add('flex'); }
-    function closeExamModal() { examModal.classList.add('hidden'); examModal.classList.remove('flex'); }
+    function openExamModal() {
+      document.getElementById('inputExamDate').value = fmtDateInput(new Date());
+      document.getElementById('inputExamTitle').value = '';
+      document.getElementById('inputExamScore').value = '';
+      document.getElementById('inputExamMax').value = '100';
+      document.getElementById('inputExamRank').value = '';
+      document.getElementById('inputExamNote').value = '';
+      examModal.classList.remove('hidden');
+      examModal.classList.add('flex');
+    }
+    function closeExamModal() {
+      examModal.classList.add('hidden');
+      examModal.classList.remove('flex');
+    }
     document.getElementById('openAddExamBtn').addEventListener('click', openExamModal);
     document.getElementById('closeExamBtn').addEventListener('click', closeExamModal);
     document.getElementById('cancelExamBtn').addEventListener('click', closeExamModal);
     examModal.addEventListener('click', (e) => { if (e.target === examModal) closeExamModal(); });
+
     document.getElementById('examForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const item = { id: 'ex_' + Date.now(), date: document.getElementById('inputExamDate').value, subject: document.getElementById('inputExamSubject').value, title: document.getElementById('inputExamTitle').value.trim(), score: Number(document.getElementById('inputExamScore').value), maxScore: Number(document.getElementById('inputExamMax').value) || 100, rank: document.getElementById('inputExamRank').value.trim(), note: document.getElementById('inputExamNote').value.trim(), source: '手入力' };
-      examResults.unshift(item); saveJSON(STORAGE_KEYS.EXAMS, examResults); renderExamResults(); closeExamModal(); showToast('成績を保存しました');
-      if (settings.gasUrl) { try { await fetch(settings.gasUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'addExamResult', exam: item }) }); } catch (err) {} }
+      const item = {
+        id: 'ex_' + Date.now(),
+        date: document.getElementById('inputExamDate').value,
+        subject: document.getElementById('inputExamSubject').value,
+        title: document.getElementById('inputExamTitle').value.trim(),
+        score: Number(document.getElementById('inputExamScore').value),
+        maxScore: Number(document.getElementById('inputExamMax').value) || 100,
+        rank: document.getElementById('inputExamRank').value.trim(),
+        note: document.getElementById('inputExamNote').value.trim(),
+        source: '手入力'
+      };
+      examResults.unshift(item);
+      saveJSON(STORAGE_KEYS.EXAMS, examResults);
+      renderExamResults();
+      closeExamModal();
+      showToast('成績を保存しました');
+      if (settings.gasUrl) {
+        try {
+          await fetch(settings.gasUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({ action: 'addExamResult', exam: item })
+          });
+        } catch (err) { }
+      }
     });
 
-    // Googleアカウント管理 ＆ 初期設定ウィザード（スプシ・Driveフォルダ自動作成）
-    let googleAuth = loadJSON(STORAGE_KEYS.GOOGLE_AUTH, { accessToken: '', expiresAt: 0, user: null, spreadsheetId: '', spreadsheetUrl: '', examFolderId: '', examFolderUrl: '', doneFolderId: '' });
-    let googleClientId = (() => { try { return localStorage.getItem(STORAGE_KEYS.GOOGLE_CLIENT_ID) || DEFAULT_GOOGLE_CLIENT_ID; } catch (e) { return DEFAULT_GOOGLE_CLIENT_ID; } })();
-    function isGoogleSignedIn() { return !!(googleAuth.accessToken && googleAuth.user && Date.now() < (googleAuth.expiresAt || 0)); }
+    // =========================================================================
+    // 10. Googleアカウント管理 ＆ 初期設定ウィザード（スプシ・Driveフォルダ自動作成）
+    // =========================================================================
+    let googleAuth = loadJSON(STORAGE_KEYS.GOOGLE_AUTH, {
+      accessToken: '',
+      expiresAt: 0,
+      user: null,
+      spreadsheetId: '',
+      spreadsheetUrl: '',
+      examFolderId: '',
+      examFolderUrl: '',
+      doneFolderId: ''
+    });
+    let googleClientId = (() => {
+      try { return localStorage.getItem(STORAGE_KEYS.GOOGLE_CLIENT_ID) || DEFAULT_GOOGLE_CLIENT_ID; }
+      catch (e) { return DEFAULT_GOOGLE_CLIENT_ID; }
+    })();
+
+    function isGoogleSignedIn() {
+      return !!(googleAuth.accessToken && googleAuth.user && Date.now() < (googleAuth.expiresAt || 0));
+    }
 
     function renderAccountUI() {
-      const signedIn = !!googleAuth.user, tokenValid = isGoogleSignedIn();
-      const headerAvatar = document.getElementById('headerAvatarImg'), headerDot = document.getElementById('headerAccountDot'), headerLabel = document.getElementById('headerAccountLabel');
-      if (signedIn && googleAuth.user.picture) { headerAvatar.src = googleAuth.user.picture; headerAvatar.classList.remove('hidden'); headerDot.classList.add('hidden'); }
-      else { headerAvatar.classList.add('hidden'); headerDot.classList.remove('hidden'); headerDot.className = tokenValid ? 'h-2 w-2 rounded-full bg-emerald-500' : 'h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600'; }
+      const signedIn = !!(googleAuth.user);
+      const tokenValid = isGoogleSignedIn();
+
+      const headerAvatar = document.getElementById('headerAvatarImg');
+      const headerDot = document.getElementById('headerAccountDot');
+      const headerLabel = document.getElementById('headerAccountLabel');
+
+      if (signedIn && googleAuth.user.picture) {
+        headerAvatar.src = googleAuth.user.picture;
+        headerAvatar.classList.remove('hidden');
+        headerDot.classList.add('hidden');
+      } else {
+        headerAvatar.classList.add('hidden');
+        headerDot.classList.remove('hidden');
+        headerDot.className = tokenValid ? 'h-2 w-2 rounded-full bg-emerald-500' : 'h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600';
+      }
       headerLabel.textContent = signedIn ? (googleAuth.user.given_name || googleAuth.user.name || 'アカウント') : 'アカウント';
 
-      const accAvatar = document.getElementById('accountAvatar'), accFallback = document.getElementById('accountAvatarFallback');
-      if (signedIn && googleAuth.user.picture) { accAvatar.src = googleAuth.user.picture; accAvatar.classList.remove('hidden'); accFallback.classList.add('hidden'); }
-      else { accAvatar.classList.add('hidden'); accFallback.classList.remove('hidden'); }
+      const accAvatar = document.getElementById('accountAvatar');
+      const accFallback = document.getElementById('accountAvatarFallback');
+      if (signedIn && googleAuth.user.picture) {
+        accAvatar.src = googleAuth.user.picture;
+        accAvatar.classList.remove('hidden');
+        accFallback.classList.add('hidden');
+      } else {
+        accAvatar.classList.add('hidden');
+        accFallback.classList.remove('hidden');
+      }
       document.getElementById('accountName').textContent = signedIn ? (googleAuth.user.name || 'Googleユーザー') : '未ログイン';
       document.getElementById('accountEmail').textContent = signedIn ? (googleAuth.user.email || '') : 'Googleアカウントでログインして同期';
 
       const badge = document.getElementById('accountStatusBadge');
-      if (tokenValid) { badge.textContent = '接続中'; badge.className = 'rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'; }
-      else if (signedIn) { badge.textContent = '再認証要'; badge.className = 'rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-950 dark:text-amber-300'; }
-      else { badge.textContent = '未接続'; badge.className = 'rounded-full bg-slate-200 px-2.5 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-700 dark:text-slate-300'; }
+      if (tokenValid) {
+        badge.textContent = '接続中';
+        badge.className = 'rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300';
+      } else if (signedIn) {
+        badge.textContent = '再認証要';
+        badge.className = 'rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-950 dark:text-amber-300';
+      } else {
+        badge.textContent = '未接続';
+        badge.className = 'rounded-full bg-slate-200 px-2.5 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-700 dark:text-slate-300';
+      }
 
       const sLink = document.getElementById('accountSheetLink');
-      sLink.href = googleAuth.spreadsheetUrl || '#'; sLink.textContent = googleAuth.spreadsheetUrl ? 'スプレッドシートを開く ↗' : '未作成（初期設定から作成）';
+      if (googleAuth.spreadsheetUrl) {
+        sLink.href = googleAuth.spreadsheetUrl;
+        sLink.textContent = 'スプレッドシートを開く ↗';
+      } else {
+        sLink.href = '#';
+        sLink.textContent = '未作成（初期設定から作成）';
+      }
+
       const fLink = document.getElementById('accountFolderLink');
-      fLink.href = googleAuth.examFolderUrl || '#'; fLink.textContent = googleAuth.examFolderUrl ? 'フォルダを開く ↗' : '未作成（初期設定から作成）';
+      if (googleAuth.examFolderUrl) {
+        fLink.href = googleAuth.examFolderUrl;
+        fLink.textContent = 'フォルダを開く ↗';
+      } else {
+        fLink.href = '#';
+        fLink.textContent = '未作成（初期設定から作成）';
+      }
+
       document.getElementById('googleSignOutBtn').classList.toggle('hidden', !signedIn);
       document.getElementById('inputGoogleClientId').value = googleClientId || '';
     }
 
     function requestGoogleLogin() {
       return new Promise((resolve, reject) => {
-        if (!googleClientId) { reject(new Error('Google OAuth クライアントIDが未設定です。アカウント管理画面の「Google OAuth クライアントID設定」から登録してください。')); return; }
-        if (!window.google || !google.accounts || !google.accounts.oauth2) { reject(new Error('GoogleログインSDKの読み込み中です。数秒後にもう一度お試しください。')); return; }
+        if (!googleClientId) {
+          reject(new Error('Google OAuth クライアントIDが未設定です。アカウント管理画面の「Google OAuth クライアントID設定」から登録してください。'));
+          return;
+        }
+        if (!window.google || !google.accounts || !google.accounts.oauth2) {
+          reject(new Error('GoogleログインSDKの読み込み中です。数秒後にもう一度お試しください。'));
+          return;
+        }
         const tokenClient = google.accounts.oauth2.initTokenClient({
-          client_id: googleClientId, scope: GOOGLE_SCOPES,
+          client_id: googleClientId,
+          scope: GOOGLE_SCOPES,
           callback: async (resp) => {
-            if (resp.error) { reject(new Error(resp.error_description || resp.error)); return; }
+            if (resp.error) {
+              reject(new Error(resp.error_description || resp.error));
+              return;
+            }
             googleAuth.accessToken = resp.access_token;
             googleAuth.expiresAt = Date.now() + ((Number(resp.expires_in) || 3500) * 1000);
-            try { const uRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', { headers: { Authorization: `Bearer ${googleAuth.accessToken}` } }); googleAuth.user = await uRes.json(); } catch (e) {}
-            saveJSON(STORAGE_KEYS.GOOGLE_AUTH, googleAuth); renderAccountUI(); resolve(googleAuth);
+            try {
+              const uRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                headers: { Authorization: `Bearer ${googleAuth.accessToken}` }
+              });
+              googleAuth.user = await uRes.json();
+            } catch (e) { }
+            saveJSON(STORAGE_KEYS.GOOGLE_AUTH, googleAuth);
+            renderAccountUI();
+            resolve(googleAuth);
           }
         });
         tokenClient.requestAccessToken({ prompt: googleAuth.user ? '' : 'consent' });
@@ -1165,105 +2218,226 @@
       return json;
     }
 
+    // ユーザーのGoogleドライブに専用スプレッドシート＆答練PDFフォルダを自動作成（既存があれば再利用）
     async function autoProvisionUserWorkspace(logFn) {
       if (!isGoogleSignedIn()) throw new Error('先にGoogleアカウントでログインしてください');
+
+      // 1. 専用スプレッドシートを検索または新規作成
       logFn('🔍 専用スプレッドシートを確認中...');
       const qSheet = encodeURIComponent("name='CPA Study Hub データ' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false");
       const foundSheets = await gApiFetch(`https://www.googleapis.com/drive/v3/files?q=${qSheet}&fields=files(id,name,webViewLink)`);
+
       if (foundSheets.files && foundSheets.files.length > 0) {
-        const f = foundSheets.files[0]; googleAuth.spreadsheetId = f.id; googleAuth.spreadsheetUrl = f.webViewLink || `https://docs.google.com/spreadsheets/d/${f.id}/edit`;
-        logFn('✓ 既存のスプレッドシートを検出しました（自動引き継ぎ）');
+        const f = foundSheets.files[0];
+        googleAuth.spreadsheetId = f.id;
+        googleAuth.spreadsheetUrl = f.webViewLink || `https://docs.google.com/spreadsheets/d/${f.id}/edit`;
+        logFn(`✓ 既存のスプレッドシートを検出しました（自動引き継ぎ）`);
       } else {
         logFn('📊 スプレッドシート「CPA Study Hub データ」を新規作成中...');
         const created = await gApiFetch('https://sheets.googleapis.com/v4/spreadsheets', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ properties: { title: 'CPA Study Hub データ', locale: 'ja_JP', timeZone: 'Asia/Tokyo' }, sheets: [{ properties: { title: 'log' } }, { properties: { title: 'materials' } }, { properties: { title: 'exams' } }, { properties: { title: 'config' } }] })
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            properties: { title: 'CPA Study Hub データ', locale: 'ja_JP', timeZone: 'Asia/Tokyo' },
+            sheets: [
+              { properties: { title: 'log' } },
+              { properties: { title: 'materials' } },
+              { properties: { title: 'exams' } },
+              { properties: { title: 'config' } }
+            ]
+          })
         });
-        googleAuth.spreadsheetId = created.spreadsheetId; googleAuth.spreadsheetUrl = created.spreadsheetUrl;
+        googleAuth.spreadsheetId = created.spreadsheetId;
+        googleAuth.spreadsheetUrl = created.spreadsheetUrl;
+
+        // 初期ヘッダーとデフォルト教材を自動投入
         const matRows = [['subject', 'materials'], ...SUBJECTS.map(s => [s, (DEFAULT_MATERIALS[s] || []).join(',')])];
         await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${created.spreadsheetId}/values:batchUpdate`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ valueInputOption: 'USER_ENTERED', data: [{ range: 'log!A1:I1', values: [['date', 'subject', 'material', 'minutes', 'topic', 'rating', 'memo', 'start_time', 'end_time']] }, { range: 'materials!A1:B8', values: matRows }, { range: 'exams!A1:I1', values: [['id', 'date', 'subject', 'title', 'score', 'maxScore', 'rank', 'note', 'source']] }, { range: 'config!A1:B2', values: [['key', 'value'], ['created_at', new Date().toISOString()]] }] })
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            valueInputOption: 'USER_ENTERED',
+            data: [
+              { range: 'log!A1:I1', values: [['date', 'subject', 'material', 'minutes', 'topic', 'rating', 'memo', 'start_time', 'end_time']] },
+              { range: 'materials!A1:B8', values: matRows },
+              { range: 'exams!A1:I1', values: [['id', 'date', 'subject', 'title', 'score', 'maxScore', 'rank', 'note', 'source']] },
+              { range: 'config!A1:B2', values: [['key', 'value'], ['created_at', new Date().toISOString()]] }
+            ]
+          })
         });
         logFn('✓ スプレッドシート＋4シート＋初期教材を作成しました');
       }
+
+      // 2. CPA答練PDF フォルダを検索または新規作成
       logFn('📁 答練OCR用フォルダ「CPA答練PDF」を確認中...');
       const qFolder = encodeURIComponent("name='CPA答練PDF' and mimeType='application/vnd.google-apps.folder' and trashed=false");
       const foundFolders = await gApiFetch(`https://www.googleapis.com/drive/v3/files?q=${qFolder}&fields=files(id,name,webViewLink)`);
       if (foundFolders.files && foundFolders.files.length > 0) {
-        const fd = foundFolders.files[0]; googleAuth.examFolderId = fd.id; googleAuth.examFolderUrl = fd.webViewLink || `https://drive.google.com/drive/folders/${fd.id}`;
+        const fd = foundFolders.files[0];
+        googleAuth.examFolderId = fd.id;
+        googleAuth.examFolderUrl = fd.webViewLink || `https://drive.google.com/drive/folders/${fd.id}`;
         logFn('✓ 既存の「CPA答練PDF」フォルダを検出しました');
       } else {
-        const fd = await gApiFetch('https://www.googleapis.com/drive/v3/files?fields=id,webViewLink', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'CPA答練PDF', mimeType: 'application/vnd.google-apps.folder' }) });
-        googleAuth.examFolderId = fd.id; googleAuth.examFolderUrl = fd.webViewLink || `https://drive.google.com/drive/folders/${fd.id}`;
-        const doneFd = await gApiFetch('https://www.googleapis.com/drive/v3/files?fields=id', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: '処理済み', mimeType: 'application/vnd.google-apps.folder', parents: [fd.id] }) });
+        const fd = await gApiFetch('https://www.googleapis.com/drive/v3/files?fields=id,webViewLink', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: 'CPA答練PDF', mimeType: 'application/vnd.google-apps.folder' })
+        });
+        googleAuth.examFolderId = fd.id;
+        googleAuth.examFolderUrl = fd.webViewLink || `https://drive.google.com/drive/folders/${fd.id}`;
+        const doneFd = await gApiFetch('https://www.googleapis.com/drive/v3/files?fields=id', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: '処理済み', mimeType: 'application/vnd.google-apps.folder', parents: [fd.id] })
+        });
         googleAuth.doneFolderId = doneFd.id;
         logFn('✓ 「CPA答練PDF」＋「処理済み」フォルダを作成しました');
       }
+
+      // 作成したスプレッドシートURLをクイックアクセスにも自動反映
       settings.sheetUrl = googleAuth.spreadsheetUrl;
-      saveJSON(STORAGE_KEYS.SETTINGS, settings); saveJSON(STORAGE_KEYS.GOOGLE_AUTH, googleAuth);
-      renderAccountUI(); renderQuickLinks();
+      saveJSON(STORAGE_KEYS.SETTINGS, settings);
+      saveJSON(STORAGE_KEYS.GOOGLE_AUTH, googleAuth);
+      renderAccountUI();
+      renderQuickLinks();
       logFn('🎉 すべての自動セットアップが完了しました！');
     }
 
+    // アカウント管理モーダル制御
     const accountModal = document.getElementById('accountModal');
-    function openAccountModal() { renderAccountUI(); accountModal.classList.remove('hidden'); accountModal.classList.add('flex'); }
-    function closeAccountModal() { accountModal.classList.add('hidden'); accountModal.classList.remove('flex'); }
+    function openAccountModal() {
+      renderAccountUI();
+      accountModal.classList.remove('hidden');
+      accountModal.classList.add('flex');
+    }
+    function closeAccountModal() {
+      accountModal.classList.add('hidden');
+      accountModal.classList.remove('flex');
+    }
     document.getElementById('openAccountBtn').addEventListener('click', openAccountModal);
     document.getElementById('closeAccountBtn').addEventListener('click', closeAccountModal);
     accountModal.addEventListener('click', (e) => { if (e.target === accountModal) closeAccountModal(); });
+
     document.getElementById('saveClientIdBtn').addEventListener('click', () => {
       googleClientId = document.getElementById('inputGoogleClientId').value.trim();
-      try { localStorage.setItem(STORAGE_KEYS.GOOGLE_CLIENT_ID, googleClientId); } catch (e) {}
+      try { localStorage.setItem(STORAGE_KEYS.GOOGLE_CLIENT_ID, googleClientId); } catch (e) { }
       showToast('GoogleクライアントIDを保存しました');
     });
+
     document.getElementById('googleSignInBtn').addEventListener('click', async () => {
-      try { await requestGoogleLogin(); showToast(`${googleAuth.user?.name || 'Googleアカウント'} でログインしました`); if (!googleAuth.spreadsheetId) { closeAccountModal(); openOnboardingModal(2); } }
-      catch (err) { showToast(err.message); }
-    });
-    document.getElementById('googleSignOutBtn').addEventListener('click', () => {
-      googleAuth = { accessToken: '', expiresAt: 0, user: null, spreadsheetId: '', spreadsheetUrl: '', examFolderId: '', examFolderUrl: '', doneFolderId: '' };
-      saveJSON(STORAGE_KEYS.GOOGLE_AUTH, googleAuth); renderAccountUI(); showToast('ログアウトしました');
+      try {
+        await requestGoogleLogin();
+        showToast(`${googleAuth.user?.name || 'Googleアカウント'} でログインしました`);
+        if (!googleAuth.spreadsheetId) {
+          closeAccountModal();
+          openOnboardingModal(2);
+        }
+      } catch (err) {
+        showToast(err.message);
+      }
     });
 
+    document.getElementById('googleSignOutBtn').addEventListener('click', () => {
+      googleAuth = { accessToken: '', expiresAt: 0, user: null, spreadsheetId: '', spreadsheetUrl: '', examFolderId: '', examFolderUrl: '', doneFolderId: '' };
+      saveJSON(STORAGE_KEYS.GOOGLE_AUTH, googleAuth);
+      renderAccountUI();
+      showToast('ログアウトしました');
+    });
+
+    // 初期設定ウィザード制御
     const onboardingModal = document.getElementById('onboardingModal');
     function setWizardStep(step) {
       [1, 2, 3].forEach(n => {
         document.getElementById(`wizStep${n}`).classList.toggle('hidden', n !== step);
         const ind = document.getElementById(`wizStepInd${n}`);
-        ind.className = n === step ? 'rounded-lg bg-blue-600 py-1.5 text-white' : n < step ? 'rounded-lg bg-emerald-100 py-1.5 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'rounded-lg bg-slate-100 py-1.5 text-slate-400 dark:bg-slate-800';
+        if (n === step) ind.className = 'rounded-lg bg-blue-600 py-1.5 text-white';
+        else if (n < step) ind.className = 'rounded-lg bg-emerald-100 py-1.5 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300';
+        else ind.className = 'rounded-lg bg-slate-100 py-1.5 text-slate-400 dark:bg-slate-800';
       });
     }
-    function openOnboardingModal(startStep = 1) { setWizardStep(startStep); onboardingModal.classList.remove('hidden'); onboardingModal.classList.add('flex'); }
-    function closeOnboardingModal() { onboardingModal.classList.add('hidden'); onboardingModal.classList.remove('flex'); }
-    document.getElementById('openOnboardingFromAccountBtn').addEventListener('click', () => { closeAccountModal(); openOnboardingModal(isGoogleSignedIn() ? 2 : 1); });
+    function openOnboardingModal(startStep = 1) {
+      setWizardStep(startStep);
+      onboardingModal.classList.remove('hidden');
+      onboardingModal.classList.add('flex');
+    }
+    function closeOnboardingModal() {
+      onboardingModal.classList.add('hidden');
+      onboardingModal.classList.remove('flex');
+    }
+    document.getElementById('openOnboardingFromAccountBtn').addEventListener('click', () => {
+      closeAccountModal();
+      openOnboardingModal(isGoogleSignedIn() ? 2 : 1);
+    });
     document.getElementById('closeOnboardingBtn').addEventListener('click', closeOnboardingModal);
     onboardingModal.addEventListener('click', (e) => { if (e.target === onboardingModal) closeOnboardingModal(); });
+
     document.getElementById('wizLoginBtn').addEventListener('click', async () => {
-      const st = document.getElementById('wizStep1Status'); st.textContent = 'Googleログイン画面を開いています...';
-      try { await requestGoogleLogin(); st.textContent = `✓ ${googleAuth.user?.email || 'ログイン完了'}`; setWizardStep(2); }
-      catch (err) { st.textContent = err.message; }
-    });
-    document.getElementById('wizAutoCreateBtn').addEventListener('click', async () => {
-      const btn = document.getElementById('wizAutoCreateBtn'), logEl = document.getElementById('wizProvisionLog'); logEl.innerHTML = '';
-      const appendLog = (line) => { const d = document.createElement('div'); d.textContent = line; logEl.appendChild(d); };
-      btn.disabled = true;
-      try { await autoProvisionUserWorkspace(appendLog); document.getElementById('wizToStep3Btn').classList.remove('hidden'); showToast('スプレッドシートとフォルダを自動作成しました'); }
-      catch (err) { appendLog('❌ ' + err.message); } finally { btn.disabled = false; }
-    });
-    document.getElementById('wizToStep3Btn').addEventListener('click', () => setWizardStep(3));
-    document.getElementById('wizFinishBtn').addEventListener('click', () => {
-      const name = document.getElementById('wizExamName').value.trim(), date = document.getElementById('wizExamDate').value;
-      if (name && date && !countdowns.some(c => c.name === name && c.date === date)) { countdowns.unshift({ id: 'c_' + Date.now(), name, date, color: 'rose' }); saveJSON(STORAGE_KEYS.COUNTDOWNS, countdowns); renderCountdowns(); saveHubConfigToCloud(); }
-      closeOnboardingModal(); showToast('初期設定が完了しました！');
+      const st = document.getElementById('wizStep1Status');
+      st.textContent = 'Googleログイン画面を開いています...';
+      try {
+        await requestGoogleLogin();
+        st.textContent = `✓ ${googleAuth.user?.email || 'ログイン完了'}`;
+        setWizardStep(2);
+      } catch (err) {
+        st.textContent = err.message;
+      }
     });
 
-    initTheme(); initHeaderDate(); renderAccountUI(); renderCountdowns(); renderQuickLinks(); renderExamResults(); renderSubjectChips(); renderRatingChips();
-    if (localStorage.getItem(STORAGE_KEYS.TIMER_FIRST_START)) startTimeInput.value = fmtTime(new Date(Number(localStorage.getItem(STORAGE_KEYS.TIMER_FIRST_START))));
-    if (localStorage.getItem(STORAGE_KEYS.TIMER_START)) startTimer(false); else updateTimerUI();
+    document.getElementById('wizAutoCreateBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('wizAutoCreateBtn');
+      const logEl = document.getElementById('wizProvisionLog');
+      logEl.innerHTML = '';
+      const appendLog = (line) => {
+        const div = document.createElement('div');
+        div.textContent = line;
+        logEl.appendChild(div);
+      };
+      btn.disabled = true;
+      try {
+        await autoProvisionUserWorkspace(appendLog);
+        document.getElementById('wizToStep3Btn').classList.remove('hidden');
+        showToast('スプレッドシートとフォルダを自動作成しました');
+      } catch (err) {
+        appendLog('❌ ' + err.message);
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    document.getElementById('wizToStep3Btn').addEventListener('click', () => setWizardStep(3));
+
+    document.getElementById('wizFinishBtn').addEventListener('click', () => {
+      const name = document.getElementById('wizExamName').value.trim();
+      const date = document.getElementById('wizExamDate').value;
+      if (name && date && !countdowns.some(c => c.name === name && c.date === date)) {
+        countdowns.unshift({ id: 'c_' + Date.now(), name, date, color: 'rose' });
+        saveJSON(STORAGE_KEYS.COUNTDOWNS, countdowns);
+        renderCountdowns();
+        saveHubConfigToCloud();
+      }
+      closeOnboardingModal();
+      showToast('初期設定が完了しました！');
+    });
+
+    initTheme();
+    initHeaderDate();
+    renderAccountUI();
+    renderCountdowns();
+    renderQuickLinks();
+    renderExamResults();
+    renderSubjectChips();
+    renderRatingChips();
+
+    if (localStorage.getItem(STORAGE_KEYS.TIMER_FIRST_START)) {
+      startTimeInput.value = fmtTime(new Date(Number(localStorage.getItem(STORAGE_KEYS.TIMER_FIRST_START))));
+    }
+    if (localStorage.getItem(STORAGE_KEYS.TIMER_START)) startTimer(false);
+    else updateTimerUI();
+
     const savedTab = (() => { try { return localStorage.getItem(STORAGE_KEYS.ACTIVE_TAB); } catch (e) { return 'hubView'; } })();
     switchAppTab(savedTab === 'logView' ? 'logView' : 'hubView');
     fetchAndRenderData(false);
   </script>
 </body>
+
 </html>
