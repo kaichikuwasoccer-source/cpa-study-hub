@@ -145,11 +145,30 @@
         class="hidden flex-col items-start justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900 sm:flex-row sm:items-center dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
         <div>
           <strong class="font-bold">デモデータ表示中：</strong>
-          右上の歯車アイコン（⚙）からGASのウェブアプリURLを設定すると、スプレッドシートとGoogleカレンダーの本番データが反映されます。
+          Googleアカウントでログインすると、あなた専用のスプレッドシートとカレンダーに自動連携されます（GAS設定不要）。
         </div>
-        <button id="bannerOpenSettingsBtn" type="button"
-          class="shrink-0 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-700 transition">
-          URLを設定する
+        <div class="flex shrink-0 items-center gap-2">
+          <button id="bannerStartOnboardingBtn" type="button"
+            class="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-700 transition">
+            ✨ Googleで初期設定
+          </button>
+          <button id="bannerOpenSettingsBtn" type="button"
+            class="rounded-lg border border-amber-300 bg-white/80 px-2.5 py-1.5 text-xs font-semibold text-amber-800 hover:bg-white dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-200 transition">
+            GAS設定
+          </button>
+        </div>
+      </div>
+
+      <!-- Google再接続バナー（アクセストークン期限切れ時） -->
+      <div id="googleReconnectBanner"
+        class="hidden flex-col items-start justify-between gap-3 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs text-blue-900 sm:flex-row sm:items-center dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-200">
+        <div>
+          <strong class="font-bold">Googleセッションの再認証が必要です：</strong>
+          最新のスプレッドシート・カレンダーと同期するには「再接続する」を押してください。
+        </div>
+        <button id="bannerReconnectBtn" type="button"
+          class="shrink-0 rounded-lg bg-blue-600 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-blue-700 transition">
+          再接続する
         </button>
       </div>
 
@@ -674,7 +693,7 @@
       <div id="wizStep1" class="space-y-4">
         <div
           class="rounded-xl bg-slate-50 p-4 text-xs leading-relaxed text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">
-          自分のGoogleアカウントでログインすると、**あなた専用のスプレッドシートと答練PDFフォルダ**をGoogleドライブへ自動作成します。データはあなたのドライブに保存されるため安心です。
+          自分のGoogleアカウントでログインすると、<strong>あなた専用のスプレッドシートと答練PDFフォルダ</strong>をGoogleドライブへ自動作成します。データはあなたのドライブに保存されるため安心です。
         </div>
         <div id="wizStep1Status" class="text-center text-xs font-semibold text-slate-500"></div>
         <div class="flex justify-end gap-2">
@@ -813,6 +832,7 @@
       EXAMS: 'cpa_hub_exams_v1',
       GOOGLE_AUTH: 'cpa_google_auth_v1',
       GOOGLE_CLIENT_ID: 'cpa_google_client_id_v1',
+      ONBOARDING_DISMISSED: 'cpa_onboarding_dismissed_v1',
       THEME: 'cpa_hub_theme_v1',
       ACTIVE_TAB: 'cpa_unified_tab_v1',
       TIMER_START: 'cpa_timer_start',
@@ -840,12 +860,21 @@
       '選択科目': ['テキスト', '問題集', '答練', '講義']
     };
     const SUBJECTS = Object.keys(DEFAULT_MATERIALS);
+    const SUBJECT_KEYWORDS = [
+      { key: '財務(計算)', words: ['財務(計算)', '財務計算', '財計'] },
+      { key: '財務(理論)', words: ['財務(理論)', '財務理論', '財理'] },
+      { key: '管理会計', words: ['管理会計', '管理'] },
+      { key: '監査論', words: ['監査論', '監査'] },
+      { key: '企業法', words: ['企業法', '企業'] },
+      { key: '租税法', words: ['租税法', '租税'] },
+      { key: '選択科目', words: ['選択科目', '経営学', '経済学', '民法', '統計学'] }
+    ];
     const SUBJECT_COLORS = ['#2563eb', '#38bdf8', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#64748b'];
     const RATINGS = ['◎ 余裕', '○ 普通', '△ 要復習'];
 
     const DEFAULT_SETTINGS = {
-      gasUrl: 'https://script.google.com/macros/s/AKfycbzE8uqAzZaCao5IIh2P-9HtpbRxPpCO_hDPfG5tsFb7lxA9iXtgaxp5tI0Zi4VVtvb9/exec',
-      sheetUrl: 'https://docs.google.com/spreadsheets/d/1t2HtZSgPttHl-ek01fI0rGpC1I-07gggdw8Xv7_uF7s/edit',
+      gasUrl: '',
+      sheetUrl: '',
       calendarUrl: 'https://calendar.google.com/',
       notebookUrl: 'https://notebooklm.google.com/',
     };
@@ -1101,23 +1130,25 @@
     }
 
     async function saveHubConfigToCloud() {
+      const hubConfig = {
+        countdowns,
+        settings: {
+          sheetUrl: settings.sheetUrl || '',
+          calendarUrl: settings.calendarUrl || '',
+          notebookUrl: settings.notebookUrl || '',
+        },
+        updatedAt: Date.now()
+      };
+      if (useGoogleDirectMode()) {
+        try { await saveConfigKeyToGoogleSheet('hubConfig', hubConfig, 3); } catch (e) { }
+        return;
+      }
       if (!settings.gasUrl) return;
       try {
         await fetch(settings.gasUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify({
-            action: 'saveHubConfig',
-            hubConfig: {
-              countdowns,
-              settings: {
-                sheetUrl: settings.sheetUrl || '',
-                calendarUrl: settings.calendarUrl || '',
-                notebookUrl: settings.notebookUrl || '',
-              },
-              updatedAt: Date.now()
-            }
-          })
+          body: JSON.stringify({ action: 'saveHubConfig', hubConfig })
         });
       } catch (e) { }
     }
@@ -1203,12 +1234,18 @@
     async function fetchAndRenderData(showSyncToast = false) {
       const refreshIcon = document.getElementById('refreshIcon');
       const demoBanner = document.getElementById('demoBanner');
+      const reconnectBanner = document.getElementById('googleReconnectBanner');
       refreshIcon.classList.add('animate-spin');
       updatePeriodNavUI();
 
-      if (!settings.gasUrl) {
-        demoBanner.classList.remove('hidden');
-        demoBanner.classList.add('flex');
+      const hasGoogleDirect = useGoogleDirectMode();
+      const needsReconnect = !!(googleAuth.user && googleAuth.spreadsheetId && !isGoogleSignedIn());
+      reconnectBanner.classList.toggle('hidden', !needsReconnect);
+      reconnectBanner.classList.toggle('flex', needsReconnect);
+
+      if (!hasGoogleDirect && !settings.gasUrl) {
+        demoBanner.classList.toggle('hidden', needsReconnect);
+        demoBanner.classList.toggle('flex', !needsReconnect);
         currentData = DEMO_DATA;
         currentIsDemo = true;
         renderDashboard(currentData, true);
@@ -1222,10 +1259,15 @@
 
       try {
         const ctx = getPeriodContext(selectedPeriod, periodOffset);
-        const sep = settings.gasUrl.includes('?') ? '&' : '?';
-        const reqUrl = `${settings.gasUrl}${sep}baseDate=${encodeURIComponent(ctx.baseDate)}&period=${encodeURIComponent(selectedPeriod)}`;
-        const res = await fetch(reqUrl);
-        const json = await res.json();
+        let json;
+        if (hasGoogleDirect) {
+          json = await fetchDataFromGoogleApis(ctx.baseDate);
+        } else {
+          const sep = settings.gasUrl.includes('?') ? '&' : '?';
+          const reqUrl = `${settings.gasUrl}${sep}baseDate=${encodeURIComponent(ctx.baseDate)}&period=${encodeURIComponent(selectedPeriod)}`;
+          const res = await fetch(reqUrl);
+          json = await res.json();
+        }
         if (json.status !== 'ok') throw new Error(json.message || 'データ取得エラー');
 
         // 教材リスト同期
@@ -1267,11 +1309,11 @@
         renderDashboard(currentData, false);
         const now = new Date();
         document.getElementById('lastUpdated').textContent =
-          `最終更新 ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+          `${hasGoogleDirect ? 'Google同期 ' : '最終更新 '}${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
         if (showSyncToast) showToast('最新データと他端末の状態を同期しました');
       } catch (err) {
         console.error(err);
-        showToast('データ取得に失敗しました（デモを表示します）');
+        showToast(err.message || 'データ取得に失敗しました（デモを表示します）');
         currentData = DEMO_DATA;
         currentIsDemo = true;
         renderDashboard(currentData, true);
@@ -1592,6 +1634,18 @@
     }
 
     async function saveMaterialsToCloud() {
+      if (useGoogleDirectMode()) {
+        try {
+          const matRows = [['subject', 'materials'], ...SUBJECTS.map(s => [s, (materialsBySubject[s] || []).join(',')])];
+          await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${googleAuth.spreadsheetId}/values/materials!A1:B8?valueInputOption=USER_ENTERED`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ values: matRows })
+          });
+          showToast('教材リストをGoogleスプレッドシートに同期しました');
+        } catch (e) { }
+        return;
+      }
       if (!settings.gasUrl) return;
       try {
         await fetch(settings.gasUrl, {
@@ -1650,7 +1704,6 @@
     }
 
     async function saveTimerToCloud() {
-      if (!settings.gasUrl) return;
       const updatedAt = Date.now();
       localStorage.setItem(STORAGE_KEYS.TIMER_UPDATED, String(updatedAt));
       const timerState = {
@@ -1661,6 +1714,11 @@
         material: selectedMaterial || '',
         updatedAt
       };
+      if (useGoogleDirectMode()) {
+        try { await saveConfigKeyToGoogleSheet('activeTimer', timerState, 4); } catch (e) { }
+        return;
+      }
+      if (!settings.gasUrl) return;
       try {
         await fetch(settings.gasUrl, {
           method: 'POST',
@@ -1761,9 +1819,10 @@
         statusEl.textContent = '科目・教材・学習時間（分）を入力してください。';
         return;
       }
-      if (!settings.gasUrl) {
-        openSettingsModal();
-        showToast('GASのURLを設定してください');
+      const hasGoogleDirect = useGoogleDirectMode();
+      if (!hasGoogleDirect && !settings.gasUrl) {
+        openOnboardingModal(isGoogleSignedIn() ? 2 : 1);
+        showToast('先にGoogleログイン＆スプレッドシート自動作成を完了してください');
         return;
       }
 
@@ -1791,28 +1850,40 @@
       statusEl.textContent = '送信中...';
 
       try {
-        const res = await fetch(settings.gasUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify(payload)
-        });
-        const json = await res.json();
-        if (json.status === 'ok') {
-          statusEl.textContent = `記録しました（${dateStr} ${startTime}〜${endTime} / ${selectedSubject} / ${minutes}分）`;
-          showToast(`${selectedSubject} ${minutes}分を記録しました`);
-          resetTimer(true);
-          studyDateInput.value = fmtDateInput(new Date());
-          minutesInput.value = '';
-          startTimeInput.value = '';
-          endTimeInput.value = '';
-          document.getElementById('topicInput').value = '';
-          document.getElementById('memoInput').value = '';
-          fetchAndRenderData(false);
+        if (hasGoogleDirect) {
+          await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${googleAuth.spreadsheetId}/values/log!A:I:append?valueInputOption=USER_ENTERED`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              values: [[
+                payload.date, payload.subject, payload.material, payload.minutes,
+                payload.topic, payload.rating, payload.memo, payload.start_time, payload.end_time
+              ]]
+            })
+          });
         } else {
-          throw new Error(json.message);
+          const res = await fetch(settings.gasUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify(payload)
+          });
+          const json = await res.json();
+          if (json.status !== 'ok') throw new Error(json.message);
         }
+        statusEl.textContent = `記録しました（${dateStr} ${startTime}〜${endTime} / ${selectedSubject} / ${minutes}分）`;
+        showToast(`${selectedSubject} ${minutes}分を記録しました`);
+        resetTimer(true);
+        studyDateInput.value = fmtDateInput(new Date());
+        minutesInput.value = '';
+        startTimeInput.value = '';
+        endTimeInput.value = '';
+        document.getElementById('topicInput').value = '';
+        document.getElementById('memoInput').value = '';
+        fetchAndRenderData(false);
       } catch (err) {
-        statusEl.textContent = '送信エラー：GASを新バージョンで再デプロイしたか確認してください。';
+        statusEl.textContent = hasGoogleDirect
+          ? `送信エラー：${err.message || 'Google認証を再接続してください。'}`
+          : '送信エラー：GASを新バージョンで再デプロイしたか確認してください。';
       } finally {
         btn.disabled = false;
       }
@@ -2076,7 +2147,17 @@
       renderExamResults();
       closeExamModal();
       showToast('成績を保存しました');
-      if (settings.gasUrl) {
+      if (useGoogleDirectMode()) {
+        try {
+          await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${googleAuth.spreadsheetId}/values/exams!A:I:append?valueInputOption=USER_ENTERED`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              values: [[item.id, item.date, item.subject, item.title, item.score, item.maxScore, item.rank, item.note, item.source]]
+            })
+          });
+        } catch (err) { }
+      } else if (settings.gasUrl) {
         try {
           await fetch(settings.gasUrl, {
             method: 'POST',
@@ -2107,6 +2188,167 @@
 
     function isGoogleSignedIn() {
       return !!(googleAuth.accessToken && googleAuth.user && Date.now() < (googleAuth.expiresAt || 0));
+    }
+
+    function useGoogleDirectMode() {
+      return !!(isGoogleSignedIn() && googleAuth.spreadsheetId);
+    }
+
+    function matchSubjectKeyword(title) {
+      const t = String(title || '');
+      for (const s of SUBJECT_KEYWORDS) {
+        for (const w of s.words) {
+          if (t.includes(w)) return s.key;
+        }
+      }
+      return null;
+    }
+
+    function createEmptyPeriodBucket() {
+      const actual = {}, planned = {};
+      SUBJECTS.forEach(s => { actual[s] = 0; planned[s] = 0; });
+      return { actual: 0, planned: 0, bySubject: { actual, planned } };
+    }
+
+    async function saveConfigKeyToGoogleSheet(key, valueObj, rowNum) {
+      if (!useGoogleDirectMode()) return;
+      await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${googleAuth.spreadsheetId}/values/config!A${rowNum}:B${rowNum}?valueInputOption=USER_ENTERED`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ values: [[key, JSON.stringify(valueObj)]] })
+      });
+    }
+
+    async function fetchDataFromGoogleApis(baseDateStr) {
+      const base = baseDateStr ? new Date(`${baseDateStr}T00:00:00`) : new Date();
+      if (isNaN(base.getTime())) throw new Error('基準日の解析に失敗しました');
+
+      const dayStart = new Date(base.getFullYear(), base.getMonth(), base.getDate(), 0, 0, 0, 0);
+      const dayEnd = new Date(base.getFullYear(), base.getMonth(), base.getDate(), 23, 59, 59, 999);
+      const dow = (base.getDay() + 6) % 7;
+      const weekStart = new Date(dayStart); weekStart.setDate(dayStart.getDate() - dow);
+      const weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate() + 6); weekEnd.setHours(23, 59, 59, 999);
+      const monthStart = new Date(base.getFullYear(), base.getMonth(), 1, 0, 0, 0, 0);
+      const monthEnd = new Date(base.getFullYear(), base.getMonth() + 1, 0, 23, 59, 59, 999);
+      const yearStart = new Date(base.getFullYear(), 0, 1, 0, 0, 0, 0);
+      const yearEnd = new Date(base.getFullYear(), 11, 31, 23, 59, 59, 999);
+
+      const periods = {
+        today: createEmptyPeriodBucket(),
+        week: createEmptyPeriodBucket(),
+        month: createEmptyPeriodBucket(),
+        year: createEmptyPeriodBucket()
+      };
+
+      const addAct = (b, subj, mins) => {
+        b.actual += mins;
+        if (b.bySubject.actual[subj] !== undefined) b.bySubject.actual[subj] += mins;
+      };
+      const addPlan = (b, subj, mins) => {
+        b.planned += mins;
+        if (subj && b.bySubject.planned[subj] !== undefined) b.bySubject.planned[subj] += mins;
+      };
+
+      // 1. スプレッドシートの4シートを一括取得
+      const rangesQuery = ['log!A:I', 'materials!A:B', 'exams!A:I', 'config!A:B']
+        .map(r => `ranges=${encodeURIComponent(r)}`).join('&');
+      const batchRes = await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${googleAuth.spreadsheetId}/values:batchGet?${rangesQuery}`);
+      const vr = batchRes.valueRanges || [];
+      const logRows = vr[0]?.values || [];
+      const matRows = vr[1]?.values || [];
+      const examRows = vr[2]?.values || [];
+      const cfgRows = vr[3]?.values || [];
+
+      for (let i = 1; i < logRows.length; i++) {
+        const [dateVal, subject, , minsVal] = logRows[i];
+        if (!dateVal || !minsVal) continue;
+        const d = new Date(String(dateVal).replace(/-/g, '/'));
+        if (isNaN(d.getTime())) continue;
+        const mins = Number(minsVal) || 0;
+        if (d >= dayStart && d <= dayEnd) addAct(periods.today, subject, mins);
+        if (d >= weekStart && d <= weekEnd) addAct(periods.week, subject, mins);
+        if (d >= monthStart && d <= monthEnd) addAct(periods.month, subject, mins);
+        if (d >= yearStart && d <= yearEnd) addAct(periods.year, subject, mins);
+      }
+
+      const materials = {};
+      for (let i = 1; i < matRows.length; i++) {
+        const subj = matRows[i][0];
+        const listStr = String(matRows[i][1] || '');
+        if (subj) materials[subj] = listStr ? listStr.split(',').map(s => s.trim()).filter(Boolean) : [];
+      }
+
+      const parsedExams = [];
+      for (let i = 1; i < examRows.length; i++) {
+        const r = examRows[i];
+        if (!r || !r[1]) continue;
+        parsedExams.push({
+          id: r[0] || `ex_${i}`,
+          date: String(r[1] || '').replace(/\//g, '-'),
+          subject: r[2] || '',
+          title: r[3] || '',
+          score: Number(r[4] || 0),
+          maxScore: Number(r[5] || 100),
+          rank: r[6] || '',
+          note: r[7] || '',
+          source: r[8] || ''
+        });
+      }
+
+      let hubConfig = null;
+      let activeTimer = null;
+      for (let i = 1; i < cfgRows.length; i++) {
+        const [k, v] = cfgRows[i];
+        if (!k || !v) continue;
+        try {
+          if (k === 'hubConfig') hubConfig = JSON.parse(v);
+          if (k === 'activeTimer') activeTimer = JSON.parse(v);
+        } catch (e) { }
+      }
+
+      // 2. Googleカレンダーの予定を取得して集計（権限・API未設定でも安全に続行）
+      const todayEvents = [];
+      try {
+        const fetchStart = new Date(Math.min(yearStart.getTime(), weekStart.getTime()));
+        const fetchEnd = new Date(Math.max(yearEnd.getTime(), weekEnd.getTime()));
+        const calUrl = `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(fetchStart.toISOString())}&timeMax=${encodeURIComponent(fetchEnd.toISOString())}&singleEvents=true&orderBy=startTime&maxResults=2500`;
+        const calRes = await gApiFetch(calUrl);
+        const nowDay = new Date();
+        const realTodayStart = new Date(nowDay.getFullYear(), nowDay.getMonth(), nowDay.getDate(), 0, 0, 0, 0);
+        const realTodayEnd = new Date(nowDay.getFullYear(), nowDay.getMonth(), nowDay.getDate(), 23, 59, 59, 999);
+
+        (calRes.items || []).forEach(ev => {
+          if (!ev.start?.dateTime || !ev.end?.dateTime) return; // 終日予定は除外
+          const title = ev.summary || '';
+          const matchedSubject = matchSubjectKeyword(title);
+          if (!matchedSubject && !title.includes('勉強')) return;
+          const start = new Date(ev.start.dateTime);
+          const end = new Date(ev.end.dateTime);
+          const mins = Math.max(0, Math.round((end - start) / 60000));
+          if (start >= realTodayStart && start <= realTodayEnd) {
+            todayEvents.push({ title, start: fmtTime(start), end: fmtTime(end) });
+          }
+          if (start >= dayStart && start <= dayEnd) addPlan(periods.today, matchedSubject, mins);
+          if (start >= weekStart && start <= weekEnd) addPlan(periods.week, matchedSubject, mins);
+          if (start >= monthStart && start <= monthEnd) addPlan(periods.month, matchedSubject, mins);
+          if (start >= yearStart && start <= yearEnd) addPlan(periods.year, matchedSubject, mins);
+        });
+      } catch (calErr) {
+        console.warn('Calendar API取得スキップ:', calErr);
+      }
+
+      return {
+        status: 'ok',
+        today: { actual: periods.today.actual, planned: periods.today.planned },
+        week: { actual: periods.week.actual, planned: periods.week.planned },
+        bySubject: periods.week.bySubject,
+        periods,
+        todayEvents,
+        materials,
+        examResults: parsedExams.reverse(),
+        hubConfig,
+        activeTimer
+      };
     }
 
     function renderAccountUI() {
@@ -2214,6 +2456,12 @@
       const headers = Object.assign({ Authorization: `Bearer ${googleAuth.accessToken}` }, options.headers || {});
       const res = await fetch(url, Object.assign({}, options, { headers }));
       const json = await res.json();
+      if (res.status === 401) {
+        googleAuth.expiresAt = 0;
+        saveJSON(STORAGE_KEYS.GOOGLE_AUTH, googleAuth);
+        renderAccountUI();
+        throw new Error('Google認証の有効期限が切れました。「再接続する」から再ログインしてください。');
+      }
       if (!res.ok) throw new Error(json.error?.message || `Google API Error (${res.status})`);
       return json;
     }
@@ -2331,6 +2579,9 @@
         if (!googleAuth.spreadsheetId) {
           closeAccountModal();
           openOnboardingModal(2);
+        } else {
+          closeAccountModal();
+          fetchAndRenderData(true);
         }
       } catch (err) {
         showToast(err.message);
@@ -2341,7 +2592,21 @@
       googleAuth = { accessToken: '', expiresAt: 0, user: null, spreadsheetId: '', spreadsheetUrl: '', examFolderId: '', examFolderUrl: '', doneFolderId: '' };
       saveJSON(STORAGE_KEYS.GOOGLE_AUTH, googleAuth);
       renderAccountUI();
+      fetchAndRenderData(false);
       showToast('ログアウトしました');
+    });
+
+    document.getElementById('bannerStartOnboardingBtn').addEventListener('click', () => {
+      openOnboardingModal(isGoogleSignedIn() ? 2 : 1);
+    });
+    document.getElementById('bannerReconnectBtn').addEventListener('click', async () => {
+      try {
+        await requestGoogleLogin();
+        showToast('Googleアカウントに再接続しました');
+        fetchAndRenderData(true);
+      } catch (err) {
+        showToast(err.message);
+      }
     });
 
     // 初期設定ウィザード制御
@@ -2361,6 +2626,7 @@
       onboardingModal.classList.add('flex');
     }
     function closeOnboardingModal() {
+      try { localStorage.setItem(STORAGE_KEYS.ONBOARDING_DISMISSED, '1'); } catch (e) { }
       onboardingModal.classList.add('hidden');
       onboardingModal.classList.remove('flex');
     }
@@ -2397,6 +2663,7 @@
         await autoProvisionUserWorkspace(appendLog);
         document.getElementById('wizToStep3Btn').classList.remove('hidden');
         showToast('スプレッドシートとフォルダを自動作成しました');
+        fetchAndRenderData(false);
       } catch (err) {
         appendLog('❌ ' + err.message);
       } finally {
@@ -2413,9 +2680,10 @@
         countdowns.unshift({ id: 'c_' + Date.now(), name, date, color: 'rose' });
         saveJSON(STORAGE_KEYS.COUNTDOWNS, countdowns);
         renderCountdowns();
-        saveHubConfigToCloud();
       }
+      saveHubConfigToCloud();
       closeOnboardingModal();
+      fetchAndRenderData(false);
       showToast('初期設定が完了しました！');
     });
 
@@ -2437,6 +2705,12 @@
     const savedTab = (() => { try { return localStorage.getItem(STORAGE_KEYS.ACTIVE_TAB); } catch (e) { return 'hubView'; } })();
     switchAppTab(savedTab === 'logView' ? 'logView' : 'hubView');
     fetchAndRenderData(false);
+
+    // 初回アクセス時は自動で初期設定ウィザードを案内
+    const onboardingDismissed = (() => { try { return localStorage.getItem(STORAGE_KEYS.ONBOARDING_DISMISSED); } catch (e) { return '1'; } })();
+    if (!googleAuth.user && !settings.gasUrl && !onboardingDismissed) {
+      openOnboardingModal(1);
+    }
   </script>
 </body>
 
