@@ -6,8 +6,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <title>CPA Study Hub</title>
-<link rel="apple-touch-icon" href="icon2.png" />
-<link rel="icon" type="image/png" href="icon2.png" /> 
+<link rel="apple-touch-icon" href="icon2.png?v=2" />
+<link rel="icon" type="image/png" href="icon2.png?v=2" /> 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Chart.js -->
@@ -303,17 +303,18 @@
     </div>
   </div>
 
-  <!-- カウントダウン追加モーダル -->
+  <!-- カウントダウン追加・編集モーダル -->
   <div id="countdownModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
     <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
       <div class="mb-4 flex items-center justify-between">
-        <h3 class="text-base font-bold">重要日程を追加</h3>
+        <h3 id="countdownModalTitle" class="text-base font-bold">重要日程を追加</h3>
         <button id="closeCountdownBtn" type="button" class="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800">✕</button>
       </div>
       <form id="countdownForm" class="space-y-4 text-sm">
+        <input id="inputEventId" type="hidden" value="" />
         <div>
           <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">試験・イベント名 *</label>
-          <input id="inputEventName" type="text" required placeholder="例：第Ⅰ回 短答公開模試"
+          <input id="inputEventName" type="text" required placeholder="例：第Ⅰ回 短答式試験"
                  class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
         </div>
         <div class="grid grid-cols-2 gap-3">
@@ -338,7 +339,7 @@
                   class="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
             キャンセル
           </button>
-          <button type="submit"
+          <button id="countdownSubmitBtn" type="submit"
                   class="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 transition">
             追加する
           </button>
@@ -361,7 +362,7 @@
     const SUBJECT_COLORS = ['#2563eb', '#38bdf8', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#64748b'];
 
     const DEFAULT_SETTINGS = {
-      gasUrl: '',
+      gasUrl: 'https://script.google.com/macros/s/AKfycbzE8uqAzZaCao5IIh2P-9HtpbRxPpCO_hDPfG5tsFb7lxA9iXtgaxp5tI0Zi4VVtvb9/exec',
       loggerUrl: '',
       sheetUrl: 'https://docs.google.com/spreadsheets/d/1t2HtZSgPttHl-ek01fI0rGpC1I-07gggdw8Xv7_uF7s/edit',
       calendarUrl: 'https://calendar.google.com/',
@@ -549,24 +550,68 @@
             <div class="text-xs font-semibold text-slate-400">${escapeHTML(item.date.replace(/-/g, '/'))}</div>
             <div class="mt-0.5 truncate text-sm font-bold">${escapeHTML(item.name)}</div>
           </div>
-          <div class="shrink-0 text-right">${daysHtml}</div>
-          <button type="button" data-del-id="${escapeHTML(item.id)}" title="削除"
-                  class="absolute right-2 top-2 hidden h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-xs text-slate-400 hover:bg-rose-100 hover:text-rose-600 group-hover:flex dark:bg-slate-800">
-            ✕
-          </button>
+          <div class="flex shrink-0 items-center gap-2">
+            <div class="text-right">${daysHtml}</div>
+            <div class="flex flex-col gap-1">
+              <button type="button" data-edit-id="${escapeHTML(item.id)}" title="編集"
+                      class="flex h-6 w-6 items-center justify-center rounded-md bg-slate-100 text-[11px] text-slate-500 hover:bg-blue-100 hover:text-blue-600 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-blue-950 dark:hover:text-blue-300 transition">
+                ✎
+              </button>
+              <button type="button" data-del-id="${escapeHTML(item.id)}" title="削除"
+                      class="flex h-6 w-6 items-center justify-center rounded-md bg-slate-100 text-[11px] text-slate-500 hover:bg-rose-100 hover:text-rose-600 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-rose-950 dark:hover:text-rose-400 transition">
+                ✕
+              </button>
+            </div>
+          </div>
         `;
         grid.appendChild(card);
+      });
+
+      grid.querySelectorAll('[data-edit-id]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const item = countdowns.find(c => c.id === btn.dataset.editId);
+          if (item) openCountdownModal(item);
+        });
       });
 
       grid.querySelectorAll('[data-del-id]').forEach(btn => {
         btn.addEventListener('click', () => {
           const id = btn.dataset.delId;
+          const targetItem = countdowns.find(c => c.id === id);
+          if (targetItem && !confirm(`「${targetItem.name}」を削除しますか？`)) return;
           countdowns = countdowns.filter(c => c.id !== id);
           saveJSON(STORAGE_KEYS.COUNTDOWNS, countdowns);
           renderCountdowns();
+          saveHubConfigToCloud();
           showToast('日程を削除しました');
         });
       });
+    }
+
+    // Study Hub の設定・カウントダウンをGAS（スプレッドシート）へ保存（全デバイス同期）
+    async function saveHubConfigToCloud() {
+      if (!settings.gasUrl) return;
+      try {
+        await fetch(settings.gasUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({
+            action: 'saveHubConfig',
+            hubConfig: {
+              countdowns,
+              settings: {
+                loggerUrl: settings.loggerUrl || '',
+                sheetUrl: settings.sheetUrl || '',
+                calendarUrl: settings.calendarUrl || '',
+                notebookUrl: settings.notebookUrl || '',
+              },
+              updatedAt: Date.now()
+            }
+          })
+        });
+      } catch (e) {
+        console.warn('Hub設定のクラウド同期に失敗:', e);
+      }
     }
 
     // =========================================================================
@@ -649,6 +694,25 @@
         const res = await fetch(settings.gasUrl);
         const json = await res.json();
         if (json.status !== 'ok') throw new Error(json.message || 'データ取得エラー');
+        // クラウド保存されたHub設定・カウントダウンがあれば同期反映
+        if (json.hubConfig) {
+          if (Array.isArray(json.hubConfig.countdowns)) {
+            countdowns = json.hubConfig.countdowns;
+            saveJSON(STORAGE_KEYS.COUNTDOWNS, countdowns);
+            renderCountdowns();
+          }
+          if (json.hubConfig.settings) {
+            const cs = json.hubConfig.settings;
+            settings = Object.assign({}, settings, {
+              loggerUrl: cs.loggerUrl || settings.loggerUrl,
+              sheetUrl: cs.sheetUrl || settings.sheetUrl,
+              calendarUrl: cs.calendarUrl || settings.calendarUrl,
+              notebookUrl: cs.notebookUrl || settings.notebookUrl,
+            });
+            saveJSON(STORAGE_KEYS.SETTINGS, settings);
+            renderQuickLinks();
+          }
+        }
         currentData = json;
         currentIsDemo = false;
         renderDashboard(currentData, false);
@@ -983,14 +1047,28 @@
       saveJSON(STORAGE_KEYS.SETTINGS, settings);
       closeSettingsModal();
       renderQuickLinks();
+      saveHubConfigToCloud();
       fetchAndRenderData();
-      showToast('設定を保存しました');
+      showToast('設定を保存・同期しました');
     });
 
     const countdownModal = document.getElementById('countdownModal');
-    function openCountdownModal() {
-      document.getElementById('inputEventName').value = '';
-      document.getElementById('inputEventDate').value = '';
+    function openCountdownModal(editItem = null) {
+      if (editItem) {
+        document.getElementById('countdownModalTitle').textContent = '重要日程を編集';
+        document.getElementById('countdownSubmitBtn').textContent = '更新する';
+        document.getElementById('inputEventId').value = editItem.id;
+        document.getElementById('inputEventName').value = editItem.name || '';
+        document.getElementById('inputEventDate').value = editItem.date || '';
+        document.getElementById('inputEventColor').value = editItem.color || 'blue';
+      } else {
+        document.getElementById('countdownModalTitle').textContent = '重要日程を追加';
+        document.getElementById('countdownSubmitBtn').textContent = '追加する';
+        document.getElementById('inputEventId').value = '';
+        document.getElementById('inputEventName').value = '';
+        document.getElementById('inputEventDate').value = '';
+        document.getElementById('inputEventColor').value = 'blue';
+      }
       countdownModal.classList.remove('hidden');
       countdownModal.classList.add('flex');
     }
@@ -999,23 +1077,30 @@
       countdownModal.classList.remove('flex');
     }
 
-    document.getElementById('openAddCountdownBtn').addEventListener('click', openCountdownModal);
+    document.getElementById('openAddCountdownBtn').addEventListener('click', () => openCountdownModal(null));
     document.getElementById('closeCountdownBtn').addEventListener('click', closeCountdownModal);
     document.getElementById('cancelCountdownBtn').addEventListener('click', closeCountdownModal);
     countdownModal.addEventListener('click', (e) => { if (e.target === countdownModal) closeCountdownModal(); });
 
     document.getElementById('countdownForm').addEventListener('submit', (e) => {
       e.preventDefault();
+      const editId = document.getElementById('inputEventId').value;
       const name = document.getElementById('inputEventName').value.trim();
       const date = document.getElementById('inputEventDate').value;
       const color = document.getElementById('inputEventColor').value;
       if (!name || !date) return;
 
-      countdowns.push({ id: 'c_' + Date.now(), name, date, color });
+      if (editId) {
+        countdowns = countdowns.map(c => c.id === editId ? { ...c, name, date, color } : c);
+        showToast('日程を更新・同期しました');
+      } else {
+        countdowns.push({ id: 'c_' + Date.now(), name, date, color });
+        showToast('日程を追加・同期しました');
+      }
       saveJSON(STORAGE_KEYS.COUNTDOWNS, countdowns);
       closeCountdownModal();
       renderCountdowns();
-      showToast('日程を追加しました');
+      saveHubConfigToCloud();
     });
 
     // =========================================================================
