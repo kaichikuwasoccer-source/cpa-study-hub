@@ -311,18 +311,19 @@
         </div>
       </section>
 
-      <!-- 5. 答練・模試の成績（GoogleドライブOCR連携） -->
+      <!-- 5. 答練・模試の成績（AI OCR対応） -->
       <section>
         <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">直近の模試・答練・テスト成績（Drive
-              OCR連携）</h2>
-            <p class="text-[11px] text-slate-400">模試・定期テスト・答練の成績を記録でき、GoogleドライブにPDFを入れてOCR取込やAI振り返りにも反映されます</p>
+            <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              直近の模試・答練・テスト成績（AI OCR対応）</h2>
+            <p class="text-[11px] text-slate-400">模試・定期テスト・答練のPDFや写真をアップするとAIが自動OCRし、スプシ保存・Driveバックアップ・AI振り返りに反映されます</p>
           </div>
           <div class="flex items-center gap-2">
+            <input id="ocrFileInput" type="file" accept="application/pdf,image/*" class="hidden" />
             <button id="syncDriveOcrBtn" type="button"
               class="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60 transition">
-              <span>📄 DriveからOCR取込</span>
+              <span>📄 PDF / 写真からOCR取込</span>
             </button>
             <button id="openAddExamBtn" type="button"
               class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 transition">
@@ -1524,7 +1525,7 @@
       if (!grid) return;
       grid.innerHTML = '';
       if (!examResults.length) {
-        grid.innerHTML = `<div class="col-span-full rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center text-xs text-slate-400 dark:border-slate-700 dark:bg-slate-900">成績データがありません。Googleドライブの専用フォルダにPDFを入れて「DriveからOCR取込」を押すか、「＋ 手入力」から登録できます。</div>`;
+        grid.innerHTML = `<div class="col-span-full rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center text-xs text-slate-400 dark:border-slate-700 dark:bg-slate-900">成績データがありません。「📄 PDF / 写真からOCR取込」または「＋ 手入力」から登録できます。</div>`;
         return;
       }
       const sorted = [...examResults].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 6);
@@ -2266,7 +2267,7 @@
     });
 
     // =========================================================================
-    // 9. イベントリスナー（期間切替・過去ナビ・Drive OCR・答練手入力）＆ 初期化
+    // 9. イベントリスナー（期間切替・過去ナビ・AI OCR・成績手入力）＆ 初期化
     // =========================================================================
     document.getElementById('refreshDataBtn').addEventListener('click', () => fetchAndRenderData(true));
 
@@ -2294,32 +2295,125 @@
       });
     });
 
-    // Googleドライブ専用フォルダからPDFをOCR取込
-    document.getElementById('syncDriveOcrBtn').addEventListener('click', async () => {
-      if (!settings.gasUrl) {
-        openSettingsModal();
-        showToast('先にGASのURLを設定してください');
-        return;
+    // PDF / 写真を読み込み（画像は自動リサイズ圧縮して高速＆安定送信）
+    function prepareFileForOcr(file) {
+      return new Promise((resolve, reject) => {
+        if (file.type && file.type.startsWith('image/')) {
+          const img = new Image();
+          const objUrl = URL.createObjectURL(file);
+          img.onload = () => {
+            URL.revokeObjectURL(objUrl);
+            const maxDim = 1800;
+            let w = img.width, h = img.height;
+            if (w > maxDim || h > maxDim) {
+              const scale = Math.min(maxDim / w, maxDim / h);
+              w = Math.round(w * scale);
+              h = Math.round(h * scale);
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            resolve({ base64Data: dataUrl.split(',')[1], mimeType: 'image/jpeg', fileName: file.name });
+          };
+          img.onerror = () => { URL.revokeObjectURL(objUrl); reject(new Error('画像の読み込みに失敗しました')); };
+          img.src = objUrl;
+          return;
+        }
+        if (file.size > 4 * 1024 * 1024) {
+          reject(new Error('PDFは4MB以下のファイルを選択してください（大きい場合はスクショ画像でもOCRできます）'));
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+          const res = String(reader.result || '');
+          const base64Data = res.includes(',') ? res.split(',')[1] : res;
+          resolve({ base64Data, mimeType: file.type || 'application/pdf', fileName: file.name });
+        };
+        reader.onerror = () => reject(new Error('ファイルの読み込みに失敗しました'));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // ユーザーのGoogleドライブ「成績PDFフォルダ」へ自動バックアップ
+    async function backupFileToDriveFolder(file) {
+      if (!isGoogleSignedIn() || !googleAuth.examFolderId) return false;
+      try {
+        const metadata = { name: file.name, parents: [googleAuth.examFolderId] };
+        const form = new FormData();
+        form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+        form.append('file', file);
+        const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${googleAuth.accessToken}` },
+          body: form
+        });
+        return res.ok;
+      } catch (e) {
+        return false;
       }
+    }
+
+    // PDF / 写真からAI OCR取込（Vercel /api/ocr + スプシ保存 + Driveバックアップ）
+    const ocrFileInput = document.getElementById('ocrFileInput');
+    document.getElementById('syncDriveOcrBtn').addEventListener('click', () => {
+      ocrFileInput.value = '';
+      ocrFileInput.click();
+    });
+
+    ocrFileInput.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
       const btn = document.getElementById('syncDriveOcrBtn');
       const origText = btn.innerHTML;
       btn.disabled = true;
-      btn.innerHTML = '<span>⏳ OCR解析中...</span>';
+      btn.innerHTML = '<span>⏳ AI OCR解析中...</span>';
       try {
-        const res = await fetch(settings.gasUrl, {
+        const prepared = await prepareFileForOcr(file);
+        const res = await fetch('/api/ocr', {
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify({ action: 'syncExamPdfs' })
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            base64Data: prepared.base64Data,
+            mimeType: prepared.mimeType,
+            fileName: prepared.fileName,
+            subjects: SUBJECTS
+          })
         });
         const json = await res.json();
-        if (json.status === 'ok') {
-          showToast(json.importedCount > 0 ? `${json.importedCount}件の成績PDFをOCR取込しました` : '新しい成績PDFはありませんでした');
-          fetchAndRenderData(false);
-        } else {
-          throw new Error(json.message || 'OCR未設定');
+        if (!res.ok || json.status !== 'ok') {
+          throw new Error(json.message || 'OCR解析に失敗しました');
         }
-      } catch (e) {
-        showToast('GAS側へのOCRスクリプト追加・再デプロイを確認してください');
+        const newItems = json.results || [];
+        examResults = [...newItems, ...examResults];
+        saveJSON(STORAGE_KEYS.EXAMS, examResults);
+        renderExamResults();
+
+        // スプレッドシートへ自動保存
+        if (useGoogleDirectMode()) {
+          const rows = newItems.map(it => [it.id, it.date, it.subject, it.title, it.score, it.maxScore, it.rank, it.note, it.source]);
+          await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${googleAuth.spreadsheetId}/values/exams!A:I:append?valueInputOption=USER_ENTERED`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ values: rows })
+          });
+          await backupFileToDriveFolder(file);
+        } else if (settings.gasUrl) {
+          for (const it of newItems) {
+            try {
+              await fetch(settings.gasUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({ action: 'addExamResult', exam: it })
+              });
+            } catch (err) { }
+          }
+        }
+        showToast(`${newItems.length}件の成績をAI OCRで取り込みました！`);
+      } catch (err) {
+        console.error(err);
+        showToast(err.message || 'OCR取込に失敗しました');
       } finally {
         btn.disabled = false;
         btn.innerHTML = origText;
