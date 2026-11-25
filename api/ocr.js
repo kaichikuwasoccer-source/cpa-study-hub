@@ -48,35 +48,52 @@ module.exports = async function handler(req, res) {
       '}'
     ].join('\n');
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
-    const geminiRes = await fetch(geminiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              { text: prompt },
-              {
-                inlineData: {
-                  mimeType,
-                  data: base64Data
-                }
+    const models = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'];
+    const payload = JSON.stringify({
+      contents: [
+        {
+          parts: [
+            { text: prompt },
+            {
+              inlineData: {
+                mimeType,
+                data: base64Data
               }
-            ]
-          }
-        ],
-        generationConfig: {
-          temperature: 0.1,
-          responseMimeType: 'application/json'
+            }
+          ]
         }
-      })
+      ],
+      generationConfig: {
+        temperature: 0.1,
+        responseMimeType: 'application/json'
+      }
     });
 
-    const geminiJson = await geminiRes.json();
-    if (!geminiRes.ok) {
-      const msg = geminiJson?.error?.message || `Gemini API Error (${geminiRes.status})`;
-      return res.status(502).json({ status: 'error', message: msg });
+    let geminiRes = null;
+    let geminiJson = null;
+    let lastErrorMsg = 'Gemini API Error';
+
+    for (const model of models) {
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+      try {
+        geminiRes = await fetch(geminiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload
+        });
+        geminiJson = await geminiRes.json();
+        if (geminiRes.ok) {
+          break;
+        }
+        lastErrorMsg = geminiJson?.error?.message || `Gemini API Error (${geminiRes.status})`;
+      } catch (e) {
+        lastErrorMsg = e?.message || 'Gemini API request failed';
+        geminiRes = null;
+      }
+    }
+
+    if (!geminiRes || !geminiRes.ok) {
+      return res.status(502).json({ status: 'error', message: lastErrorMsg });
     }
 
     const rawText = geminiJson?.candidates?.[0]?.content?.parts?.[0]?.text || '';
