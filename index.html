@@ -90,6 +90,16 @@
             <span class="nav-timer-text">00:00</span>
           </span>
         </button>
+        <button type="button" data-app-tab="coachView"
+          class="app-tab-btn inline-flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+          </svg>
+          <span>コーチ</span>
+          <span
+            class="nav-coach-badge hidden rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-bold text-white tabular-nums">0</span>
+        </button>
       </nav>
 
       <!-- アクションボタン群 -->
@@ -173,41 +183,6 @@
           再接続する
         </button>
       </div>
-
-      <!-- 0. パーソナル改善コーチ（学習ログ × 答練成績 10パターン自動判定） -->
-      <section id="personalCoachSection" class="space-y-3">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              🧭 パーソナル改善コーチ（10パターン自動診断）
-            </h2>
-            <p class="text-[11px] text-slate-400">学習ログ（時間帯・1クール時間・集中度）× 予実 × 答練誤答データから優先改善アクションを提案します</p>
-          </div>
-          <div class="flex items-center gap-2">
-            <span id="coachActiveCountBadge"
-              class="rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">診断中...</span>
-            <button id="toggleAllCoachPatternsBtn" type="button"
-              class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 transition">
-              全10パターン詳細 ▾
-            </button>
-          </div>
-        </div>
-        <div id="coachAdviceGrid" class="grid grid-cols-1 gap-3 md:grid-cols-2"></div>
-        <!-- 時間帯 × 科目タイプ別 1クール継続時間＆集中度サマリー -->
-        <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div class="mb-2.5 flex flex-wrap items-center justify-between gap-2">
-            <h3 class="text-xs font-bold text-slate-700 dark:text-slate-200">⏱ 時間帯 × 科目タイプ別：平均1クール時間 ＆ 集中度</h3>
-            <span class="text-[11px] text-slate-400">朝(5-11時) / 昼(12-17時) / 夜(18-4時) · 集中度は手応え(◎/○/△)から自動算出</span>
-          </div>
-          <div id="sessionMatrixBox" class="grid grid-cols-1 gap-2.5 sm:grid-cols-3"></div>
-        </div>
-        <!-- 全10パターン診断ステータス（折りたたみ） -->
-        <div id="coachAllPatternsPanel"
-          class="hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div class="mb-2 text-xs font-bold text-slate-700 dark:text-slate-200">全10パターンの診断ステータス</div>
-          <div id="coachAllPatternsList" class="grid grid-cols-1 gap-2 sm:grid-cols-2"></div>
-        </div>
-      </section>
 
       <!-- 1. 重要日程カウントダウン -->
       <section>
@@ -563,6 +538,45 @@
       </div>
     </div>
 
+    <!-- ===================================================================== -->
+    <!-- ビュー3：パーソナル改善コーチ（10パターン自動診断・時間帯×科目タイプ分析） -->
+    <!-- ===================================================================== -->
+    <div id="coachView" class="hidden space-y-6">
+      <section id="personalCoachSection" class="space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 class="text-base font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
+              🧭 パーソナル改善コーチ（10パターン自動診断）
+            </h2>
+            <p class="mt-0.5 text-xs text-slate-400">学習ログ（時間帯・1クール時間・集中度）× 予実 × 答練誤答データから優先改善アクションを提案します</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="coachActiveCountBadge"
+              class="rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">診断中...</span>
+            <button id="toggleAllCoachPatternsBtn" type="button"
+              class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 transition">
+              全10パターン詳細 ▾
+            </button>
+          </div>
+        </div>
+        <div id="coachAdviceGrid" class="grid grid-cols-1 gap-3 md:grid-cols-2"></div>
+        <!-- 時間帯 × 科目タイプ別 1クール継続時間＆集中度サマリー -->
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200">⏱ 時間帯 × 科目タイプ別：平均1クール時間 ＆ 集中度</h3>
+            <span class="text-[11px] text-slate-400">朝(5-11時) / 昼(12-17時) / 夜(18-4時) · 集中度は手応え(◎/○/△)から自動算出</span>
+          </div>
+          <div id="sessionMatrixBox" class="grid grid-cols-1 gap-3 sm:grid-cols-3"></div>
+        </div>
+        <!-- 全10パターン診断ステータス（折りたたみ） -->
+        <div id="coachAllPatternsPanel"
+          class="hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div class="mb-3 text-sm font-bold text-slate-700 dark:text-slate-200">全10パターンの診断ステータス</div>
+          <div id="coachAllPatternsList" class="grid grid-cols-1 gap-2 sm:grid-cols-2"></div>
+        </div>
+      </section>
+    </div>
+
     <!-- フッター（プライバシーポリシー・利用規約リンク） -->
     <footer
       class="mt-10 flex flex-wrap items-center justify-center gap-4 border-t border-slate-200/80 pt-5 text-xs text-slate-400 dark:border-slate-800">
@@ -578,7 +592,7 @@
   <!-- スマホ用 下部固定ナビゲーションバー -->
   <nav aria-label="モバイルアプリ切替"
     class="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/90 bg-white/95 backdrop-blur-md sm:hidden dark:border-slate-800 dark:bg-slate-900/95">
-    <div class="mx-auto grid max-w-md grid-cols-2 px-3 py-2">
+    <div class="mx-auto grid max-w-md grid-cols-3 px-2 py-2">
       <button type="button" data-app-tab="hubView"
         class="app-tab-mobile-btn flex flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 text-blue-600 dark:text-blue-400 transition">
         <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.1" viewBox="0 0 24 24">
@@ -597,6 +611,18 @@
             class="nav-timer-dot hidden absolute -right-1 -top-0.5 h-2 w-2 animate-pulse rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900"></span>
         </div>
         <span class="nav-mobile-log-label text-[11px] font-bold">記録</span>
+      </button>
+      <button type="button" data-app-tab="coachView"
+        class="app-tab-mobile-btn relative flex flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 text-slate-400 dark:text-slate-500 transition">
+        <div class="relative">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.1" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+          </svg>
+          <span
+            class="nav-coach-dot hidden absolute -right-1 -top-0.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-900"></span>
+        </div>
+        <span class="text-[11px] font-bold">コーチ</span>
       </button>
     </div>
   </nav>
@@ -1385,11 +1411,12 @@
     }
 
     function switchAppTab(tabId) {
-      activeAppTab = tabId === 'logView' ? 'logView' : 'hubView';
+      activeAppTab = (tabId === 'logView' || tabId === 'coachView') ? tabId : 'hubView';
       try { localStorage.setItem(STORAGE_KEYS.ACTIVE_TAB, activeAppTab); } catch (e) { }
 
       document.getElementById('hubView').classList.toggle('hidden', activeAppTab !== 'hubView');
       document.getElementById('logView').classList.toggle('hidden', activeAppTab !== 'logView');
+      document.getElementById('coachView')?.classList.toggle('hidden', activeAppTab !== 'coachView');
 
       // PC上部タブ
       document.querySelectorAll('.app-tab-btn').forEach(btn => {
@@ -1414,6 +1441,9 @@
 
       if (activeAppTab === 'hubView' && currentData) {
         renderCharts(resolvePeriodData(currentData, selectedPeriod).slice);
+      }
+      if (activeAppTab === 'coachView' && typeof renderPersonalCoach === 'function') {
+        renderPersonalCoach();
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -4097,6 +4127,13 @@
 
           const { patterns, matrix } = evaluateCoach10Patterns();
           const active = patterns.filter(p => p.triggered).sort((a, b) => b.priority - a.priority);
+          document.querySelectorAll('.nav-coach-badge').forEach(el => {
+            el.textContent = String(active.length);
+            el.classList.toggle('hidden', active.length === 0);
+          });
+          document.querySelectorAll('.nav-coach-dot').forEach(el => {
+            el.classList.toggle('hidden', active.length === 0);
+          });
           badge.textContent = active.length ? `${active.length}件の改善提案あり` : '全10パターン良好 ✓';
           badge.className = active.length
             ? 'rounded-full bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-700 dark:bg-rose-950 dark:text-rose-300'
@@ -4108,7 +4145,7 @@
                 <strong>現在の学習バランス・答練分析に大きなボトルネックは検出されていません。</strong> このリズムを維持しつつ、答練の誤答(A/B/C)を継続登録するとさらに精度が上がります。
               </div>`;
           } else {
-            grid.innerHTML = active.slice(0, 4).map((p, i) => `
+            grid.innerHTML = active.map((p, i) => `
               <div class="flex flex-col justify-between rounded-2xl border ${i === 0 ? 'border-rose-300 bg-rose-50/40 dark:border-rose-900/70 dark:bg-rose-950/20' : 'border-indigo-200 bg-white dark:border-slate-800 dark:bg-slate-900'} p-4 shadow-sm">
                 <div>
                   <div class="flex items-center justify-between gap-2">
@@ -4169,7 +4206,7 @@
         else updateTimerUI();
 
         const savedTab = (() => { try { return localStorage.getItem(STORAGE_KEYS.ACTIVE_TAB); } catch (e) { return 'hubView'; } })();
-        switchAppTab(savedTab === 'logView' ? 'logView' : 'hubView');
+        switchAppTab((savedTab === 'logView' || savedTab === 'coachView') ? savedTab : 'hubView');
         fetchAndRenderData(false);
 
         // 初回アクセス時は自動で初期設定ウィザードを案内
