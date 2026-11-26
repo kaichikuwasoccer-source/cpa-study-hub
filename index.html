@@ -1071,6 +1071,9 @@
               サンプル10問を試す
             </button>
           </div>
+          <p class="mt-2 rounded-lg border border-amber-200/80 bg-amber-50/70 px-2.5 py-1.5 text-[11px] text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
+            🔒 ※氏名や受験番号が写っている場合は切り抜くか塗りつぶしてアップロードすることを推奨します（サーバーには一切保存されません）
+          </p>
           <div id="eaOcrStatus" class="mt-2 hidden text-[11px] font-semibold text-indigo-600 dark:text-indigo-400"></div>
 
           <!-- テキスト貼り付けパネル（APIキー未設定時や手入力用） -->
@@ -1400,7 +1403,16 @@
       return `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
     }
     function escapeHTML(str) {
-      return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+    function sanitizeSafeUrl(url, fallback = '') {
+      const s = String(url || '').trim();
+      if (!s) return fallback;
+      try {
+        const parsed = new URL(s);
+        if (parsed.protocol === 'https:' || parsed.protocol === 'http:') return parsed.href;
+      } catch (_) { }
+      return fallback;
     }
 
     let toastTimer = null;
@@ -1570,12 +1582,12 @@
     // 4. クイックアクセス描画
     // =========================================================================
     function renderQuickLinks() {
-      document.getElementById('openCalendarLink').href = settings.calendarUrl || 'https://calendar.google.com/';
+      document.getElementById('openCalendarLink').href = sanitizeSafeUrl(settings.calendarUrl, 'https://calendar.google.com/');
       const links = [
         { title: '学習を記録する', sub: 'タイマー計測・入力へ切替', internalTab: 'logView', icon: '⏱️', bg: 'bg-blue-50 dark:bg-blue-950/60' },
-        { title: 'スプレッドシート', sub: '全ログ・集計シート', url: settings.sheetUrl, icon: '📊', bg: 'bg-emerald-50 dark:bg-emerald-950/60' },
-        { title: 'Googleカレンダー', sub: '週間スケジュール管理', url: settings.calendarUrl, icon: '📅', bg: 'bg-amber-50 dark:bg-amber-950/60' },
-        { title: 'Gemini Notebook', sub: '論点まとめ・復習ノート', url: settings.notebookUrl, icon: '✨', bg: 'bg-violet-50 dark:bg-violet-950/60' },
+        { title: 'スプレッドシート', sub: '全ログ・集計シート', url: sanitizeSafeUrl(settings.sheetUrl, ''), icon: '📊', bg: 'bg-emerald-50 dark:bg-emerald-950/60' },
+        { title: 'Googleカレンダー', sub: '週間スケジュール管理', url: sanitizeSafeUrl(settings.calendarUrl, ''), icon: '📅', bg: 'bg-amber-50 dark:bg-amber-950/60' },
+        { title: 'Gemini Notebook', sub: '論点まとめ・復習ノート', url: sanitizeSafeUrl(settings.notebookUrl, ''), icon: '✨', bg: 'bg-violet-50 dark:bg-violet-950/60' },
       ];
       const grid = document.getElementById('quickLinksGrid');
       grid.innerHTML = '';
@@ -2737,9 +2749,11 @@
       btn.innerHTML = '<span>⏳ AI OCR解析中...</span>';
       try {
         const prepared = await prepareFileForOcr(file);
+        const ocrHeaders = { 'Content-Type': 'application/json' };
+        if (isGoogleSignedIn()) ocrHeaders.Authorization = `Bearer ${googleAuth.accessToken}`;
         const res = await fetch('/api/ocr', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: ocrHeaders,
           body: JSON.stringify({
             base64Data: prepared.base64Data,
             mimeType: prepared.mimeType,
@@ -3184,6 +3198,30 @@
           document.getElementById('inputGoogleClientId').value = googleClientId || '';
         }
 
+        function clearAllUserLocalData(keepTheme = true) {
+          try {
+            Object.entries(STORAGE_KEYS).forEach(([k, storageKey]) => {
+              if (keepTheme && k === 'THEME') return;
+              if (k === 'GOOGLE_CLIENT_ID') return;
+              localStorage.removeItem(storageKey);
+            });
+            sessionStorage.clear();
+          } catch (_) { }
+          clearInterval(timerInterval);
+          timerInterval = null;
+          googleAuth = { accessToken: '', expiresAt: 0, user: null, spreadsheetId: '', spreadsheetUrl: '', examFolderId: '', examFolderUrl: '', doneFolderId: '' };
+          settings = Object.assign({}, DEFAULT_SETTINGS);
+          countdowns = JSON.parse(JSON.stringify(DEFAULT_COUNTDOWNS));
+          examResults = [];
+          examDetailedResults = [];
+          examMistakes = [];
+          reviewedMistakeIds = [];
+          studyLogs = [];
+          weeklyHistory = [];
+          currentData = null;
+          currentIsDemo = true;
+        }
+
         function requestGoogleLogin() {
           return new Promise((resolve, reject) => {
             if (!googleClientId) {
@@ -3194,6 +3232,7 @@
               reject(new Error('GoogleログインSDKの読み込み中です。数秒後にもう一度お試しください。'));
               return;
             }
+            const prevEmail = googleAuth.user?.email || '';
             const tokenClient = google.accounts.oauth2.initTokenClient({
               client_id: googleClientId,
               scope: GOOGLE_SCOPES,
@@ -3202,14 +3241,22 @@
                   reject(new Error(resp.error_description || resp.error));
                   return;
                 }
-                googleAuth.accessToken = resp.access_token;
-                googleAuth.expiresAt = Date.now() + ((Number(resp.expires_in) || 3500) * 1000);
+                const newToken = resp.access_token;
+                const newExpiresAt = Date.now() + ((Number(resp.expires_in) || 3500) * 1000);
+                let newUser = null;
                 try {
                   const uRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                    headers: { Authorization: `Bearer ${googleAuth.accessToken}` }
+                    headers: { Authorization: `Bearer ${newToken}` }
                   });
-                  googleAuth.user = await uRes.json();
+                  newUser = await uRes.json();
                 } catch (e) { }
+                // 別アカウントへ切り替わった場合は前ユーザーのローカルキャッシュを完全消去
+                if (prevEmail && newUser?.email && prevEmail !== newUser.email) {
+                  clearAllUserLocalData(true);
+                }
+                googleAuth.accessToken = newToken;
+                googleAuth.expiresAt = newExpiresAt;
+                googleAuth.user = newUser || googleAuth.user;
                 saveJSON(STORAGE_KEYS.GOOGLE_AUTH, googleAuth);
                 renderAccountUI();
                 resolve(googleAuth);
@@ -3362,11 +3409,15 @@
         });
 
         document.getElementById('googleSignOutBtn').addEventListener('click', () => {
-          googleAuth = { accessToken: '', expiresAt: 0, user: null, spreadsheetId: '', spreadsheetUrl: '', examFolderId: '', examFolderUrl: '', doneFolderId: '' };
-          saveJSON(STORAGE_KEYS.GOOGLE_AUTH, googleAuth);
+          clearAllUserLocalData(true);
           renderAccountUI();
+          renderCountdowns();
+          renderQuickLinks();
+          renderExamResults();
+          renderExamMistakeDashboard();
+          renderPersonalCoach();
           fetchAndRenderData(false);
-          showToast('ログアウトしました');
+          showToast('ログアウトし、端末内の学習キャッシュ・一時APIキーをすべて消去しました');
         });
 
         document.getElementById('bannerStartOnboardingBtn').addEventListener('click', () => {
@@ -3625,6 +3676,7 @@
             const prompt = [
               'あなたは日本のあらゆる試験（公認会計士、大学受験・共通テスト模試、税理士、行政書士、社労士など）の模試・答練・定期テストの個人成績表を解析する高精度OCRエンジンです。',
               'アップロードされた画像またはPDF（複数ページ・複数科目含む）から、成績サマリーと問題別の正誤・正答率データをすべて抽出し、指定されたJSONフォーマットのみを出力してください。',
+              '【個人情報保護（厳守）】氏名・受験番号・生年月日・学校名・メールアドレス・住所など個人を特定できる情報は絶対に抽出せず、出力JSONのどの項目にも含めないこと。',
               '1. 複数科目は必ず科目ごとに subjects 配列へ分割。社労士の選択式/択一式も分割。公認会計士の財務会計論は計算・理論分割なら「財務(計算)」「財務(理論)」、本番形式合算なら「財務会計論（計算＋理論）」。',
               `   登録済み科目リスト（該当時は表記を合わせる）: ${examSubjects.join('、')}`,
               '2. 問題別明細(questions): q_no(階層は1-2等ハイフン連結), is_correct(○/満点はtrue、×/0点/満点未満の部分点はfalse), accuracy(0〜100数値、全国平均点と配点のみなら (全国平均点÷配点)×100 小数第1位), official_rank(予備校難易度ランク A/B/C/易/普/難 等、無ければnull), points(記載なければ1), q_type(calc/theory/空文字)。',
@@ -3676,10 +3728,16 @@
             throw new Error(lastErr);
           }
 
-          // APIキー未設定時は /api/ocr (mode: 'exam_questions') を試行
+          // APIキー未設定時は /api/ocr (mode: 'exam_questions') を試行（Googleログイン必須）
+          if (!isGoogleSignedIn()) {
+            throw new Error('サーバーOCRを利用するにはGoogleアカウントでログインしてください（未ログイン時は設定画面で自身のGemini APIキーを入力するか、テキスト貼付・手入力をご利用ください）');
+          }
           const res = await fetch('/api/ocr', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${googleAuth.accessToken}`
+            },
             body: JSON.stringify({
               mode: 'exam_questions',
               base64Data: prepared.base64Data,

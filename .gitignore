@@ -1,4 +1,18 @@
-﻿.env
+﻿# Environment & secrets
+.env
 .env.*
+*.local
+client_secret*.json
+*credentials*.json
+service-account*.json
+*.pem
+*.key
+
+# Vercel & Node
 .vercel
 node_modules/
+npm-debug.log*
+
+# OS / Editor
+.DS_Store
+Thumbs.db

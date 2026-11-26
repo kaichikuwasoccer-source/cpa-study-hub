@@ -36,27 +36,27 @@
     <article class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-10 space-y-7 text-sm leading-relaxed">
       <div class="border-b border-slate-100 pb-5">
         <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">利用規約</h1>
-        <p class="mt-1.5 text-xs text-slate-400">最終更新日：2026年11月24日</p>
+        <p class="mt-1.5 text-xs text-slate-400">最終更新日：2026年11月26日</p>
       </div>
 
       <section class="space-y-2">
         <h2 class="text-base font-bold text-slate-900">第1条（適用）</h2>
         <p class="text-slate-600">
-          本規約は、CPA Study Hub（以下「本アプリ」）の利用条件を定めるものです。ユーザーは本規約に同意の上、本アプリを利用するものとします。
+          本規約は、CPA Study Hub（Study Hub、以下「本アプリ」）の利用条件を定めるものです。ユーザーは本規約に同意の上、本アプリを利用するものとします。
         </p>
       </section>
 
       <section class="space-y-2">
         <h2 class="text-base font-bold text-slate-900">第2条（サービス内容）</h2>
         <p class="text-slate-600">
-          本アプリは、学習時間の記録・タイマー計測、Google スプレッドシートおよび Google カレンダーとの連携による学習進捗の可視化、ならびに AI を活用した振り返り支援機能を提供します。
+          本アプリは、学習時間の記録・タイマー計測、Google スプレッドシートおよび Google カレンダーとの連携による学習進捗の可視化、AI を用いた成績表 OCR 解析・誤答分析、ならびにパーソナル学習コーチによる振り返り支援機能を提供します。
         </p>
       </section>
 
       <section class="space-y-2">
-        <h2 class="text-base font-bold text-slate-900">第3条（Google アカウントおよびデータの管理）</h2>
+        <h2 class="text-base font-bold text-slate-900">第3条（Google アカウントおよびデータの管理・バックアップ）</h2>
         <p class="text-slate-600">
-          本アプリで記録・作成されるスプレッドシートおよびフォルダは、ユーザー自身の Google ドライブ上に保存されます。ユーザーは自己の責任において Google アカウントおよび保存データの管理・バックアップを行うものとします。
+          本アプリで記録・作成されるスプレッドシート（<code>Study Hub データ</code>）およびフォルダ（<code>StudyHub_成績PDF</code>）は、ユーザー自身の Google ドライブ上に保存されます。ユーザーは自己の責任において Google アカウントを管理し、Google API の仕様変更や通信障害・データ同期エラー等に備えて、定期的にスプレッドシートのコピーやエクスポート等のバックアップを行うものとします。
         </p>
       </section>
 
@@ -65,22 +65,25 @@
         <p class="text-slate-600">ユーザーは、本アプリの利用にあたり以下の行為をしてはなりません。</p>
         <ul class="list-disc space-y-1.5 pl-5 text-slate-600">
           <li>法令または公序良俗に違反する行為</li>
-          <li>本アプリの運営やインフラ、または外部連携 API（Google API 等）に過度な負荷をかける行為</li>
-          <li>不正アクセスやリバースエンジニアリング等により本アプリの正常な動作を妨げる行為</li>
+          <li>本アプリの AI OCR エンドポイント（<code>/api/ocr</code>）や外部連携 API（Google API / Gemini API 等）に対する自動スクリプト等を用いた過剰なリクエスト送信、レート制限の回避、API の不正利用・タダ乗り行為</li>
+          <li>不正アクセス、リバースエンジニアリング、脆弱性の悪用等により本アプリの正常な運営・セキュリティを妨げる行為</li>
+          <li>他人の成績表や個人情報を本人の同意なくアップロード・解析する行為</li>
         </ul>
       </section>
 
       <section class="space-y-2">
-        <h2 class="text-base font-bold text-slate-900">第5条（免責事項）</h2>
-        <p class="text-slate-600">
-          本アプリは現状有姿（AS IS）で無償提供されます。開発者は、本アプリの完全性、正確性、継続性、特定目的への適合性、ならびに試験結果について一切の保証を行わず、本アプリの利用または利用不能により生じた損害（データの消失・破損を含む）について責任を負わないものとします。
-        </p>
+        <h2 class="text-base font-bold text-slate-900">第5条（無保証・免責事項）</h2>
+        <ul class="list-disc space-y-1.5 pl-5 text-slate-600">
+          <li>本アプリは現状有姿（AS IS）で提供されます。開発者は、本アプリの完全性、正確性（AI OCR 抽出結果やコーチ診断結果の正確性を含む）、継続性、特定目的への適合性について一切の保証を行いません。</li>
+          <li>本アプリは学習管理を支援するツールであり、<strong>公認会計士試験・大学受験・各種資格試験の合否や成績向上について、開発者は一切の責任を負いません</strong>。</li>
+          <li>Google サービスの仕様変更、通信障害、同期エラー、端末故障等により生じたデータの消失・破損その他の損害について、開発者は故意または重過失がある場合を除き一切の責任を負わないものとします。</li>
+        </ul>
       </section>
 
       <section class="space-y-2">
-        <h2 class="text-base font-bold text-slate-900">第6条（サービスの変更・終了および規約の改定）</h2>
+        <h2 class="text-base font-bold text-slate-900">第6条（サービスの変更・中断・終了および規約の改定）</h2>
         <p class="text-slate-600">
-          開発者は、事前の通知なく本アプリの内容変更・提供停止・終了、および本規約の改定を行うことができます。改定後の規約は本ページに掲載された時点で効力を生じるものとします。
+          開発者は、システム保守、外部 API の仕様変更・利用制限、または運営上の都合により、ユーザーへの事前通知なく本アプリの内容変更、一部機能の制限（OCR 回数制限の変更等）、提供の一時中断または終了を行うことができます。また、開発者は必要に応じて本規約を改定できるものとし、改定後の規約は本ページに掲載された時点で効力を生じるものとします。なお、本アプリが終了した場合でも、ユーザー自身の Google ドライブ上に保存されたスプレッドシート等のデータは引き続きユーザーご自身で利用可能です。
         </p>
       </section>
 

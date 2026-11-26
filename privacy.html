@@ -52,19 +52,19 @@
           本アプリは、ユーザーの同意に基づき Google OAuth 2.0 を通じて以下の情報へアクセスします。
         </p>
         <ul class="list-disc space-y-1.5 pl-5 text-slate-600">
-          <li><strong>Google アカウントの基本情報（氏名・メールアドレス・プロフィール画像）</strong>：ログイン状態の表示およびアカウント管理のために利用します。</li>
-          <li><strong>Google ドライブおよび Google スプレッドシート（本アプリが作成したファイルのみ / <code>drive.file</code> スコープ）</strong>：ユーザー専用の学習記録スプレッドシート（<code>Study Hub データ</code> または <code>CPA Study Hub データ</code> 内の <code>log</code> / <code>materials</code> / <code>exams</code> / <code>exam_results</code> / <code>exam_mistakes</code> / <code>config</code> シート）および成績PDF用フォルダ（<code>StudyHub_成績PDF</code> または <code>CPA答練PDF</code>）の作成・読み書き・バックアップのために利用します。本アプリが作成していない他のドライブファイルにはアクセスしません。</li>
+          <li><strong>Google アカウントの基本情報（氏名・メールアドレス・プロフィール画像）</strong>：ログイン状態の表示、アカウント管理、および AI 成績表 OCR API（<code>/api/ocr</code>）利用時の正当なログインユーザー認証のために利用します。</li>
+          <li><strong>Google ドライブおよび Google スプレッドシート（本アプリが作成したファイルのみ / <code>drive.file</code> スコープ）</strong>：ユーザー専用の学習記録スプレッドシート（<code>Study Hub データ</code> 内の <code>log</code> / <code>materials</code> / <code>exams</code> / <code>exam_results</code> / <code>exam_mistakes</code> / <code>config</code> シート）および成績PDF用フォルダ（<code>StudyHub_成績PDF</code>）の作成・読み書き・バックアップのために利用します。本アプリが作成していない他のドライブファイルにはアクセスしません。</li>
           <li><strong>Google カレンダーの予定情報（読み取り専用 / <code>calendar.readonly</code> スコープ）</strong>：学習予定時間の集計および「今日の勉強予定」の表示のために利用します。カレンダーの予定を作成・変更・削除することはありません。</li>
         </ul>
       </section>
 
       <section class="space-y-2">
-        <h2 class="text-base font-bold text-slate-900">3. データの保存場所、AI OCR 処理および第三者提供</h2>
+        <h2 class="text-base font-bold text-slate-900">3. データの保存場所、AI 成績表 OCR 処理および第三者提供</h2>
         <ul class="list-disc space-y-1.5 pl-5 text-slate-600">
-          <li><strong>学習データ・設定の保存先</strong>：すべての学習記録・答練成績・誤答分析・設定（任意で入力するユーザー自身の Gemini API キーを含む）は、ユーザー自身のブラウザ（localStorage）およびユーザー自身の Google ドライブ内のスプレッドシートに保存されます。開発者のサーバーへこれらを永続保存することはありません。</li>
-          <li><strong>AI OCR 解析（<code>/api/ocr</code> および Gemini API）</strong>：ユーザーが「PDF / 写真からOCR取込」または「成績表OCR＆誤答(A/B/C)分析」を実行した場合のみ、選択された成績表の画像・PDFデータを本アプリのサーバーレス関数（Vercel <code>/api/ocr</code>）またはユーザー自身の API キー経由で Google Gemini API へ一時送信し、点数・問題番号・正答率を抽出します。送信された画像・PDFおよび解析結果は開発者のサーバーには一切保存されず、応答完了後に破棄されます。</li>
+          <li><strong>原則としての保存先</strong>：すべての学習記録・答練成績・誤答分析・設定（任意で入力するユーザー自身の Gemini API キーを含む）は、原則としてユーザー自身のブラウザ（localStorage）およびユーザー自身の Google ドライブ（<code>Study Hub データ</code> / <code>StudyHub_成績PDF</code>）に直接保存され、開発者のサーバーに永続保存されることはありません。共有端末でログアウトまたはアカウント切替を行うと、ブラウザ内のキャッシュおよび一時キーはすべて自動消去されます。</li>
+          <li><strong>AI 成績表 OCR 機能における一時送信</strong>：ユーザーが AI 成績表 OCR 機能を利用した場合のみ、アップロードされた成績表の画像・PDF データが本アプリの Vercel サーバーレス関数（<code>/api/ocr</code>）を経由して Google Gemini API へ一時送信され、点数・問題番号・正答率等の成績データのみを抽出します。<strong>開発者サーバー上への画像・PDF の保存、個人情報を含むログ記録、および AI モデルの学習への利用は一切行いません</strong>（解析応答の完了後にデータは即座に破棄されます）。また、氏名や受験番号が写っている場合は切り抜き・塗りつぶしの上でアップロードすることを推奨しています。</li>
           <li>ユーザーの同意なく、取得したデータを第三者へ販売・提供・共有することはありません。</li>
-          <li>「ChatGPTに送る」「Geminiに送る」機能は、ユーザーが明示的にボタンを押した場合のみ、学習サマリー・診断結果テキストをクリップボードへコピーまたは外部AI画面へ引き渡します。</li>
+          <li>「ChatGPTに送る」「Geminiに送る」機能は、ユーザーが明示的にボタンを押した場合のみ、学習サマリー・診断結果テキストをクリップボードへコピーまたは外部 AI 画面へ引き渡します。</li>
         </ul>
       </section>
 
