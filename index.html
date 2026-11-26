@@ -198,14 +198,28 @@
 
       <!-- 2. 今日の勉強予定（カレンダー） -->
       <section>
-        <div class="mb-3 flex items-center justify-between">
-          <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">今日の勉強予定（カレンダー）</h2>
+        <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div class="flex flex-wrap items-center gap-2.5">
+            <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">勉強予定（カレンダー）</h2>
+            <div class="inline-flex rounded-xl border border-slate-200 bg-white p-0.5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <button id="calTabTodayBtn" type="button"
+                class="rounded-lg bg-blue-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-sm transition">
+                今日
+              </button>
+              <button id="calTabOverdueBtn" type="button"
+                class="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-bold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition">
+                <span>未完了</span>
+                <span id="calOverdueBadge"
+                  class="hidden rounded-full bg-rose-500 px-1.5 py-0.2 text-[10px] font-extrabold text-white tabular-nums">0</span>
+              </button>
+            </div>
+          </div>
           <a id="openCalendarLink" href="https://calendar.google.com/" target="_blank" rel="noopener noreferrer"
             class="text-xs font-semibold text-blue-600 hover:underline dark:text-blue-400">
             カレンダーを開く ↗
           </a>
         </div>
-        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 dark:border-slate-800 dark:bg-slate-900">
           <div id="todayEventsList" class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"></div>
         </div>
       </section>
@@ -1127,6 +1141,7 @@
       EXAM_MISTAKES: 'cpa_hub_exam_mistakes_v1',
       REVIEWED_MISTAKES: 'cpa_hub_reviewed_mistakes_v1',
       STUDY_LOGS: 'cpa_hub_study_logs_v1',
+      CALENDAR_DONE: 'cpa_hub_calendar_done_v1',
       GOAL: 'cpa_hub_goal_v1',
       SUBJECTS: 'cpa_hub_subjects_v1',
       MATERIALS: 'cpa_hub_materials_v1',
@@ -1325,9 +1340,13 @@
         }
       },
       todayEvents: [
-        { title: '財務(計算) 連結会計・総合問題', start: '09:00', end: '11:30' },
-        { title: '管理会計 標準原価計算 復習', start: '13:30', end: '15:30' },
-        { title: '監査論 短答問題集（リスクアプローチ）', start: '16:00', end: '17:30' },
+        { id: 'demo_ev_1', date: new Date().toISOString().slice(0, 10), title: '財務(計算) 連結会計・総合問題', start: '09:00', end: '11:30', mins: 150, subject: '財務(計算)' },
+        { id: 'demo_ev_2', date: new Date().toISOString().slice(0, 10), title: '管理会計 標準原価計算 復習', start: '13:30', end: '15:30', mins: 120, subject: '管理会計' },
+        { id: 'demo_ev_3', date: new Date().toISOString().slice(0, 10), title: '監査論 短答問題集（リスクアプローチ）', start: '16:00', end: '17:30', mins: 90, subject: '監査論' },
+      ],
+      pastEvents: [
+        { id: 'demo_past_1', date: new Date(Date.now() - 86400000).toISOString().slice(0, 10), title: '企業法 機関設計・短答問題集', start: '19:00', end: '20:30', mins: 90, subject: '企業法' },
+        { id: 'demo_past_2', date: new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10), title: '財務(理論) 金融商品会計 コンサマ', start: '10:00', end: '11:00', mins: 60, subject: '財務(理論)' },
       ]
     };
 
@@ -1360,6 +1379,8 @@
     let examMistakes = loadJSON(STORAGE_KEYS.EXAM_MISTAKES, []).filter(m => m && !String(m.id || '').startsWith('exm_demo'));
     let reviewedMistakeIds = loadJSON(STORAGE_KEYS.REVIEWED_MISTAKES, []);
     let studyLogs = loadJSON(STORAGE_KEYS.STUDY_LOGS, []);
+    let calendarDoneMap = loadJSON(STORAGE_KEYS.CALENDAR_DONE, {});
+    let activeCalendarTab = 'today'; // 'today' | 'overdue'
     let weeklyHistory = [];
     let selectedPeriod = 'week';
     let periodOffset = 0; // 0=現在, -1=前の期間, -2=2つ前...
@@ -1732,6 +1753,10 @@
           examMistakes = json.examMistakes;
           saveJSON(STORAGE_KEYS.EXAM_MISTAKES, examMistakes);
         }
+        if (json.calendarDoneMap && typeof json.calendarDoneMap === 'object') {
+          calendarDoneMap = json.calendarDoneMap;
+          saveJSON(STORAGE_KEYS.CALENDAR_DONE, calendarDoneMap);
+        }
         renderExamResults();
         // Hub設定・学習目的・科目・カウントダウン同期
         if (json.hubConfig) {
@@ -1948,30 +1973,137 @@
       });
     }
 
+    function presetLogFromCalendarEvent(ev) {
+      if (!ev) return;
+      switchAppTab('logView');
+      const dEl = document.getElementById('studyDateInput');
+      const sEl = document.getElementById('startTimeInput');
+      const eEl = document.getElementById('endTimeInput');
+      const mEl = document.getElementById('minutesInput');
+      const tEl = document.getElementById('topicInput');
+      if (dEl && ev.date) dEl.value = ev.date;
+      if (sEl && ev.start) sEl.value = ev.start;
+      if (eEl && ev.end) eEl.value = ev.end;
+      if (mEl && ev.mins) mEl.value = String(ev.mins);
+      if (tEl && ev.title) tEl.value = ev.title;
+      const matched = ev.subject && SUBJECTS.includes(ev.subject) ? ev.subject : matchSubjectKeyword(ev.title);
+      if (matched && SUBJECTS.includes(matched)) {
+        selectedSubject = matched;
+        selectedMaterial = '';
+        renderSubjectChips();
+        renderMaterials();
+      }
+      showToast('予定を学習記録にプリセットしました（教材を選んで記録できます）');
+    }
+
+    function updateCalendarTabButtons(overdueCount) {
+      const todayBtn = document.getElementById('calTabTodayBtn');
+      const overdueBtn = document.getElementById('calTabOverdueBtn');
+      const badge = document.getElementById('calOverdueBadge');
+      if (!todayBtn || !overdueBtn) return;
+      const isToday = activeCalendarTab === 'today';
+      todayBtn.className = isToday
+        ? 'rounded-lg bg-blue-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-sm transition'
+        : 'rounded-lg px-2.5 py-1 text-[11px] font-bold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition';
+      overdueBtn.className = !isToday
+        ? 'inline-flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-sm transition'
+        : 'inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-bold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition';
+      if (badge) {
+        badge.textContent = String(overdueCount);
+        badge.classList.toggle('hidden', overdueCount <= 0);
+      }
+    }
+
     function renderTodayEvents(data) {
       const container = document.getElementById('todayEventsList');
-      const events = data.todayEvents;
-      if (!events) {
-        container.innerHTML = `<div class="col-span-full rounded-xl bg-slate-50 p-4 text-xs leading-relaxed text-slate-500 dark:bg-slate-800/60 dark:text-slate-400"><p class="mb-1 font-semibold text-slate-700 dark:text-slate-200">カレンダー予定の合計時間は連携済みです</p>個別の予定タイトル一覧を表示するには、GASの <code class="rounded bg-slate-200 px-1 dark:bg-slate-700">doGet</code> に <code class="rounded bg-slate-200 px-1 dark:bg-slate-700">todayEvents</code> を追加してください。</div>`;
+      if (!container) return;
+      const todayList = data?.todayEvents;
+      const pastList = Array.isArray(data?.pastEvents) ? data.pastEvents : [];
+      const overdueItems = pastList.filter(ev => {
+        const eid = ev.id || `${ev.date || ''}_${ev.start}_${ev.title}`;
+        return !calendarDoneMap[eid];
+      });
+      updateCalendarTabButtons(overdueItems.length);
+
+      if (!todayList && activeCalendarTab === 'today') {
+        container.innerHTML = `<div class="col-span-full rounded-xl bg-slate-50 p-4 text-xs leading-relaxed text-slate-500 dark:bg-slate-800/60 dark:text-slate-400"><p class="mb-1 font-semibold text-slate-700 dark:text-slate-200">カレンダー予定の合計時間は連携済みです</p>個別の予定タイトル一覧を表示するには、Googleアカウントでログインするか GAS の <code class="rounded bg-slate-200 px-1 dark:bg-slate-700">doGet</code> に <code class="rounded bg-slate-200 px-1 dark:bg-slate-700">todayEvents</code> を追加してください。</div>`;
         return;
       }
-      if (events.length === 0) {
-        container.innerHTML = `<div class="col-span-full rounded-xl bg-slate-50 p-4 text-center text-xs text-slate-400 dark:bg-slate-800/60">今日の勉強予定はありません</div>`;
+
+      const targetEvents = activeCalendarTab === 'overdue' ? overdueItems : (todayList || []);
+      if (targetEvents.length === 0) {
+        container.innerHTML = activeCalendarTab === 'overdue'
+          ? `<div class="col-span-full rounded-xl bg-emerald-50/70 p-4 text-center text-xs font-semibold text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">過去30日間の未完了予定はありません 🎉</div>`
+          : `<div class="col-span-full rounded-xl bg-slate-50 p-4 text-center text-xs text-slate-400 dark:bg-slate-800/60">今日の勉強予定はありません</div>`;
         return;
       }
+
+      const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
       container.innerHTML = '';
-      events.forEach(ev => {
+      targetEvents.forEach(ev => {
+        const todayIso = fmtDateInput(new Date());
+        const evDate = ev.date || todayIso;
+        const eid = ev.id || `${evDate}_${ev.start}_${ev.title}`;
+        const isDone = !!calendarDoneMap[eid];
+        const subj = ev.subject || matchSubjectKeyword(ev.title) || '';
+        let dateBadgeText = '';
+        if (activeCalendarTab === 'overdue' && evDate) {
+          const dObj = new Date(`${evDate}T00:00:00`);
+          dateBadgeText = !isNaN(dObj.getTime())
+            ? `${dObj.getMonth() + 1}/${dObj.getDate()}(${dayNames[dObj.getDay()]})`
+            : evDate;
+        }
+        let mins = Number(ev.mins) || 0;
+        if (!mins && ev.start && ev.end) {
+          const [sh, sm] = String(ev.start).split(':').map(Number);
+          const [eh, em] = String(ev.end).split(':').map(Number);
+          if (!isNaN(sh) && !isNaN(eh)) mins = Math.max(1, (eh * 60 + em) - (sh * 60 + sm));
+        }
+        const normalizedEv = { id: eid, date: evDate, start: ev.start || '', end: ev.end || '', mins: mins || 60, title: ev.title || '', subject: subj };
+
         const card = document.createElement('div');
-        card.className = 'flex items-center gap-3 rounded-xl border border-slate-200/80 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-800/50';
+        card.className = `flex items-start gap-2.5 rounded-xl border p-3 transition ${isDone
+          ? 'border-slate-200/70 bg-slate-100/70 opacity-65 dark:border-slate-800 dark:bg-slate-800/30'
+          : 'border-slate-200/80 bg-slate-50/70 dark:border-slate-800 dark:bg-slate-800/50'}`;
+
         card.innerHTML = `
-          <div class="shrink-0 rounded-lg bg-blue-50 px-2.5 py-1.5 text-center text-[11px] font-bold text-blue-700 dark:bg-blue-950/70 dark:text-blue-300">
-            <div>${escapeHTML(ev.start)}</div>
-            <div class="text-[10px] opacity-70">〜${escapeHTML(ev.end)}</div>
+          <button type="button" data-cal-toggle="${escapeHTML(eid)}" aria-label="完了切替"
+            class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-xs font-extrabold transition ${isDone
+              ? 'border-emerald-500 bg-emerald-500 text-white'
+              : 'border-slate-300 bg-white text-transparent hover:border-blue-500 dark:border-slate-600 dark:bg-slate-900'}">✓</button>
+          <div class="shrink-0 rounded-lg ${activeCalendarTab === 'overdue' ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300' : 'bg-blue-50 text-blue-700 dark:bg-blue-950/70 dark:text-blue-300'} px-2 py-1 text-center text-[11px] font-bold">
+            ${dateBadgeText ? `<div class="text-[10px] font-extrabold">${escapeHTML(dateBadgeText)}</div>` : ''}
+            <div>${escapeHTML(normalizedEv.start)}</div>
+            <div class="text-[10px] opacity-70">〜${escapeHTML(normalizedEv.end)}</div>
           </div>
-          <div class="min-w-0 text-xs font-bold leading-snug text-slate-800 dark:text-slate-100">${escapeHTML(ev.title)}</div>`;
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center gap-1.5">
+              ${subj ? `<span class="rounded bg-slate-200/80 px-1.5 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-700 dark:text-slate-300">${escapeHTML(subj)}</span>` : ''}
+              ${mins ? `<span class="text-[10px] font-semibold text-slate-400">${mins}分</span>` : ''}
+            </div>
+            <div class="mt-0.5 break-words text-xs font-bold leading-snug ${isDone ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-slate-100'}">${escapeHTML(normalizedEv.title)}</div>
+            ${isDone ? `
+              <button type="button" data-cal-record="${escapeHTML(eid)}"
+                class="mt-1.5 inline-flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-950/60 dark:text-blue-300 transition">
+                ＋ 実績にも記録
+              </button>
+            ` : ''}
+          </div>`;
+
+        card.querySelector('[data-cal-toggle]')?.addEventListener('click', () => toggleCalendarEventDone(normalizedEv));
+        card.querySelector('[data-cal-record]')?.addEventListener('click', () => presetLogFromCalendarEvent(normalizedEv));
         container.appendChild(card);
       });
     }
+
+    document.getElementById('calTabTodayBtn')?.addEventListener('click', () => {
+      activeCalendarTab = 'today';
+      renderTodayEvents(currentData || DEMO_DATA);
+    });
+    document.getElementById('calTabOverdueBtn')?.addEventListener('click', () => {
+      activeCalendarTab = 'overdue';
+      renderTodayEvents(currentData || DEMO_DATA);
+    });
 
     function renderSubjectGaps(actualMap, plannedMap) {
       const container = document.getElementById('subjectGapList');
@@ -3043,16 +3175,18 @@
             } catch (e) { }
           }
 
-          // 2. Googleカレンダーの予定を取得して集計（権限・API未設定でも安全に続行）
+          // 2. Googleカレンダーの予定を取得して集計（過去30日分の未完了予定も抽出・権限未設定でも安全に続行）
           const todayEvents = [];
+          const pastEvents = [];
           try {
-            const fetchStart = new Date(Math.min(yearStart.getTime(), weekStart.getTime()));
-            const fetchEnd = new Date(Math.max(yearEnd.getTime(), weekEnd.getTime()));
-            const calUrl = `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(fetchStart.toISOString())}&timeMax=${encodeURIComponent(fetchEnd.toISOString())}&singleEvents=true&orderBy=startTime&maxResults=2500`;
-            const calRes = await gApiFetch(calUrl);
             const nowDay = new Date();
             const realTodayStart = new Date(nowDay.getFullYear(), nowDay.getMonth(), nowDay.getDate(), 0, 0, 0, 0);
             const realTodayEnd = new Date(nowDay.getFullYear(), nowDay.getMonth(), nowDay.getDate(), 23, 59, 59, 999);
+            const thirtyDaysAgo = new Date(realTodayStart.getTime() - 30 * 86400000);
+            const fetchStart = new Date(Math.min(yearStart.getTime(), weekStart.getTime(), thirtyDaysAgo.getTime()));
+            const fetchEnd = new Date(Math.max(yearEnd.getTime(), weekEnd.getTime(), realTodayEnd.getTime()));
+            const calUrl = `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(fetchStart.toISOString())}&timeMax=${encodeURIComponent(fetchEnd.toISOString())}&singleEvents=true&orderBy=startTime&maxResults=2500`;
+            const calRes = await gApiFetch(calUrl);
 
             (calRes.items || []).forEach(ev => {
               if (!ev.start?.dateTime || !ev.end?.dateTime) return; // 終日予定は除外
@@ -3062,22 +3196,30 @@
               const start = new Date(ev.start.dateTime);
               const end = new Date(ev.end.dateTime);
               const mins = Math.max(0, Math.round((end - start) / 60000));
+              const evDate = fmtDateInput(start);
+              const evId = ev.id || `${evDate}_${fmtTime(start)}_${title}`;
+              const evItem = { id: evId, date: evDate, title, start: fmtTime(start), end: fmtTime(end), mins, subject: matchedSubject || '' };
+
               ensureWeek(getWeekKey(start)).planned += mins;
               if (start >= realTodayStart && start <= realTodayEnd) {
-                todayEvents.push({ title, start: fmtTime(start), end: fmtTime(end) });
+                todayEvents.push(evItem);
+              } else if (start >= thirtyDaysAgo && start < realTodayStart) {
+                pastEvents.push(evItem);
               }
               if (start >= dayStart && start <= dayEnd) addPlan(periods.today, matchedSubject, mins);
               if (start >= weekStart && start <= weekEnd) addPlan(periods.week, matchedSubject, mins);
               if (start >= monthStart && start <= monthEnd) addPlan(periods.month, matchedSubject, mins);
               if (start >= yearStart && start <= yearEnd) addPlan(periods.year, matchedSubject, mins);
             });
+            pastEvents.sort((a, b) => `${b.date} ${b.start}`.localeCompare(`${a.date} ${a.start}`));
           } catch (calErr) {
             console.warn('Calendar API取得スキップ:', calErr);
           }
 
-          // 3. exam_results / exam_mistakes シートを安全取得（未作成でもエラーにしない）
+          // 3. exam_results / exam_mistakes / calendar_done シートを安全取得（未作成でもエラーにしない）
           let parsedDetailedResults = null;
           let parsedMistakes = null;
+          let parsedCalendarDoneMap = null;
           try {
             const extraQ = ['exam_results!A:K', 'exam_mistakes!A:K'].map(r => `ranges=${encodeURIComponent(r)}`).join('&');
             const extraRes = await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${googleAuth.spreadsheetId}/values:batchGet?${extraQ}`);
@@ -3109,6 +3251,21 @@
           } catch (_) {
             // 既存スプレッドシートにまだシートがない場合は初回保存時に自動作成
           }
+          try {
+            const cdRes = await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${googleAuth.spreadsheetId}/values/${encodeURIComponent('calendar_done!A:G')}`);
+            const cdRows = cdRes.values || [];
+            parsedCalendarDoneMap = {};
+            for (let i = 1; i < cdRows.length; i++) {
+              const r = cdRows[i];
+              if (!r || !r[0]) continue;
+              parsedCalendarDoneMap[r[0]] = {
+                event_id: r[0], date: r[1] || '', start_time: r[2] || '', end_time: r[3] || '',
+                title: r[4] || '', subject: r[5] || '', completed_at: r[6] || ''
+              };
+            }
+          } catch (_) {
+            // calendar_done シート未作成時は初回チェック時に自動作成
+          }
 
           const weeklyHistoryArr = Object.values(weeklyMap)
             .map(w => ({ weekStart: w.weekStart, actual: w.actual, planned: w.planned, activeDays: w.activeDays.size }))
@@ -3121,12 +3278,14 @@
             bySubject: periods.week.bySubject,
             periods,
             todayEvents,
+            pastEvents,
             materials,
             examResults: parsedExams.reverse(),
             studyLogs: parsedStudyLogs,
             weeklyHistory: weeklyHistoryArr,
             examDetailedResults: parsedDetailedResults,
             examMistakes: parsedMistakes,
+            calendarDoneMap: parsedCalendarDoneMap,
             hubConfig,
             activeTimer
           };
@@ -3217,6 +3376,7 @@
           examMistakes = [];
           reviewedMistakeIds = [];
           studyLogs = [];
+          calendarDoneMap = {};
           weeklyHistory = [];
           currentData = null;
           currentIsDemo = true;
@@ -3307,6 +3467,7 @@
                   { properties: { title: 'exams' } },
                   { properties: { title: 'exam_results' } },
                   { properties: { title: 'exam_mistakes' } },
+                  { properties: { title: 'calendar_done' } },
                   { properties: { title: 'config' } }
                 ]
               })
@@ -3329,6 +3490,7 @@
                   { range: 'exams!A1:I1', values: [['id', 'date', 'subject', 'title', 'score', 'maxScore', 'rank', 'note', 'source']] },
                   { range: 'exam_results!A1:I1', values: [['id', 'date', 'subject', 'title', 'score', 'maxScore', 'rank', 'nextTargetScore', 'questions_json']] },
                   { range: 'exam_mistakes!A1:K1', values: [['id', 'exam_id', 'date', 'subject', 'exam_title', 'q_no', 'accuracy', 'points', 'feeling', 'cause_tag', 'memo']] },
+                  { range: 'calendar_done!A1:G1', values: [['event_id', 'date', 'start_time', 'end_time', 'title', 'subject', 'completed_at']] },
                   { range: 'config!A1:B3', values: [['key', 'value'], ['created_at', new Date().toISOString()], ['hubConfig', JSON.stringify(initHubCfg)]] }
                 ]
               })
@@ -3562,6 +3724,75 @@
 
         function getMistakeCauseTagsForSubject(subject) {
           return getSubjectType(subject) === 'calc' ? CALC_MISTAKE_TAGS : THEORY_MISTAKE_TAGS;
+        }
+
+        // calendar_done シート自動作成 ＆ 完了状態の楽観的UI更新・Sheets同期
+        async function ensureCalendarDoneSheet() {
+          if (!useGoogleDirectMode()) return false;
+          const meta = await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${googleAuth.spreadsheetId}?fields=sheets.properties.title`);
+          const existing = new Set((meta.sheets || []).map(s => s.properties?.title));
+          if (!existing.has('calendar_done')) {
+            await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${googleAuth.spreadsheetId}:batchUpdate`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ requests: [{ addSheet: { properties: { title: 'calendar_done' } } }] })
+            });
+            await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${googleAuth.spreadsheetId}/values/calendar_done!A1:G1?valueInputOption=USER_ENTERED`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ values: [['event_id', 'date', 'start_time', 'end_time', 'title', 'subject', 'completed_at']] })
+            });
+          }
+          return true;
+        }
+
+        async function syncCalendarDoneMapToSheet() {
+          if (!useGoogleDirectMode()) return;
+          await ensureCalendarDoneSheet();
+          const rows = [['event_id', 'date', 'start_time', 'end_time', 'title', 'subject', 'completed_at']];
+          Object.values(calendarDoneMap).forEach(it => {
+            rows.push([it.event_id, it.date || '', it.start_time || '', it.end_time || '', it.title || '', it.subject || '', it.completed_at || '']);
+          });
+          await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${googleAuth.spreadsheetId}/values/${encodeURIComponent('calendar_done!A:G')}:clear`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+          });
+          await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${googleAuth.spreadsheetId}/values/${encodeURIComponent(`calendar_done!A1:G${rows.length}`)}?valueInputOption=USER_ENTERED`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ values: rows })
+          });
+        }
+
+        async function toggleCalendarEventDone(ev) {
+          const eid = ev.id;
+          const wasDone = !!calendarDoneMap[eid];
+          // 楽観的UI更新（即座にlocalStorageと画面へ反映）
+          if (wasDone) {
+            delete calendarDoneMap[eid];
+          } else {
+            calendarDoneMap[eid] = {
+              event_id: eid,
+              date: ev.date || fmtDateInput(new Date()),
+              start_time: ev.start || '',
+              end_time: ev.end || '',
+              title: ev.title || '',
+              subject: ev.subject || '',
+              completed_at: new Date().toISOString()
+            };
+          }
+          saveJSON(STORAGE_KEYS.CALENDAR_DONE, calendarDoneMap);
+          renderTodayEvents(currentData || DEMO_DATA);
+          showToast(wasDone ? '予定の完了チェックを外しました' : '予定を完了にしました！');
+
+          if (useGoogleDirectMode()) {
+            try {
+              await syncCalendarDoneMapToSheet();
+            } catch (err) {
+              console.warn('calendar_done同期警告:', err);
+            }
+          }
         }
 
         // 既存スプレッドシートに exam_results / exam_mistakes シートが無ければ自動作成
