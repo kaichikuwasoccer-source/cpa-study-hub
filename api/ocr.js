@@ -19,27 +19,35 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ status: 'error', message: 'ファイルデータが不足しています' });
     }
 
-    const subjectList = Array.isArray(subjects) && subjects.length
-      ? [...subjects, '総合・模試']
-      : ['財務(計算)', '財務(理論)', '管理会計', '監査論', '企業法', '租税法', '選択科目', '英語', '数学', '国語', '物理', '化学', '総合・模試'];
+    const baseSubjects = Array.isArray(subjects) && subjects.length
+      ? [...subjects]
+      : ['財務(計算)', '財務(理論)', '財務会計論（計算＋理論）', '管理会計', '監査論', '企業法', '租税法', '選択科目', '英語', '数学', '国語', '物理', '化学'];
+    if ((baseSubjects.includes('財務(計算)') || baseSubjects.includes('財務(理論)')) && !baseSubjects.includes('財務会計論（計算＋理論）')) {
+      baseSubjects.push('財務会計論（計算＋理論）');
+    }
+    if (!baseSubjects.includes('総合・模試')) baseSubjects.push('総合・模試');
+    const subjectList = baseSubjects;
 
     const todayStr = new Date().toISOString().slice(0, 10);
     const isQuestionMode = mode === 'exam_questions';
+    const cpaFinanceRule = '※公認会計士試験の財務会計論について：小テストやレギュラー答練等で「計算」「理論」が分かれて記載されている場合は「財務(計算)」「財務(理論)」を選択し、短答直前答練・模擬試験・論文答練等の本番形式で計算と理論が合算（1科目）になっている場合は「財務会計論（計算＋理論）」を選択してください。';
     const prompt = isQuestionMode
       ? [
-        '添付された答練・模試の成績表（問題別正答率表の画像またはPDF）から、基本情報と「問題番号」「全体正答率(%)」「配点(分かれば)」を正確に抽出し、JSONのみで返してください。',
+        '添付された答練・模試の成績表（問題別正答率表の画像またはPDF）から、基本情報と「問題番号」「全体正答率(%)」「配点(分かれば)」「計算/理論区分(calcまたはtheory、分かれば)」を正確に抽出し、JSONのみで返してください。',
+        cpaFinanceRule,
         `【選択可能な科目リスト】${subjectList.join('、')}`,
         `【ファイル名参考】${fileName || '不明'}`,
         `【日付デフォルト】${todayStr}`,
         '以下のJSON形式のみで返答してください：',
         '{',
         '  "exam": { "date": "YYYY-MM-DD", "subject": "科目リストから1つ", "title": "答練名", "score": 72, "maxScore": 100, "rank": "判定や偏差値（なければ空文字）" },',
-        '  "questions": [ { "qNo": "問1", "accuracy": 82, "points": 5 } ]',
+        '  "questions": [ { "qNo": "問1", "accuracy": 82, "points": 5, "qType": "calc または theory（不明なら空文字）" } ]',
         '}'
       ].join('\n')
       : [
         '添付された模試・答練・定期テストの成績表（PDFまたは画像）から成績情報を正確に読み取り、JSONで返してください。',
         '1枚の成績表に複数科目の点数が記載されている場合は、科目ごと（および総合があれば総合も）に配列へ分けて出力してください。',
+        cpaFinanceRule,
         '',
         `【選択可能な科目リスト】${subjectList.join('、')}`,
         `【ファイル名参考】${fileName || '不明'}`,
@@ -120,7 +128,8 @@ module.exports = async function handler(req, res) {
           .map((q, idx) => ({
             qNo: String(q.qNo ?? q.number ?? `問${idx + 1}`),
             accuracy: Math.max(0, Math.min(100, Number(q.accuracy ?? q.rate ?? 50) || 0)),
-            points: Number(q.points || 0) || 0
+            points: Number(q.points || 0) || 0,
+            qType: (q.qType === 'calc' || q.qType === 'theory') ? q.qType : ''
           }))
         : [];
       if (!qs.length) {

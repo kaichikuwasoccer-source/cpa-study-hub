@@ -230,7 +230,7 @@
       badge: '計算対策',
       advice: '計算ミスの70%以上が「論点誤認・注意点漏れ」です。電卓を叩く前に10秒だけ立ち止まり、前提条件・問われている数値を確認する「着手前10秒ルール」を徹底しましょう。',
       evaluate(ctx) {
-        const calcTagged = ctx.mistakes.filter(m => ctx.getSubjectType(m.subject) === 'calc' && m.causeTag);
+        const calcTagged = ctx.mistakes.filter(m => (m.qType || ctx.getSubjectType(m.subject)) === 'calc' && m.causeTag);
         const calcPreThink = calcTagged.filter(m => m.causeTag === '論点誤認・前提ミス' || m.causeTag === '注意点漏れ・ケアレス');
         const ratio = calcTagged.length ? (calcPreThink.length / calcTagged.length) : 0;
         return {
@@ -246,7 +246,7 @@
       badge: '理論対策',
       advice: '理論ミスの60%以上が「線引き外の見落とし・関連知識不足」です。マーク箇所だけでなく前後1文を再読し、関連論点のページ番号をテキストへ書き込みましょう。',
       evaluate(ctx) {
-        const theoryTagged = ctx.mistakes.filter(m => ctx.getSubjectType(m.subject) === 'theory' && m.causeTag);
+        const theoryTagged = ctx.mistakes.filter(m => (m.qType || ctx.getSubjectType(m.subject)) === 'theory' && m.causeTag);
         const theoryStruct = theoryTagged.filter(m => m.causeTag === '線引き外の見落とし' || m.causeTag === '関連知識・構造不足');
         const ratio = theoryTagged.length ? (theoryStruct.length / theoryTagged.length) : 0;
         return {

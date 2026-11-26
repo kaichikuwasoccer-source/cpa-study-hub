@@ -2014,11 +2014,22 @@
       if (currentData) renderDashboard(currentData, currentIsDemo);
     }
 
+    function getExamSubjectList() {
+      const opts = [...SUBJECTS];
+      const hasFin = opts.includes('財務(計算)') || opts.includes('財務(理論)');
+      if (hasFin && !opts.includes('財務会計論（計算＋理論）')) {
+        const insertAfter = Math.max(opts.indexOf('財務(計算)'), opts.indexOf('財務(理論)'));
+        opts.splice(insertAfter + 1, 0, '財務会計論（計算＋理論）');
+      }
+      if (!opts.includes('総合・模試')) opts.push('総合・模試');
+      return opts;
+    }
+
     function renderExamSubjectOptions() {
       const sel = document.getElementById('inputExamSubject');
       if (!sel) return;
       const prev = sel.value;
-      const opts = [...SUBJECTS, '総合・模試'];
+      const opts = getExamSubjectList();
       sel.innerHTML = opts.map(s => `<option value="${escapeHTML(s)}">${escapeHTML(s)}</option>`).join('');
       if (prev && opts.includes(prev)) sel.value = prev;
     }
@@ -2727,7 +2738,7 @@
             base64Data: prepared.base64Data,
             mimeType: prepared.mimeType,
             fileName: prepared.fileName,
-            subjects: SUBJECTS
+            subjects: getExamSubjectList()
           })
         });
         const rawText = await res.text();
@@ -3580,14 +3591,16 @@
         async function extractExamQuestionsByOcr(prepared) {
           const apiKey = (settings.geminiApiKey || '').trim();
           const todayStr = fmtDateInput(new Date());
+          const examSubjects = getExamSubjectList();
           if (apiKey) {
             const prompt = [
-              '添付された答練・模試の成績表（問題別正答率表の画像またはPDF）から、基本情報と「問題番号」「全体正答率(%)」「配点(分かれば)」を正確に抽出し、JSONのみで返してください。',
-              `【選択可能な科目リスト】${SUBJECTS.join('、')}`,
+              '添付された答練・模試の成績表（問題別正答率表の画像またはPDF）から、基本情報と「問題番号」「全体正答率(%)」「配点(分かれば)」「計算/理論区分(calcまたはtheory、分かれば)」を正確に抽出し、JSONのみで返してください。',
+              '※公認会計士試験の財務会計論について：小テスト等で計算・理論が分かれている場合は「財務(計算)」「財務(理論)」、本番形式の答練・模試で合算されている場合は「財務会計論（計算＋理論）」を選択してください。',
+              `【選択可能な科目リスト】${examSubjects.join('、')}`,
               `【ファイル名参考】${prepared.fileName || '不明'}`,
               `【日付デフォルト】${todayStr}`,
               '以下のJSON形式のみで返答してください：',
-              '{ "exam": { "date": "YYYY-MM-DD", "subject": "科目リストから1つ", "title": "答練名", "score": 72, "maxScore": 100, "rank": "判定や偏差値" }, "questions": [ { "qNo": "問1", "accuracy": 82, "points": 5 } ] }'
+              '{ "exam": { "date": "YYYY-MM-DD", "subject": "科目リストから1つ", "title": "答練名", "score": 72, "maxScore": 100, "rank": "判定や偏差値" }, "questions": [ { "qNo": "問1", "accuracy": 82, "points": 5, "qType": "calc または theory（不明なら空文字）" } ] }'
             ].join('\n');
             const models = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'];
             let lastErr = 'Gemini APIエラー';
@@ -3609,7 +3622,8 @@
                   ? parsed.questions.map((q, idx) => ({
                     qNo: String(q.qNo ?? q.number ?? `問${idx + 1}`),
                     accuracy: Math.max(0, Math.min(100, Number(q.accuracy ?? q.rate ?? 50) || 0)),
-                    points: Number(q.points || 0) || 0
+                    points: Number(q.points || 0) || 0,
+                    qType: (q.qType === 'calc' || q.qType === 'theory') ? q.qType : ''
                   }))
                   : [];
                 if (qs.length) return { exam: parsed?.exam || {}, questions: qs };
@@ -3627,7 +3641,7 @@
               base64Data: prepared.base64Data,
               mimeType: prepared.mimeType,
               fileName: prepared.fileName,
-              subjects: SUBJECTS
+              subjects: examSubjects
             })
           });
           const raw = await res.text();
@@ -3662,12 +3676,18 @@
         const examAnalysisModal = document.getElementById('examAnalysisModal');
         let eaDraftQuestions = [];
 
+        function isMixedExamSubject(subj) {
+          const s = String(subj || '');
+          return s.includes('計算＋理論') || s === '管理会計' || s === '租税法' || s === '総合・模試';
+        }
+
         function populateEaSubjectSelect() {
           const sel = document.getElementById('eaSubject');
           if (!sel) return;
           const prev = sel.value;
-          sel.innerHTML = SUBJECTS.map(s => `<option value="${escapeHTML(s)}">${escapeHTML(s)}</option>`).join('');
-          if (prev && SUBJECTS.includes(prev)) sel.value = prev;
+          const opts = getExamSubjectList();
+          sel.innerHTML = opts.map(s => `<option value="${escapeHTML(s)}">${escapeHTML(s)}</option>`).join('');
+          if (prev && opts.includes(prev)) sel.value = prev;
         }
 
         function openExamAnalysisModal() {
@@ -3712,11 +3732,13 @@
           }
 
           const subj = document.getElementById('eaSubject').value || SUBJECTS[0];
-          const causeTags = getMistakeCauseTagsForSubject(subj);
-          const typeLabel = getSubjectType(subj) === 'calc' ? '計算3分類' : '理論5分類';
+          const isMixed = isMixedExamSubject(subj);
 
           container.innerHTML = '';
           eaDraftQuestions.forEach((q, idx) => {
+            const effectiveType = (q.qType === 'calc' || q.qType === 'theory') ? q.qType : getSubjectType(subj);
+            const causeTags = effectiveType === 'calc' ? CALC_MISTAKE_TAGS : THEORY_MISTAKE_TAGS;
+            const typeLabel = effectiveType === 'calc' ? '計算3分類' : '理論5分類';
             const bandColor = q.accuracy >= 60
               ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
               : q.accuracy >= 40
@@ -3762,6 +3784,13 @@
                         ${opt.label}
                       </button>
                     `).join('')}
+                    ${isMixed ? `
+                      <span class="ml-2 text-[11px] font-bold text-slate-500">問題区分:</span>
+                      <button type="button" data-act="setQType" data-idx="${idx}" data-val="calc"
+                        class="rounded-lg border px-2 py-0.5 text-[11px] font-bold transition ${effectiveType === 'calc' ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'}">計算</button>
+                      <button type="button" data-act="setQType" data-idx="${idx}" data-val="theory"
+                        class="rounded-lg border px-2 py-0.5 text-[11px] font-bold transition ${effectiveType === 'theory' ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'}">理論</button>
+                    ` : ''}
                   </div>
                   <div class="flex flex-wrap items-center gap-1.5">
                     <span class="text-[11px] font-bold text-slate-500 mr-1">失点原因(${typeLabel}・任意):</span>
@@ -3785,7 +3814,19 @@
         document.getElementById('closeExamAnalysisBtn')?.addEventListener('click', closeExamAnalysisModal);
         document.getElementById('cancelExamAnalysisBtn')?.addEventListener('click', closeExamAnalysisModal);
         examAnalysisModal?.addEventListener('click', (e) => { if (e.target === examAnalysisModal) closeExamAnalysisModal(); });
-        document.getElementById('eaSubject')?.addEventListener('change', renderEaQuestionList);
+        document.getElementById('eaSubject')?.addEventListener('change', (e) => {
+          const maxEl = document.getElementById('eaMaxScore');
+          if (e.target.value === '財務会計論（計算＋理論）' && maxEl && maxEl.value === '100') {
+            maxEl.value = '200';
+          }
+          renderEaQuestionList();
+        });
+        document.getElementById('inputExamSubject')?.addEventListener('change', (e) => {
+          const maxEl = document.getElementById('inputExamMax');
+          if (e.target.value === '財務会計論（計算＋理論）' && maxEl && maxEl.value === '100') {
+            maxEl.value = '200';
+          }
+        });
 
         document.getElementById('eaTogglePasteBtn')?.addEventListener('click', () => {
           document.getElementById('eaPasteBox').classList.toggle('hidden');
@@ -3837,7 +3878,8 @@
             const extracted = await extractExamQuestionsByOcr(prepared);
             if (extracted.exam) {
               if (extracted.exam.date) document.getElementById('eaDate').value = extracted.exam.date;
-              if (extracted.exam.subject && SUBJECTS.includes(extracted.exam.subject)) document.getElementById('eaSubject').value = extracted.exam.subject;
+              const allowedSubjs = getExamSubjectList();
+              if (extracted.exam.subject && allowedSubjs.includes(extracted.exam.subject)) document.getElementById('eaSubject').value = extracted.exam.subject;
               if (extracted.exam.title) document.getElementById('eaTitle').value = extracted.exam.title;
               if (extracted.exam.score) document.getElementById('eaScore').value = extracted.exam.score;
               if (extracted.exam.maxScore) document.getElementById('eaMaxScore').value = extracted.exam.maxScore;
@@ -3845,6 +3887,7 @@
             }
             eaDraftQuestions = extracted.questions.map(q => ({
               qNo: q.qNo, accuracy: q.accuracy, points: q.points || 0,
+              qType: (q.qType === 'calc' || q.qType === 'theory') ? q.qType : '',
               isWrong: false, feeling: 'A', causeTag: '', memo: ''
             }));
             renderEaQuestionList();
@@ -3865,6 +3908,7 @@
           if (act === 'toggleWrong') { q.isWrong = !q.isWrong; renderEaQuestionList(); }
           else if (act === 'removeRow') { eaDraftQuestions.splice(idx, 1); renderEaQuestionList(); }
           else if (act === 'setFeeling') { q.feeling = btn.dataset.val; renderEaQuestionList(); }
+          else if (act === 'setQType') { q.qType = btn.dataset.val; q.causeTag = ''; renderEaQuestionList(); }
           else if (act === 'setCause') { q.causeTag = (q.causeTag === btn.dataset.val) ? '' : btn.dataset.val; renderEaQuestionList(); }
         });
         document.getElementById('eaQuestionList')?.addEventListener('input', (e) => {
@@ -3908,6 +3952,7 @@
               id: `exm_${Date.now()}_${idx}`,
               examId, date, subject, examTitle: title,
               qNo: norm.qNo, accuracy: norm.accuracy, points: norm.points,
+              qType: (q.qType === 'calc' || q.qType === 'theory') ? q.qType : getSubjectType(subject),
               feeling: q.feeling || 'A', causeTag: q.causeTag || '', memo: q.memo || ''
             }));
 
