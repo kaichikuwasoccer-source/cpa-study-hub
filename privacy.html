@@ -36,13 +36,13 @@
     <article class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-10 space-y-7 text-sm leading-relaxed">
       <div class="border-b border-slate-100 pb-5">
         <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">プライバシーポリシー</h1>
-        <p class="mt-1.5 text-xs text-slate-400">最終更新日：2026年11月24日</p>
+        <p class="mt-1.5 text-xs text-slate-400">最終更新日：2026年11月26日</p>
       </div>
 
       <section class="space-y-2">
         <h2 class="text-base font-bold text-slate-900">1. 基本方針</h2>
         <p class="text-slate-600">
-          CPA Study Hub（以下「本アプリ」）は、公認会計士試験等の学習時間管理および振り返りを支援するウェブアプリケーションです。本アプリはユーザーのプライバシーを尊重し、個人情報を適切に取り扱います。
+          CPA Study Hub（以下「本アプリ」）は、公認会計士試験や大学受験等の学習時間管理・答練成績分析および振り返りを支援するウェブアプリケーションです。本アプリはユーザーのプライバシーを尊重し、個人情報を適切に取り扱います。
         </p>
       </section>
 
@@ -53,18 +53,18 @@
         </p>
         <ul class="list-disc space-y-1.5 pl-5 text-slate-600">
           <li><strong>Google アカウントの基本情報（氏名・メールアドレス・プロフィール画像）</strong>：ログイン状態の表示およびアカウント管理のために利用します。</li>
-          <li><strong>Google ドライブおよび Google スプレッドシート（本アプリが作成したファイルのみ / <code>drive.file</code> スコープ）</strong>：ユーザー専用の学習記録スプレッドシート（<code>CPA Study Hub データ</code>）および答練PDF用フォルダ（<code>CPA答練PDF</code>）の作成・読み書きのために利用します。本アプリが作成していない他のドライブファイルにはアクセスしません。</li>
+          <li><strong>Google ドライブおよび Google スプレッドシート（本アプリが作成したファイルのみ / <code>drive.file</code> スコープ）</strong>：ユーザー専用の学習記録スプレッドシート（<code>Study Hub データ</code> または <code>CPA Study Hub データ</code> 内の <code>log</code> / <code>materials</code> / <code>exams</code> / <code>exam_results</code> / <code>exam_mistakes</code> / <code>config</code> シート）および成績PDF用フォルダ（<code>StudyHub_成績PDF</code> または <code>CPA答練PDF</code>）の作成・読み書き・バックアップのために利用します。本アプリが作成していない他のドライブファイルにはアクセスしません。</li>
           <li><strong>Google カレンダーの予定情報（読み取り専用 / <code>calendar.readonly</code> スコープ）</strong>：学習予定時間の集計および「今日の勉強予定」の表示のために利用します。カレンダーの予定を作成・変更・削除することはありません。</li>
         </ul>
       </section>
 
       <section class="space-y-2">
-        <h2 class="text-base font-bold text-slate-900">3. データの保存場所と第三者提供</h2>
+        <h2 class="text-base font-bold text-slate-900">3. データの保存場所、AI OCR 処理および第三者提供</h2>
         <ul class="list-disc space-y-1.5 pl-5 text-slate-600">
-          <li>本アプリはフロントエンド完結型で動作しており、<strong>開発者のサーバーにユーザーの学習記録・カレンダー予定・個人情報を収集・保存することはありません</strong>。</li>
-          <li>すべての学習データおよび設定は、ユーザー自身のブラウザ（localStorage）およびユーザー自身の Google ドライブ内のスプレッドシートに直接保存されます。</li>
+          <li><strong>学習データ・設定の保存先</strong>：すべての学習記録・答練成績・誤答分析・設定（任意で入力するユーザー自身の Gemini API キーを含む）は、ユーザー自身のブラウザ（localStorage）およびユーザー自身の Google ドライブ内のスプレッドシートに保存されます。開発者のサーバーへこれらを永続保存することはありません。</li>
+          <li><strong>AI OCR 解析（<code>/api/ocr</code> および Gemini API）</strong>：ユーザーが「PDF / 写真からOCR取込」または「成績表OCR＆誤答(A/B/C)分析」を実行した場合のみ、選択された成績表の画像・PDFデータを本アプリのサーバーレス関数（Vercel <code>/api/ocr</code>）またはユーザー自身の API キー経由で Google Gemini API へ一時送信し、点数・問題番号・正答率を抽出します。送信された画像・PDFおよび解析結果は開発者のサーバーには一切保存されず、応答完了後に破棄されます。</li>
           <li>ユーザーの同意なく、取得したデータを第三者へ販売・提供・共有することはありません。</li>
-          <li>「ChatGPTに送る」「Geminiに送る」機能は、ユーザーが明示的にボタンを押した場合のみ、学習サマリーテキストをクリップボードへコピーまたは外部AI画面へ引き渡します。</li>
+          <li>「ChatGPTに送る」「Geminiに送る」機能は、ユーザーが明示的にボタンを押した場合のみ、学習サマリー・診断結果テキストをクリップボードへコピーまたは外部AI画面へ引き渡します。</li>
         </ul>
       </section>
 
@@ -87,7 +87,7 @@
           <li>本アプリ内の「Googleアカウント管理」画面から「ログアウト」を実行する。</li>
           <li><a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer"
               class="font-semibold text-blue-600 underline hover:text-blue-700">Google アカウントのサードパーティ アクセス管理ページ</a>から本アプリのアクセス権限を取り消す。</li>
-          <li>Google ドライブ上の「CPA Study Hub データ」スプレッドシートおよび「CPA答練PDF」フォルダを削除する。</li>
+          <li>Google ドライブ上の「Study Hub データ（または CPA Study Hub データ）」スプレッドシートおよび「StudyHub_成績PDF（または CPA答練PDF）」フォルダを削除する。</li>
         </ul>
       </section>
 
