@@ -13,6 +13,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- パーソナル改善コーチ ルール定義（外部モジュール） -->
+  <script src="./coach-rules.js"></script>
   <!-- Google Identity Services (OAuth 2.0) -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <!-- Google Fonts: Inter & Noto Sans JP -->
@@ -2496,9 +2498,38 @@
         .slice(0, 5)
         .map(ex => `- [${ex.date}] ${ex.subject}「${ex.title}」：${ex.score}/${ex.maxScore || 100}（${ex.rank || '-'}）${ex.note ? ` / メモ: ${ex.note}` : ''}`);
 
+      // パーソナルコーチ診断結果・時間帯×科目タイプ集計・選球眼スコア・最優先復習リストを自動組み込み
+      const coachEval = typeof evaluateCoach10Patterns === 'function' ? evaluateCoach10Patterns() : { patterns: [], matrix: null };
+      const activeCoachLines = (coachEval.patterns || [])
+        .filter(p => p.triggered)
+        .sort((a, b) => b.priority - a.priority)
+        .slice(0, 5)
+        .map((p, idx) => `- [優先#${idx + 1}] ${p.title}（${p.metric}）：${p.advice}`);
+
+      const matrixLines = coachEval.matrix
+        ? ['morning', 'day', 'night'].map(k => {
+          const m = coachEval.matrix[k];
+          const f = (o) => o.count ? `${Math.round(o.avgMins)}分/集中${o.avgScore ? Math.round((o.avgScore / 3) * 100) + '%' : '--'}(${o.count}件)` : '記録なし';
+          return `- ${m.label}：計算系[${f(m.calc)}] / 理論系[${f(m.theory)}]`;
+        })
+        : [];
+
+      const allMistakes = examMistakes || [];
+      const cMis = allMistakes.filter(m => m.feeling === 'C');
+      const cHigh = cMis.filter(m => Number(m.accuracy) >= 60);
+      const eyeScoreText = allMistakes.length
+        ? `${Math.max(0, Math.round(100 - cHigh.length * 18 - (cMis.length ? (cHigh.length / cMis.length) * 20 : 0)))} / 100点（体感C判定${cMis.length}問中、全体正答率60%以上が${cHigh.length}問）`
+        : '未算出（誤答データ未登録）';
+
+      const priorityReviewLines = allMistakes
+        .filter(m => Number(m.accuracy) >= 60 && !reviewedMistakeIds.includes(m.id))
+        .sort((a, b) => (Number(b.accuracy) || 0) - (Number(a.accuracy) || 0))
+        .slice(0, 6)
+        .map(m => `- ${m.subject} ${m.qNo}（${m.examTitle} / 全体正答率${m.accuracy}% / 体感${m.feeling}${m.causeTag ? ` / 原因:${m.causeTag}` : ''}${m.memo ? ` / ${m.memo}` : ''}）`);
+
       const coachRole = GOAL_PRESETS[studyGoal]?.coachRole || '資格・受験の学習コーチ';
       return [
-        `${coachRole}として、以下の【${ctx.rangeLabel}の学習時間】と【直近の模試・答練・テスト成績】の両方を踏まえ、振り返り（反省）と次週の勉強時間の配分調整を提案してください。`,
+        `${coachRole}として、以下の【${ctx.rangeLabel}の学習時間】【パーソナル診断結果】【答練成績・誤答分析】をすべて踏まえ、振り返り（反省）と次週の勉強時間の配分・具体的な学習法調整を提案してください。`,
         '',
         `■ 基準日：${todayStr}`,
         '■ 試験・重要日程',
@@ -2508,13 +2539,23 @@
         '■ 科目別の予定 vs 実績',
         ...subjectLines,
         '',
+        '■ 時間帯 × 科目タイプ別（平均1クール時間・集中度）',
+        ...(matrixLines.length ? matrixLines : ['- 記録なし']),
+        '',
+        '■ パーソナル改善コーチの自動診断結果（検出された課題）',
+        ...(activeCoachLines.length ? activeCoachLines : ['- 重大なボトルネックは未検出']),
+        '',
         '■ 直近の模試・答練・テスト成績',
         ...(examLines.length ? examLines : ['- まだ登録なし']),
         '',
+        `■ 難易度選球眼スコア：${eyeScoreText}`,
+        '■ 最優先復習リスト（全体正答率60%以上の未復習誤答）',
+        ...(priorityReviewLines.length ? priorityReviewLines : ['- 該当なし']),
+        '',
         '■ お願いしたいこと',
-        '1. 勉強時間と模試・テスト成績の相関を踏まえた反省点・良かった点',
-        '2. 成績が伸び悩んでいる科目／予定遅れ科目のリカバリーを踏まえた、次週の科目別勉強時間の具体的な配分案',
-        '3. 次週に最優先で取り組むべきアクション3点'
+        '1. 勉強時間・時間帯リズム・答練誤答（選球眼・失点原因）の相関を踏まえた反省点・良かった点',
+        '2. 成績が伸び悩んでいる科目／予定遅れ科目のリカバリーを踏まえた、次週の科目別・時間帯別の具体的な配分案',
+        '3. 次週に最優先で取り組むべきアクション3点（上記「最優先復習リスト」の消化手順を含む）'
       ].join('\n');
     }
 
@@ -4015,179 +4056,36 @@
         });
 
         // =========================================================================
-        // 12. 学習ログ × 答練成績 パーソナル改善コーチ（10パターン自動判定）
+        // 12. 学習ログ × 答練成績 パーソナル改善コーチ（外部 coach-rules.js 連携）
         // =========================================================================
-        function parseHourFromTimeStr(t) {
-          const m = String(t || '').match(/^(\d{1,2}):(\d{2})/);
-          return m ? Number(m[1]) : null;
-        }
-        function ratingToScore(r) {
-          const s = String(r || '');
-          if (s.includes('◎')) return 3;
-          if (s.includes('○')) return 2;
-          if (s.includes('△')) return 1;
-          return null;
-        }
-        function getTimeBand(hour) {
-          if (hour === null) return 'day';
-          if (hour >= 5 && hour <= 11) return 'morning';
-          if (hour >= 12 && hour <= 17) return 'day';
-          return 'night';
-        }
-
-        function computeSessionMatrix(logs) {
-          const matrix = {
-            morning: { label: '朝 (5〜11時)', calc: { mins: [], scores: [] }, theory: { mins: [], scores: [] } },
-            day: { label: '昼 (12〜17時)', calc: { mins: [], scores: [] }, theory: { mins: [], scores: [] } },
-            night: { label: '夜 (18〜4時)', calc: { mins: [], scores: [] }, theory: { mins: [], scores: [] } }
-          };
-          (logs || []).forEach(l => {
-            const mins = Number(l.minutes) || 0;
-            if (mins <= 0) return;
-            const hr = parseHourFromTimeStr(l.start_time) ?? parseHourFromTimeStr(l.end_time);
-            const band = getTimeBand(hr);
-            const type = getSubjectType(l.subject);
-            matrix[band][type].mins.push(mins);
-            const sc = ratingToScore(l.rating);
-            if (sc !== null) matrix[band][type].scores.push(sc);
-          });
-          const avg = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
-          ['morning', 'day', 'night'].forEach(b => {
-            ['calc', 'theory'].forEach(t => {
-              matrix[b][t].avgMins = avg(matrix[b][t].mins);
-              matrix[b][t].avgScore = avg(matrix[b][t].scores);
-              matrix[b][t].count = matrix[b][t].mins.length;
-            });
-          });
-          return matrix;
-        }
-
         function evaluateCoach10Patterns() {
-          const logs = studyLogs || [];
-          const mistakes = examMistakes || [];
-          const allExams = examResults || [];
-          const matrix = computeSessionMatrix(logs);
           const data = currentData || DEMO_DATA;
           const weekSlice = resolvePeriodData(data, 'week').slice;
           const weekActualMap = weekSlice.bySubject?.actual || {};
           const weekTotalActual = weekSlice.actual || Object.values(weekActualMap).reduce((a, b) => a + b, 0);
 
-          const patterns = [];
-          const pushPattern = (id, priority, triggered, title, metric, advice, badge) => {
-            patterns.push({ id, priority, triggered, title, metric, advice, badge });
-          };
-
-          // ① 朝計算の失速（朝の計算1クール45分未満＋答練伸び悩み）
-          const morningCalcAvg = matrix.morning.calc.avgMins;
-          const calcExams = allExams.filter(e => getSubjectType(e.subject) === 'calc');
-          const calcExamPct = calcExams.length ? calcExams.reduce((s, e) => s + ((e.score / (e.maxScore || 100)) * 100), 0) / calcExams.length : null;
-          const p1 = morningCalcAvg !== null && morningCalcAvg < 45 && (calcExamPct === null || calcExamPct < 75);
-          pushPattern('p1', 85, p1, '① 朝計算の失速',
-            morningCalcAvg !== null ? `朝計算の平均1クール: ${Math.round(morningCalcAvg)}分` : '朝計算のログ不足',
-            '朝の計算1クールが45分未満で失速気味です。朝は理論の暗記・回転に充て、まとまった集中が作りやすい午後へ計算演習を移動しましょう。', '時間帯最適化');
-
-          // ② 夜理論の集中低下（夜21時以降の理論集中度低下・先走りミス）
-          const lateTheoryLogs = logs.filter(l => {
-            const h = parseHourFromTimeStr(l.start_time);
-            return getSubjectType(l.subject) === 'theory' && h !== null && (h >= 21 || h <= 3);
-          });
-          const lateTheoryScores = lateTheoryLogs.map(l => ratingToScore(l.rating)).filter(x => x !== null);
-          const lateTheoryAvg = lateTheoryScores.length ? lateTheoryScores.reduce((a, b) => a + b, 0) / lateTheoryScores.length : null;
-          const hasRushMistake = mistakes.some(m => m.causeTag === '先走り読み・設問誤読');
-          const p2 = (lateTheoryAvg !== null && lateTheoryAvg <= 1.7) || (lateTheoryLogs.length > 0 && hasRushMistake);
-          pushPattern('p2', 82, p2, '② 夜理論の集中低下',
-            lateTheoryAvg !== null ? `21時以降の理論集中度: ${(lateTheoryAvg / 3 * 100).toFixed(0)}%` : '21時以降の理論ログあり',
-            '夜21時以降の理論学習で集中度低下・先走り読みが出ています。夜は手を動かして進められる「計算の個別問題」へ切り替えましょう。', '時間帯最適化');
-
-          // ③ 1クール超過による集中切れ（120分超の連続学習後の集中度急落）
-          let longDropCount = 0;
-          const sortedLogs = [...logs].sort((a, b) => `${a.date} ${a.start_time}`.localeCompare(`${b.date} ${b.start_time}`));
-          for (let i = 0; i < sortedLogs.length; i++) {
-            if (Number(sortedLogs[i].minutes) > 120) {
-              const next = sortedLogs[i + 1];
-              const curSc = ratingToScore(sortedLogs[i].rating);
-              const nextSc = next && next.date === sortedLogs[i].date ? ratingToScore(next.rating) : null;
-              if ((nextSc !== null && curSc !== null && nextSc < curSc) || (nextSc !== null && nextSc === 1) || curSc === 1) {
-                longDropCount++;
-              }
-            }
-          }
-          const p3 = longDropCount > 0;
-          pushPattern('p3', 80, p3, '③ 1クール超過による集中切れ',
-            `120分超後の集中低下: ${longDropCount}回検出`,
-            '120分を超える連続学習の直後に集中度が急落しています。「90分学習＋15分休憩」のブロック制に区切って後半の質を守りましょう。', 'リズム改善');
-
-          // ④ 基礎（正答率60%以上）の取りこぼし過多
-          const highAccMistakes = mistakes.filter(m => Number(m.accuracy) >= 60);
-          const p4 = highAccMistakes.length >= 3 && (weekTotalActual >= 600 || logs.length >= 5);
-          pushPattern('p4', 95, p4, '④ 基礎（正答率60%以上）の取りこぼし過多',
-            `正答率60%以上の誤答: ${highAccMistakes.length}問`,
-            '勉強量は確保できている一方で、全体正答率60%以上の基礎問題で取りこぼしが多い状態です。難問に手を広げず「Aランク回転教材」へ集中しましょう。', '最優先');
-
-          // ⑤ 本番での問題選球眼ズレ（体感C判定の中に正答率60%以上が2問以上）
-          const cHighAcc = mistakes.filter(m => m.feeling === 'C' && Number(m.accuracy) >= 60);
-          const p5 = cHighAcc.length >= 2;
-          pushPattern('p5', 92, p5, '⑤ 本番での問題選球眼ズレ',
-            `体感C判定×正答率60%以上: ${cHighAcc.length}問`,
-            '捨て問(C)と判断した問題の中に、周囲の60%以上が解けている基本問題が複数あります。解答開始3分の全体スキャンと総論整理を徹底しましょう。', '本番戦略');
-
-          // ⑥ 時間投入過多の「空回り科目」検出（週間時間の35%以上投入＋答練横ばい/伸び悩み）
-          let spinSubject = null, spinShare = 0;
-          if (weekTotalActual > 0) {
-            SUBJECTS.forEach(s => {
-              const share = (weekActualMap[s] || 0) / weekTotalActual;
-              if (share >= 0.35) {
-                const subEx = allExams.filter(e => e.subject === s).sort((a, b) => new Date(b.date) - new Date(a.date));
-                const stagnant = !subEx.length || (subEx[0].score / (subEx[0].maxScore || 100) < 0.72) || (subEx.length >= 2 && subEx[0].score <= subEx[1].score + 2);
-                if (stagnant && share > spinShare) { spinSubject = s; spinShare = share; }
-              }
+          if (typeof window.evaluateCpaCoachRules === 'function') {
+            return window.evaluateCpaCoachRules({
+              logs: studyLogs || [],
+              mistakes: examMistakes || [],
+              exams: examResults || [],
+              subjects: SUBJECTS || [],
+              countdowns: countdowns || [],
+              weeklyHistory: weeklyHistory || [],
+              weekActualMap,
+              weekTotalActual,
+              getSubjectType
             });
           }
-          const p6 = !!spinSubject;
-          pushPattern('p6', 84, p6, '⑥ 時間投入過多の「空回り科目」検出',
-            spinSubject ? `${spinSubject}: 週間比率 ${(spinShare * 100).toFixed(0)}%` : '偏りなし',
-            `「${spinSubject || '特定科目'}」に週間時間の35%以上を投入していますが点数が伸び悩んでいます。作業的な反復を止め、抽象・背景理解への回帰と講師相談を行いましょう。`, '配分見直し');
-
-          // ⑦ 計画過多・慢性的な予実マイナス（3週連続達成率70%未満＋オフ日なし）
-          const recent3Weeks = (weeklyHistory || []).slice(-3);
-          const low3Weeks = recent3Weeks.length >= 3 && recent3Weeks.every(w => w.planned > 0 && (w.actual / w.planned) < 0.7 && w.activeDays >= 7);
-          const p7 = low3Weeks;
-          pushPattern('p7', 78, p7, '⑦ 計画過多・慢性的な予実マイナス',
-            recent3Weeks.length >= 3 ? `直近3週の達成率: ${recent3Weeks.map(w => Math.round((w.actual / Math.max(1, w.planned)) * 100) + '%').join(' / ')}` : '3週分の履歴蓄積中',
-            '3週連続で達成率70%未満かつオフ日なしの過密計画になっています。週1日の「予備日（調整日）」をあらかじめカレンダーに設定しましょう。', '計画調整');
-
-          // ⑧ 直前期の回転スピード不足（試験2週間前以内）
-          const today0 = new Date(); today0.setHours(0, 0, 0, 0);
-          let nearestExam = null, minDays = Infinity;
-          (countdowns || []).forEach(c => {
-            const t = new Date(`${c.date}T00:00:00`);
-            const diff = Math.ceil((t - today0) / 86400000);
-            if (diff >= 0 && diff < minDays) { minDays = diff; nearestExam = c; }
-          });
-          const p8 = nearestExam !== null && minDays <= 14;
-          pushPattern('p8', 98, p8, '⑧ 直前期の回転スピード不足',
-            nearestExam ? `${nearestExam.name} まで残り${minDays}日` : '直前試験なし',
-            `試験まで2週間以内（残り${minDays}日）です。全範囲を丁寧に解き直すのではなく、「間違えた箇所・正答率60%以上の誤答」のみの高速回転へ切り替えましょう。`, '直前期モード');
-
-          // ⑨ 計算の「着手前思考」不足（計算ミスで論点誤認・注意点漏れが70%以上）
-          const calcTagged = mistakes.filter(m => getSubjectType(m.subject) === 'calc' && m.causeTag);
-          const calcPreThink = calcTagged.filter(m => m.causeTag === '論点誤認・前提ミス' || m.causeTag === '注意点漏れ・ケアレス');
-          const calcRatio = calcTagged.length ? (calcPreThink.length / calcTagged.length) : 0;
-          const p9 = calcTagged.length >= 2 && calcRatio >= 0.7;
-          pushPattern('p9', 88, p9, '⑨ 計算の「着手前思考」不足',
-            calcTagged.length ? `論点誤認・注意点漏れ比率: ${Math.round(calcRatio * 100)}% (${calcPreThink.length}/${calcTagged.length}問)` : '計算タグ未蓄積',
-            '計算ミスの70%以上が「論点誤認・注意点漏れ」です。電卓を叩く前に10秒だけ立ち止まり、前提条件・問われている数値を確認する「着手前10秒ルール」を徹底しましょう。', '計算対策');
-
-          // ⑩ 理論の「線引き外・構造見落とし」過多（理論ミスで線引き外見落とし・関連知識不足が60%以上）
-          const theoryTagged = mistakes.filter(m => getSubjectType(m.subject) === 'theory' && m.causeTag);
-          const theoryStruct = theoryTagged.filter(m => m.causeTag === '線引き外の見落とし' || m.causeTag === '関連知識・構造不足');
-          const theoryRatio = theoryTagged.length ? (theoryStruct.length / theoryTagged.length) : 0;
-          const p10 = theoryTagged.length >= 2 && theoryRatio >= 0.6;
-          pushPattern('p10', 87, p10, '⑩ 理論の「線引き外・構造見落とし」過多',
-            theoryTagged.length ? `線引き外・関連知識不足比率: ${Math.round(theoryRatio * 100)}% (${theoryStruct.length}/${theoryTagged.length}問)` : '理論タグ未蓄積',
-            '理論ミスの60%以上が「線引き外の見落とし・関連知識不足」です。マーク箇所だけでなく前後1文を再読し、関連論点のページ番号をテキストへ書き込みましょう。', '理論対策');
-
-          return { patterns, matrix };
+          // coach-rules.js 未読込時の安全なフォールバック
+          return {
+            patterns: [],
+            matrix: {
+              morning: { label: '朝 (5〜11時)', calc: { count: 0 }, theory: { count: 0 } },
+              day: { label: '昼 (12〜17時)', calc: { count: 0 }, theory: { count: 0 } },
+              night: { label: '夜 (18〜4時)', calc: { count: 0 }, theory: { count: 0 } }
+            }
+          };
         }
 
         function renderPersonalCoach() {

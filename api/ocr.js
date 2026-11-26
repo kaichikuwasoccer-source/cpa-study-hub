@@ -173,4 +173,4 @@ module.exports = async function handler(req, res) {
       message: err?.message || 'OCR解析中にエラーが発生しました'
     });
   }
-};
+}
