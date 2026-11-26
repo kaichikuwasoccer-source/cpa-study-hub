@@ -1347,10 +1347,10 @@
       { id: 'ex_demo2', date: '2026-11-18', subject: '管理会計', title: '短答直前答練 第2回', score: 62, maxScore: 100, rank: '偏差値 49.5 / C', note: '標準原価計算の差異分析で時間切れ', source: 'OCR' },
       { id: 'ex_demo3', date: '2026-11-15', subject: '監査論', title: '確認テスト 第4回', score: 85, maxScore: 100, rank: '偏差値 62.0 / A', note: 'リスクアプローチは安定', source: '手入力' },
     ]);
-    let examDetailedResults = loadJSON(STORAGE_KEYS.EXAM_RESULTS, DEMO_EXAM_RESULTS);
-    let examMistakes = loadJSON(STORAGE_KEYS.EXAM_MISTAKES, DEMO_EXAM_MISTAKES);
+    let examDetailedResults = loadJSON(STORAGE_KEYS.EXAM_RESULTS, []).filter(r => r && !String(r.id || '').startsWith('exr_demo'));
+    let examMistakes = loadJSON(STORAGE_KEYS.EXAM_MISTAKES, []).filter(m => m && !String(m.id || '').startsWith('exm_demo'));
     let reviewedMistakeIds = loadJSON(STORAGE_KEYS.REVIEWED_MISTAKES, []);
-    let studyLogs = loadJSON(STORAGE_KEYS.STUDY_LOGS, DEMO_STUDY_LOGS);
+    let studyLogs = loadJSON(STORAGE_KEYS.STUDY_LOGS, []);
     let weeklyHistory = [];
     let selectedPeriod = 'week';
     let periodOffset = 0; // 0=現在, -1=前の期間, -2=2つ前...
@@ -4089,16 +4089,30 @@
         // 12. 学習ログ × 答練成績 パーソナル改善コーチ（外部 coach-rules.js 連携）
         // =========================================================================
         function evaluateCoach10Patterns() {
+          const emptyMatrix = {
+            morning: { label: '朝 (5〜11時)', calc: { count: 0 }, theory: { count: 0 } },
+            day: { label: '昼 (12〜17時)', calc: { count: 0 }, theory: { count: 0 } },
+            night: { label: '夜 (18〜4時)', calc: { count: 0 }, theory: { count: 0 } }
+          };
+          const realLogs = (studyLogs || []).filter(l => l && Number(l.minutes) > 0);
+          const realMistakes = (examMistakes || []).filter(m => m && !String(m.id || '').startsWith('exm_demo'));
+          const realExams = (examResults || []).filter(e => e && !String(e.id || '').startsWith('ex_demo'));
+          const hasUserData = realLogs.length > 0 || realMistakes.length > 0 || (!currentIsDemo && realExams.length > 0);
+
+          if (!hasUserData) {
+            return { hasData: false, patterns: [], matrix: emptyMatrix };
+          }
+
           const data = currentData || DEMO_DATA;
-          const weekSlice = resolvePeriodData(data, 'week').slice;
+          const weekSlice = !currentIsDemo ? resolvePeriodData(data, 'week').slice : { actual: 0, bySubject: { actual: {} } };
           const weekActualMap = weekSlice.bySubject?.actual || {};
           const weekTotalActual = weekSlice.actual || Object.values(weekActualMap).reduce((a, b) => a + b, 0);
 
           if (typeof window.evaluateCpaCoachRules === 'function') {
-            return window.evaluateCpaCoachRules({
-              logs: studyLogs || [],
-              mistakes: examMistakes || [],
-              exams: examResults || [],
+            const evaluated = window.evaluateCpaCoachRules({
+              logs: realLogs,
+              mistakes: realMistakes,
+              exams: realExams,
               subjects: SUBJECTS || [],
               countdowns: countdowns || [],
               weeklyHistory: weeklyHistory || [],
@@ -4106,16 +4120,9 @@
               weekTotalActual,
               getSubjectType
             });
+            return { hasData: true, ...evaluated };
           }
-          // coach-rules.js 未読込時の安全なフォールバック
-          return {
-            patterns: [],
-            matrix: {
-              morning: { label: '朝 (5〜11時)', calc: { count: 0 }, theory: { count: 0 } },
-              day: { label: '昼 (12〜17時)', calc: { count: 0 }, theory: { count: 0 } },
-              night: { label: '夜 (18〜4時)', calc: { count: 0 }, theory: { count: 0 } }
-            }
-          };
+          return { hasData: false, patterns: [], matrix: emptyMatrix };
         }
 
         function renderPersonalCoach() {
@@ -4125,8 +4132,8 @@
           const allList = document.getElementById('coachAllPatternsList');
           if (!grid) return;
 
-          const { patterns, matrix } = evaluateCoach10Patterns();
-          const active = patterns.filter(p => p.triggered).sort((a, b) => b.priority - a.priority);
+          const { hasData, patterns, matrix } = evaluateCoach10Patterns();
+          const active = hasData ? patterns.filter(p => p.triggered).sort((a, b) => b.priority - a.priority) : [];
           document.querySelectorAll('.nav-coach-badge').forEach(el => {
             el.textContent = String(active.length);
             el.classList.toggle('hidden', active.length === 0);
@@ -4134,28 +4141,39 @@
           document.querySelectorAll('.nav-coach-dot').forEach(el => {
             el.classList.toggle('hidden', active.length === 0);
           });
-          badge.textContent = active.length ? `${active.length}件の改善提案あり` : '全10パターン良好 ✓';
-          badge.className = active.length
-            ? 'rounded-full bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-700 dark:bg-rose-950 dark:text-rose-300'
-            : 'rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300';
 
-          if (!active.length) {
+          if (!hasData) {
+            badge.textContent = 'データ蓄積待ち';
+            badge.className = 'rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-400';
             grid.innerHTML = `
-              <div class="col-span-full rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 text-xs text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200">
-                <strong>現在の学習バランス・答練分析に大きなボトルネックは検出されていません。</strong> このリズムを維持しつつ、答練の誤答(A/B/C)を継続登録するとさらに精度が上がります。
+              <div class="col-span-full rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center text-xs leading-relaxed text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+                <div class="mb-1 text-sm font-bold text-slate-700 dark:text-slate-200">まだ診断データがありません</div>
+                「記録」タブで学習ログを記録するか、「ハブ」の <strong>🎯 成績表OCR＆誤答(A/B/C)分析</strong> から答練データを登録すると、あなたのデータをもとに改善提案が表示されます。
               </div>`;
           } else {
-            grid.innerHTML = active.map((p, i) => `
-              <div class="flex flex-col justify-between rounded-2xl border ${i === 0 ? 'border-rose-300 bg-rose-50/40 dark:border-rose-900/70 dark:bg-rose-950/20' : 'border-indigo-200 bg-white dark:border-slate-800 dark:bg-slate-900'} p-4 shadow-sm">
-                <div>
-                  <div class="flex items-center justify-between gap-2">
-                    <span class="rounded-full ${i === 0 ? 'bg-rose-600 text-white' : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300'} px-2 py-0.5 text-[10px] font-bold">優先度 #${i + 1} · ${escapeHTML(p.badge)}</span>
-                    <span class="text-[10px] font-semibold text-slate-400">${escapeHTML(p.metric)}</span>
+            badge.textContent = active.length ? `${active.length}件の改善提案あり` : '全10パターン良好 ✓';
+            badge.className = active.length
+              ? 'rounded-full bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-700 dark:bg-rose-950 dark:text-rose-300'
+              : 'rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300';
+
+            if (!active.length) {
+              grid.innerHTML = `
+                <div class="col-span-full rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 text-xs text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200">
+                  <strong>現在の学習バランス・答練分析に大きなボトルネックは検出されていません。</strong> このリズムを維持しつつ、答練の誤答(A/B/C)を継続登録するとさらに精度が上がります。
+                </div>`;
+            } else {
+              grid.innerHTML = active.map((p, i) => `
+                <div class="flex flex-col justify-between rounded-2xl border ${i === 0 ? 'border-rose-300 bg-rose-50/40 dark:border-rose-900/70 dark:bg-rose-950/20' : 'border-indigo-200 bg-white dark:border-slate-800 dark:bg-slate-900'} p-4 shadow-sm">
+                  <div>
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="rounded-full ${i === 0 ? 'bg-rose-600 text-white' : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300'} px-2 py-0.5 text-[10px] font-bold">優先度 #${i + 1} · ${escapeHTML(p.badge)}</span>
+                      <span class="text-[10px] font-semibold text-slate-400">${escapeHTML(p.metric)}</span>
+                    </div>
+                    <div class="mt-2 text-sm font-extrabold text-slate-900 dark:text-slate-100">${escapeHTML(p.title)}</div>
+                    <p class="mt-1.5 text-xs leading-relaxed text-slate-600 dark:text-slate-300">${escapeHTML(p.advice)}</p>
                   </div>
-                  <div class="mt-2 text-sm font-extrabold text-slate-900 dark:text-slate-100">${escapeHTML(p.title)}</div>
-                  <p class="mt-1.5 text-xs leading-relaxed text-slate-600 dark:text-slate-300">${escapeHTML(p.advice)}</p>
-                </div>
-              </div>`).join('');
+                </div>`).join('');
+            }
           }
 
           // 時間帯 × 科目タイプ別マトリクス
@@ -4173,14 +4191,16 @@
           }).join('');
 
           // 全10パターン一覧
-          allList.innerHTML = patterns.map(p => `
-            <div class="flex items-start justify-between gap-2 rounded-xl border p-2.5 text-[11px] ${p.triggered ? 'border-rose-200 bg-rose-50/40 dark:border-rose-900/50 dark:bg-rose-950/20' : 'border-slate-200 bg-slate-50/40 dark:border-slate-800 dark:bg-slate-800/30'}">
-              <div>
-                <div class="font-bold ${p.triggered ? 'text-rose-700 dark:text-rose-300' : 'text-slate-600 dark:text-slate-300'}">${escapeHTML(p.title)}</div>
-                <div class="text-[10px] text-slate-400">${escapeHTML(p.metric)}</div>
-              </div>
-              <span class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${p.triggered ? 'bg-rose-600 text-white' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'}">${p.triggered ? '該当' : 'OK'}</span>
-            </div>`).join('');
+          allList.innerHTML = !hasData
+            ? `<div class="col-span-full text-xs text-slate-400">学習記録または答練誤答データが登録されると、10パターンの診断ステータスが表示されます。</div>`
+            : patterns.map(p => `
+              <div class="flex items-start justify-between gap-2 rounded-xl border p-2.5 text-[11px] ${p.triggered ? 'border-rose-200 bg-rose-50/40 dark:border-rose-900/50 dark:bg-rose-950/20' : 'border-slate-200 bg-slate-50/40 dark:border-slate-800 dark:bg-slate-800/30'}">
+                <div>
+                  <div class="font-bold ${p.triggered ? 'text-rose-700 dark:text-rose-300' : 'text-slate-600 dark:text-slate-300'}">${escapeHTML(p.title)}</div>
+                  <div class="text-[10px] text-slate-400">${escapeHTML(p.metric)}</div>
+                </div>
+                <span class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${p.triggered ? 'bg-rose-600 text-white' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'}">${p.triggered ? '該当' : 'OK'}</span>
+              </div>`).join('');
         }
 
         document.getElementById('toggleAllCoachPatternsBtn')?.addEventListener('click', () => {
