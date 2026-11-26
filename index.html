@@ -172,6 +172,41 @@
         </button>
       </div>
 
+      <!-- 0. パーソナル改善コーチ（学習ログ × 答練成績 10パターン自動判定） -->
+      <section id="personalCoachSection" class="space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              🧭 パーソナル改善コーチ（10パターン自動診断）
+            </h2>
+            <p class="text-[11px] text-slate-400">学習ログ（時間帯・1クール時間・集中度）× 予実 × 答練誤答データから優先改善アクションを提案します</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="coachActiveCountBadge"
+              class="rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">診断中...</span>
+            <button id="toggleAllCoachPatternsBtn" type="button"
+              class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 transition">
+              全10パターン詳細 ▾
+            </button>
+          </div>
+        </div>
+        <div id="coachAdviceGrid" class="grid grid-cols-1 gap-3 md:grid-cols-2"></div>
+        <!-- 時間帯 × 科目タイプ別 1クール継続時間＆集中度サマリー -->
+        <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div class="mb-2.5 flex flex-wrap items-center justify-between gap-2">
+            <h3 class="text-xs font-bold text-slate-700 dark:text-slate-200">⏱ 時間帯 × 科目タイプ別：平均1クール時間 ＆ 集中度</h3>
+            <span class="text-[11px] text-slate-400">朝(5-11時) / 昼(12-17時) / 夜(18-4時) · 集中度は手応え(◎/○/△)から自動算出</span>
+          </div>
+          <div id="sessionMatrixBox" class="grid grid-cols-1 gap-2.5 sm:grid-cols-3"></div>
+        </div>
+        <!-- 全10パターン診断ステータス（折りたたみ） -->
+        <div id="coachAllPatternsPanel"
+          class="hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div class="mb-2 text-xs font-bold text-slate-700 dark:text-slate-200">全10パターンの診断ステータス</div>
+          <div id="coachAllPatternsList" class="grid grid-cols-1 gap-2 sm:grid-cols-2"></div>
+        </div>
+      </section>
+
       <!-- 1. 重要日程カウントダウン -->
       <section>
         <div class="mb-3 flex items-center justify-between">
@@ -319,7 +354,11 @@
               直近の模試・答練・テスト成績（AI OCR対応）</h2>
             <p class="text-[11px] text-slate-400">模試・定期テスト・答練のPDFや写真をアップするとAIが自動OCRし、スプシ保存・Driveバックアップ・AI振り返りに反映されます</p>
           </div>
-          <div class="flex items-center gap-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <button id="openExamAnalysisBtn" type="button"
+              class="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700 transition">
+              <span>🎯 成績表OCR＆誤答(A/B/C)分析</span>
+            </button>
             <input id="ocrFileInput" type="file" accept="application/pdf,image/*" class="hidden" />
             <button id="syncDriveOcrBtn" type="button"
               class="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60 transition">
@@ -332,6 +371,46 @@
           </div>
         </div>
         <div id="examResultsGrid" class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"></div>
+
+        <!-- 答練 誤答・体感難易度（A/B/C）分析ダッシュボード -->
+        <div id="examMistakeDashboard" class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <!-- 正答率帯別の自分の正答率 & 次判定まであと何問・何点 -->
+          <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div class="mb-3 flex items-center justify-between">
+              <h3 class="text-sm font-bold">📊 全体正答率帯別 ＆ 次判定ギャップ</h3>
+              <span id="bandExamCountBadge" class="text-[11px] font-semibold text-slate-400">--</span>
+            </div>
+            <div id="accuracyBandBars" class="space-y-2.5"></div>
+            <div id="nextRankGapBox"
+              class="mt-3.5 rounded-xl bg-blue-50/80 p-3 text-xs leading-relaxed text-blue-900 dark:bg-blue-950/40 dark:text-blue-200">
+              答練の問題別誤答を登録すると、次の判定まであと何問・何点必要か自動算出します。
+            </div>
+          </div>
+
+          <!-- 難易度選球眼スコア -->
+          <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div class="mb-3 flex items-center justify-between">
+              <h3 class="text-sm font-bold">👁 難易度選球眼スコア</h3>
+              <span class="text-[11px] text-slate-400">C判定 × 正答率60%以上</span>
+            </div>
+            <div class="flex items-baseline gap-2">
+              <span id="eyeScoreVal" class="text-3xl font-extrabold tracking-tight text-indigo-600 dark:text-indigo-400">--</span>
+              <span class="text-xs font-semibold text-slate-400">/ 100点</span>
+              <span id="eyeScoreBadge" class="ml-auto rounded-full px-2.5 py-0.5 text-[11px] font-bold"></span>
+            </div>
+            <p id="eyeScoreDetail" class="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400"></p>
+            <div id="mistakeReasonSummary" class="mt-3 flex flex-wrap gap-1.5 border-t border-slate-100 pt-3 dark:border-slate-800"></div>
+          </div>
+
+          <!-- 最優先復習リスト（全体正答率60%以上の誤答） -->
+          <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div class="mb-3 flex items-center justify-between">
+              <h3 class="text-sm font-bold">🔥 最優先復習リスト（正答率60%以上）</h3>
+              <span id="priorityReviewCount" class="rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-bold text-rose-600 dark:bg-rose-950 dark:text-rose-300">0問</span>
+            </div>
+            <div id="priorityReviewList" class="max-h-60 space-y-2 overflow-y-auto pr-1"></div>
+          </div>
+        </div>
       </section>
 
       <!-- 6. 科目別 予実ギャップ & クイックアクセス -->
@@ -483,7 +562,8 @@
     </div>
 
     <!-- フッター（プライバシーポリシー・利用規約リンク） -->
-    <footer class="mt-10 flex flex-wrap items-center justify-center gap-4 border-t border-slate-200/80 pt-5 text-xs text-slate-400 dark:border-slate-800">
+    <footer
+      class="mt-10 flex flex-wrap items-center justify-center gap-4 border-t border-slate-200/80 pt-5 text-xs text-slate-400 dark:border-slate-800">
       <span>CPA Study Hub</span>
       <span>·</span>
       <a href="./privacy.html" class="hover:text-slate-600 hover:underline dark:hover:text-slate-300">プライバシーポリシー</a>
@@ -552,6 +632,12 @@
             <input id="inputNotebookUrl" type="url"
               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
           </div>
+        </div>
+        <div>
+          <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">Gemini API キー（任意・成績表OCR用／この端末のみ保存）</label>
+          <input id="inputGeminiApiKey" type="password" autocomplete="off" placeholder="AIza... / AQ...（未設定時はテキスト貼付・手入力・サーバーOCRを利用）"
+            class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+          <p class="mt-1 text-[10px] text-slate-400">※ Google AI Studio の無料APIキーを設定すると、成績表スクショから問題番号・全体正答率(%)をブラウザから直接OCR抽出できます。</p>
         </div>
         <div class="flex justify-end gap-2 pt-2">
           <button id="cancelSettingsBtn" type="button"
@@ -712,7 +798,8 @@
 
       <!-- Step 1: 学習目的・科目プリセット選択 -->
       <div id="wizStep1" class="space-y-4">
-        <p class="text-xs text-slate-600 dark:text-slate-300">どの目的で使いますか？選んだ目的に合わせてデフォルト科目・教材・AI振り返りを最適化します（あとから自由に編集できます）。</p>
+        <p class="text-xs text-slate-600 dark:text-slate-300">
+          どの目的で使いますか？選んだ目的に合わせてデフォルト科目・教材・AI振り返りを最適化します（あとから自由に編集できます）。</p>
         <div id="wizGoalGrid" class="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
           <button type="button" data-goal="univ_sci"
             class="wiz-goal-btn flex flex-col items-start rounded-xl border-2 border-slate-200 bg-white p-3.5 text-left hover:border-blue-400 dark:border-slate-700 dark:bg-slate-800/60 transition">
@@ -746,12 +833,14 @@
         <div
           class="rounded-xl bg-slate-50 p-4 text-xs leading-relaxed text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">
           自分のGoogleアカウントでログインすると、<strong>あなた専用のスプレッドシートと成績PDFフォルダ</strong>をGoogleドライブへ自動作成します。データはあなたのドライブに保存されるため安心です。
-          <p class="mt-2 text-[11px] text-slate-400">※ 初回ログイン時に「Googleで確認されていません」と出た場合は、左下の「詳細」→「cpa-study-hub.vercel.app に移動」を押してください。</p>
+          <p class="mt-2 text-[11px] text-slate-400">※
+            初回ログイン時に「Googleで確認されていません」と出た場合は、左下の「詳細」→「cpa-study-hub.vercel.app に移動」を押してください。</p>
         </div>
         <div id="wizStep2Status" class="text-center text-xs font-semibold text-slate-500"></div>
         <div class="flex gap-2">
           <button id="wizBackTo1Btn" type="button"
-            class="rounded-xl border border-slate-200 px-4 py-3 text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">← 戻る</button>
+            class="rounded-xl border border-slate-200 px-4 py-3 text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">←
+            戻る</button>
           <button id="wizLoginBtn" type="button"
             class="flex-1 rounded-xl bg-blue-600 py-3 text-xs font-bold text-white shadow-sm hover:bg-blue-700 transition">
             Googleアカウントでログインして次へ →
@@ -869,6 +958,126 @@
     </div>
   </div>
 
+  <!-- 答練成績表 OCR ＆ 誤答・体感難易度（A/B/C）分析モーダル -->
+  <div id="examAnalysisModal"
+    class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 p-3 backdrop-blur-sm">
+    <div
+      class="flex max-h-[92vh] w-full max-w-3xl flex-col rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+      <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4 dark:border-slate-800">
+        <div>
+          <h3 class="text-base font-extrabold">🎯 答練成績表 OCR ＆ 誤答・体感難易度（A/B/C）分析</h3>
+          <p class="text-[11px] text-slate-400">スクショOCR・テキスト貼付・手入力で問題別正答率を取り込み、間違えた問題だけタップしてA/B/C振り分け</p>
+        </div>
+        <button id="closeExamAnalysisBtn" type="button"
+          class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800">✕</button>
+      </div>
+
+      <div class="flex-1 space-y-4 overflow-y-auto px-5 py-4 text-xs">
+        <!-- 1. 答練基本情報 -->
+        <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-6">
+          <div class="col-span-1 sm:col-span-2">
+            <label class="mb-1 block font-semibold text-slate-600 dark:text-slate-300">実施日 *</label>
+            <input id="eaDate" type="date"
+              class="w-full rounded-xl border border-slate-300 bg-white px-2.5 py-2 text-xs dark:border-slate-700 dark:bg-slate-800" />
+          </div>
+          <div class="col-span-1 sm:col-span-2">
+            <label class="mb-1 block font-semibold text-slate-600 dark:text-slate-300">科目 *</label>
+            <select id="eaSubject"
+              class="w-full rounded-xl border border-slate-300 bg-white px-2.5 py-2 text-xs dark:border-slate-700 dark:bg-slate-800"></select>
+          </div>
+          <div class="col-span-2 sm:col-span-2">
+            <label class="mb-1 block font-semibold text-slate-600 dark:text-slate-300">判定 / 偏差値</label>
+            <input id="eaRank" type="text" placeholder="例: B判定 / 偏差値55.2"
+              class="w-full rounded-xl border border-slate-300 bg-white px-2.5 py-2 text-xs dark:border-slate-700 dark:bg-slate-800" />
+          </div>
+          <div class="col-span-2 sm:col-span-3">
+            <label class="mb-1 block font-semibold text-slate-600 dark:text-slate-300">答練・模試名 *</label>
+            <input id="eaTitle" type="text" placeholder="例：短答直前答練 第3回"
+              class="w-full rounded-xl border border-slate-300 bg-white px-2.5 py-2 text-xs dark:border-slate-700 dark:bg-slate-800" />
+          </div>
+          <div class="col-span-1 sm:col-span-1">
+            <label class="mb-1 block font-semibold text-slate-600 dark:text-slate-300">得点</label>
+            <input id="eaScore" type="number" placeholder="72"
+              class="w-full rounded-xl border border-slate-300 bg-white px-2.5 py-2 text-xs dark:border-slate-700 dark:bg-slate-800" />
+          </div>
+          <div class="col-span-1 sm:col-span-1">
+            <label class="mb-1 block font-semibold text-slate-600 dark:text-slate-300">満点</label>
+            <input id="eaMaxScore" type="number" value="100"
+              class="w-full rounded-xl border border-slate-300 bg-white px-2.5 py-2 text-xs dark:border-slate-700 dark:bg-slate-800" />
+          </div>
+          <div class="col-span-2 sm:col-span-1">
+            <label class="mb-1 block font-semibold text-slate-600 dark:text-slate-300">次判定目標</label>
+            <input id="eaNextTarget" type="number" placeholder="自動"
+              class="w-full rounded-xl border border-slate-300 bg-white px-2.5 py-2 text-xs dark:border-slate-700 dark:bg-slate-800" />
+          </div>
+        </div>
+
+        <!-- 2. 問題一覧の取り込み方法（スクショOCR / テキスト貼付 / 手動追加） -->
+        <div class="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 dark:border-slate-800 dark:bg-slate-800/40">
+          <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <span class="font-bold text-slate-700 dark:text-slate-200">① 問題番号＆全体正答率(%)を取り込む</span>
+            <span id="eaApiKeyStatus" class="text-[10px] font-semibold text-slate-400"></span>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <input id="eaImageInput" type="file" accept="image/*,application/pdf" class="hidden" />
+            <button id="eaUploadBtn" type="button"
+              class="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-bold text-white hover:bg-indigo-700 transition">
+              📷 成績表スクショからAI OCR抽出
+            </button>
+            <button id="eaTogglePasteBtn" type="button"
+              class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 transition">
+              📋 テキスト貼付で一括追加
+            </button>
+            <button id="eaAddRowBtn" type="button"
+              class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 transition">
+              ＋ 1問追加
+            </button>
+            <button id="eaSampleLoadBtn" type="button"
+              class="ml-auto rounded-lg border border-dashed border-slate-300 px-2.5 py-1.5 text-[11px] font-semibold text-slate-500 hover:text-blue-600 dark:border-slate-700 dark:text-slate-400 transition">
+              サンプル10問を試す
+            </button>
+          </div>
+          <div id="eaOcrStatus" class="mt-2 hidden text-[11px] font-semibold text-indigo-600 dark:text-indigo-400"></div>
+
+          <!-- テキスト貼り付けパネル（APIキー未設定時や手入力用） -->
+          <div id="eaPasteBox" class="mt-3 hidden space-y-2 border-t border-slate-200 pt-3 dark:border-slate-700">
+            <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+              問題番号と正答率を貼り付け（例: <code>問1 82%</code> / <code>2, 65%, 5点</code> / <code>Q3 38</code>）
+            </label>
+            <textarea id="eaPasteText" rows="3"
+              placeholder="問1 84%&#10;問2 71%&#10;問3 48%&#10;問4 29%"
+              class="w-full rounded-xl border border-slate-300 bg-white p-2.5 text-xs dark:border-slate-700 dark:bg-slate-900"></textarea>
+            <div class="flex justify-end">
+              <button id="eaParseTextBtn" type="button"
+                class="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900 transition">
+                テキストから問題一覧へ反映
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. 誤答タップ＆体感難易度(A/B/C)＋失点原因タグ振り分け -->
+        <div>
+          <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <span class="font-bold text-slate-700 dark:text-slate-200">② 間違えた問題だけタップ → 体感難易度 [A / B / C] と失点原因を選択</span>
+            <span id="eaSummaryLive" class="text-[11px] font-semibold text-slate-500">問題数: 0 / 誤答: 0</span>
+          </div>
+          <div id="eaQuestionList" class="space-y-2"></div>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 px-5 py-3.5 dark:border-slate-800">
+        <span class="text-[11px] text-slate-400">保存先: スプレッドシート <code>exam_results</code> / <code>exam_mistakes</code> ＆ ローカル</span>
+        <div class="flex items-center gap-2">
+          <button id="cancelExamAnalysisBtn" type="button"
+            class="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">キャンセル</button>
+          <button id="saveExamAnalysisBtn" type="button"
+            class="rounded-xl bg-indigo-600 px-5 py-2 text-xs font-bold text-white hover:bg-indigo-700 transition">分析結果を保存する</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     // =========================================================================
     // 1. 定数・初期データ・状態管理
@@ -877,6 +1086,10 @@
       SETTINGS: 'cpa_hub_settings_v1',
       COUNTDOWNS: 'cpa_hub_countdowns_v1',
       EXAMS: 'cpa_hub_exams_v1',
+      EXAM_RESULTS: 'cpa_hub_exam_results_v1',
+      EXAM_MISTAKES: 'cpa_hub_exam_mistakes_v1',
+      REVIEWED_MISTAKES: 'cpa_hub_reviewed_mistakes_v1',
+      STUDY_LOGS: 'cpa_hub_study_logs_v1',
       GOAL: 'cpa_hub_goal_v1',
       SUBJECTS: 'cpa_hub_subjects_v1',
       MATERIALS: 'cpa_hub_materials_v1',
@@ -988,7 +1201,45 @@
       sheetUrl: '',
       calendarUrl: 'https://calendar.google.com/',
       notebookUrl: 'https://notebooklm.google.com/',
+      geminiApiKey: '',
     };
+
+    const CALC_MISTAKE_TAGS = ['論点誤認・前提ミス', '注意点漏れ・ケアレス', '時間不足・手順不慣れ'];
+    const THEORY_MISTAKE_TAGS = ['線引き外の見落とし', '関連知識・構造不足', '先走り読み・設問誤読', '記憶曖昧・混同', '表現・当てはめ不足'];
+    const DEMO_EXAM_RESULTS = [
+      {
+        id: 'exr_demo1', date: '2026-11-20', subject: '財務(計算)', title: '短答直前答練 第2回',
+        score: 72, maxScore: 100, rank: 'B判定 / 偏差値55.8', nextTargetScore: 80,
+        questions: [
+          { qNo: '問1', accuracy: 88, points: 8, isWrong: false },
+          { qNo: '問2', accuracy: 76, points: 8, isWrong: true },
+          { qNo: '問3', accuracy: 81, points: 8, isWrong: false },
+          { qNo: '問4', accuracy: 68, points: 8, isWrong: true },
+          { qNo: '問5', accuracy: 64, points: 8, isWrong: true },
+          { qNo: '問6', accuracy: 52, points: 10, isWrong: false },
+          { qNo: '問7', accuracy: 46, points: 10, isWrong: true },
+          { qNo: '問8', accuracy: 31, points: 10, isWrong: false },
+          { qNo: '問9', accuracy: 24, points: 15, isWrong: false },
+          { qNo: '問10', accuracy: 18, points: 15, isWrong: false }
+        ]
+      }
+    ];
+    const DEMO_EXAM_MISTAKES = [
+      { id: 'exm_demo1', examId: 'exr_demo1', date: '2026-11-20', subject: '財務(計算)', examTitle: '短答直前答練 第2回', qNo: '問2', accuracy: 76, points: 8, feeling: 'A', causeTag: '論点誤認・前提ミス', memo: '退職給付の割引率読み落とし' },
+      { id: 'exm_demo2', examId: 'exr_demo1', date: '2026-11-20', subject: '財務(計算)', examTitle: '短答直前答練 第2回', qNo: '問4', accuracy: 68, points: 8, feeling: 'C', causeTag: '注意点漏れ・ケアレス', memo: '連結タイムテーブルの未実現利益' },
+      { id: 'exm_demo3', examId: 'exr_demo1', date: '2026-11-20', subject: '財務(計算)', examTitle: '短答直前答練 第2回', qNo: '問5', accuracy: 64, points: 8, feeling: 'C', causeTag: '論点誤認・前提ミス', memo: '税効果のスケジューリング区分' },
+      { id: 'exm_demo4', examId: 'exr_demo1', date: '2026-11-20', subject: '財務(計算)', examTitle: '短答直前答練 第2回', qNo: '問7', accuracy: 46, points: 10, feeling: 'B', causeTag: '時間不足・手順不慣れ', memo: 'リース取引の割賦計算' }
+    ];
+    const DEMO_STUDY_LOGS = [
+      { date: '2026-11-24', subject: '財務(計算)', material: '個別問題集', minutes: 35, rating: '△', start_time: '07:30', end_time: '08:05', topic: '連結会計' },
+      { date: '2026-11-24', subject: '管理会計', material: '短答問題集', minutes: 40, rating: '○', start_time: '08:30', end_time: '09:10', topic: '標準原価' },
+      { date: '2026-11-24', subject: '財務(計算)', material: '短答問題集', minutes: 135, rating: '◎', start_time: '13:00', end_time: '15:15', topic: '総合問題' },
+      { date: '2026-11-24', subject: '監査論', material: 'テキスト', minutes: 60, rating: '△', start_time: '15:30', end_time: '16:30', topic: 'リスクアプローチ' },
+      { date: '2026-11-24', subject: '企業法', material: '短答問題集', minutes: 55, rating: '△', start_time: '21:30', end_time: '22:25', topic: '機関設計' },
+      { date: '2026-11-23', subject: '財務(理論)', material: 'コンサマ', minutes: 50, rating: '△', start_time: '22:00', end_time: '22:50', topic: '金融商品' },
+      { date: '2026-11-23', subject: '財務(計算)', material: '個別問題集', minutes: 38, rating: '○', start_time: '07:45', end_time: '08:23', topic: '退職給付' },
+      { date: '2026-11-22', subject: '監査論', material: '短答問題集', minutes: 75, rating: '◎', start_time: '14:00', end_time: '15:15', topic: '不正リスク' }
+    ];
 
     const DEFAULT_COUNTDOWNS = [
       { id: 'c1', name: '第Ⅰ回 短答式試験', date: '2026-12-13', color: 'rose' },
@@ -1068,6 +1319,11 @@
       { id: 'ex_demo2', date: '2026-11-18', subject: '管理会計', title: '短答直前答練 第2回', score: 62, maxScore: 100, rank: '偏差値 49.5 / C', note: '標準原価計算の差異分析で時間切れ', source: 'OCR' },
       { id: 'ex_demo3', date: '2026-11-15', subject: '監査論', title: '確認テスト 第4回', score: 85, maxScore: 100, rank: '偏差値 62.0 / A', note: 'リスクアプローチは安定', source: '手入力' },
     ]);
+    let examDetailedResults = loadJSON(STORAGE_KEYS.EXAM_RESULTS, DEMO_EXAM_RESULTS);
+    let examMistakes = loadJSON(STORAGE_KEYS.EXAM_MISTAKES, DEMO_EXAM_MISTAKES);
+    let reviewedMistakeIds = loadJSON(STORAGE_KEYS.REVIEWED_MISTAKES, []);
+    let studyLogs = loadJSON(STORAGE_KEYS.STUDY_LOGS, DEMO_STUDY_LOGS);
+    let weeklyHistory = [];
     let selectedPeriod = 'week';
     let periodOffset = 0; // 0=現在, -1=前の期間, -2=2つ前...
     let activeAppTab = 'hubView';
@@ -1411,6 +1667,21 @@
           examResults = json.examResults;
           saveJSON(STORAGE_KEYS.EXAMS, examResults);
         }
+        if (Array.isArray(json.studyLogs)) {
+          studyLogs = json.studyLogs;
+          saveJSON(STORAGE_KEYS.STUDY_LOGS, studyLogs);
+        }
+        if (Array.isArray(json.weeklyHistory)) {
+          weeklyHistory = json.weeklyHistory;
+        }
+        if (Array.isArray(json.examDetailedResults)) {
+          examDetailedResults = json.examDetailedResults;
+          saveJSON(STORAGE_KEYS.EXAM_RESULTS, examDetailedResults);
+        }
+        if (Array.isArray(json.examMistakes)) {
+          examMistakes = json.examMistakes;
+          saveJSON(STORAGE_KEYS.EXAM_MISTAKES, examMistakes);
+        }
         renderExamResults();
         // Hub設定・学習目的・科目・カウントダウン同期
         if (json.hubConfig) {
@@ -1518,6 +1789,8 @@
       renderSubjectRatios(actualMap);
       renderTodayEvents(data);
       renderSubjectGaps(actualMap, plannedMap);
+      if (typeof renderExamMistakeDashboard === 'function') renderExamMistakeDashboard();
+      if (typeof renderPersonalCoach === 'function') renderPersonalCoach();
     }
 
     function renderExamResults() {
@@ -1525,7 +1798,7 @@
       if (!grid) return;
       grid.innerHTML = '';
       if (!examResults.length) {
-        grid.innerHTML = `<div class="col-span-full rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center text-xs text-slate-400 dark:border-slate-700 dark:bg-slate-900">成績データがありません。「📄 PDF / 写真からOCR取込」または「＋ 手入力」から登録できます。</div>`;
+        grid.innerHTML = `<div class="col-span-full rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center text-xs text-slate-400 dark:border-slate-700 dark:bg-slate-900">成績データがありません。Googleドライブの専用フォルダにPDFを入れて「DriveからOCR取込」を押すか、「＋ 手入力」から登録できます。</div>`;
         return;
       }
       const sorted = [...examResults].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 6);
@@ -2039,7 +2312,7 @@
       }
       const hasGoogleDirect = useGoogleDirectMode();
       if (!hasGoogleDirect && !settings.gasUrl) {
-        openOnboardingModal(isGoogleSignedIn() ? 3 : 1);
+        openOnboardingModal(isGoogleSignedIn() ? 2 : 1);
         showToast('先にGoogleログイン＆スプレッドシート自動作成を完了してください');
         return;
       }
@@ -2116,6 +2389,8 @@
       document.getElementById('inputSheetUrl').value = settings.sheetUrl || '';
       document.getElementById('inputCalendarUrl').value = settings.calendarUrl || '';
       document.getElementById('inputNotebookUrl').value = settings.notebookUrl || '';
+      const gKeyEl = document.getElementById('inputGeminiApiKey');
+      if (gKeyEl) gKeyEl.value = settings.geminiApiKey || '';
       settingsModal.classList.remove('hidden');
       settingsModal.classList.add('flex');
     }
@@ -2131,11 +2406,13 @@
 
     document.getElementById('settingsForm').addEventListener('submit', (e) => {
       e.preventDefault();
+      const gKeyEl = document.getElementById('inputGeminiApiKey');
       settings = {
         gasUrl: document.getElementById('inputGasUrl').value.trim(),
         sheetUrl: document.getElementById('inputSheetUrl').value.trim(),
         calendarUrl: document.getElementById('inputCalendarUrl').value.trim(),
         notebookUrl: document.getElementById('inputNotebookUrl').value.trim(),
+        geminiApiKey: gKeyEl ? gKeyEl.value.trim() : (settings.geminiApiKey || ''),
       };
       saveJSON(STORAGE_KEYS.SETTINGS, settings);
       closeSettingsModal();
@@ -2186,7 +2463,7 @@
     });
 
     // =========================================================================
-    // 8. AI連携（勉強時間 ＋ 直近の模試・答練・テスト成績を合わせて ChatGPT / Gemini へ送信）
+    // 8. AI連携（勉強時間 ＋ 直近の答練成績を合わせて ChatGPT / Gemini へ送信）
     // =========================================================================
     function buildAiStudyPrompt() {
       const data = currentData || DEMO_DATA;
@@ -2267,7 +2544,7 @@
     });
 
     // =========================================================================
-    // 9. イベントリスナー（期間切替・過去ナビ・AI OCR・成績手入力）＆ 初期化
+    // 9. イベントリスナー（期間切替・過去ナビ・Drive OCR・答練手入力）＆ 初期化
     // =========================================================================
     document.getElementById('refreshDataBtn').addEventListener('click', () => fetchAndRenderData(true));
 
@@ -2321,8 +2598,9 @@
           img.src = objUrl;
           return;
         }
-        if (file.size > 4 * 1024 * 1024) {
-          reject(new Error('PDFは4MB以下のファイルを選択してください（大きい場合はスクショ画像でもOCRできます）'));
+        // Vercelのペイロード上限(4.5MB)を考慮し、Base64変換前の上限を3MBに設定
+        if (file.size > 3 * 1024 * 1024) {
+          reject(new Error('PDFは3MB以下のファイルを選択してください（大きい場合はスクショ画像でもOCRできます）'));
           return;
         }
         const reader = new FileReader();
@@ -2381,10 +2659,17 @@
             subjects: SUBJECTS
           })
         });
-        const json = await res.json();
+        const rawText = await res.text();
+        let json = {};
+        try {
+          json = rawText ? JSON.parse(rawText) : {};
+        } catch (_) {
+          throw new Error(`OCR APIエラー (HTTP ${res.status}): Vercel環境とGEMINI_API_KEYの設定を確認してください`);
+        }
         if (!res.ok || json.status !== 'ok') {
           throw new Error(json.message || 'OCR解析に失敗しました');
         }
+
         const newItems = json.results || [];
         examResults = [...newItems, ...examResults];
         saveJSON(STORAGE_KEYS.EXAMS, examResults);
@@ -2392,13 +2677,17 @@
 
         // スプレッドシートへ自動保存
         if (useGoogleDirectMode()) {
-          const rows = newItems.map(it => [it.id, it.date, it.subject, it.title, it.score, it.maxScore, it.rank, it.note, it.source]);
-          await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${googleAuth.spreadsheetId}/values/exams!A:I:append?valueInputOption=USER_ENTERED`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ values: rows })
-          });
-          await backupFileToDriveFolder(file);
+          try {
+            const rows = newItems.map(it => [it.id, it.date, it.subject, it.title, it.score, it.maxScore, it.rank, it.note, it.source]);
+            await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${googleAuth.spreadsheetId}/values/exams!A:I:append?valueInputOption=USER_ENTERED`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ values: rows })
+            });
+            await backupFileToDriveFolder(file);
+          } catch (syncErr) {
+            console.warn('スプレッドシート/Drive同期エラー:', syncErr);
+          }
         } else if (settings.gasUrl) {
           for (const it of newItems) {
             try {
@@ -2420,659 +2709,1576 @@
       }
     });
 
-    // 答練成績 手入力モーダル制御
-    const examModal = document.getElementById('examModal');
-    function openExamModal() {
-      renderExamSubjectOptions();
-      document.getElementById('inputExamDate').value = fmtDateInput(new Date());
-      document.getElementById('inputExamTitle').value = '';
-      document.getElementById('inputExamScore').value = '';
-      document.getElementById('inputExamMax').value = '100';
-      document.getElementById('inputExamRank').value = '';
-      document.getElementById('inputExamNote').value = '';
-      examModal.classList.remove('hidden');
-      examModal.classList.add('flex');
-    }
-    function closeExamModal() {
-      examModal.classList.add('hidden');
-      examModal.classList.remove('flex');
-    }
-    document.getElementById('openAddExamBtn').addEventListener('click', openExamModal);
-    document.getElementById('closeExamBtn').addEventListener('click', closeExamModal);
-    document.getElementById('cancelExamBtn').addEventListener('click', closeExamModal);
-    examModal.addEventListener('click', (e) => { if (e.target === examModal) closeExamModal(); });
+        // 答練成績 手入力モーダル制御
+        const examModal = document.getElementById('examModal');
+        function openExamModal() {
+          document.getElementById('inputExamDate').value = fmtDateInput(new Date());
+          document.getElementById('inputExamTitle').value = '';
+          document.getElementById('inputExamScore').value = '';
+          document.getElementById('inputExamMax').value = '100';
+          document.getElementById('inputExamRank').value = '';
+          document.getElementById('inputExamNote').value = '';
+          examModal.classList.remove('hidden');
+          examModal.classList.add('flex');
+        }
+        function closeExamModal() {
+          examModal.classList.add('hidden');
+          examModal.classList.remove('flex');
+        }
+        document.getElementById('openAddExamBtn').addEventListener('click', openExamModal);
+        document.getElementById('closeExamBtn').addEventListener('click', closeExamModal);
+        document.getElementById('cancelExamBtn').addEventListener('click', closeExamModal);
+        examModal.addEventListener('click', (e) => { if (e.target === examModal) closeExamModal(); });
 
-    document.getElementById('examForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const item = {
-        id: 'ex_' + Date.now(),
-        date: document.getElementById('inputExamDate').value,
-        subject: document.getElementById('inputExamSubject').value,
-        title: document.getElementById('inputExamTitle').value.trim(),
-        score: Number(document.getElementById('inputExamScore').value),
-        maxScore: Number(document.getElementById('inputExamMax').value) || 100,
-        rank: document.getElementById('inputExamRank').value.trim(),
-        note: document.getElementById('inputExamNote').value.trim(),
-        source: '手入力'
-      };
-      examResults.unshift(item);
-      saveJSON(STORAGE_KEYS.EXAMS, examResults);
-      renderExamResults();
-      closeExamModal();
-      showToast('成績を保存しました');
-      if (useGoogleDirectMode()) {
-        try {
-          await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${googleAuth.spreadsheetId}/values/exams!A:I:append?valueInputOption=USER_ENTERED`, {
+        document.getElementById('examForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const item = {
+            id: 'ex_' + Date.now(),
+            date: document.getElementById('inputExamDate').value,
+            subject: document.getElementById('inputExamSubject').value,
+            title: document.getElementById('inputExamTitle').value.trim(),
+            score: Number(document.getElementById('inputExamScore').value),
+            maxScore: Number(document.getElementById('inputExamMax').value) || 100,
+            rank: document.getElementById('inputExamRank').value.trim(),
+            note: document.getElementById('inputExamNote').value.trim(),
+            source: '手入力'
+          };
+          examResults.unshift(item);
+          saveJSON(STORAGE_KEYS.EXAMS, examResults);
+          renderExamResults();
+          closeExamModal();
+          showToast('成績を保存しました');
+          if (useGoogleDirectMode()) {
+            try {
+              await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${googleAuth.spreadsheetId}/values/exams!A:I:append?valueInputOption=USER_ENTERED`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  values: [[item.id, item.date, item.subject, item.title, item.score, item.maxScore, item.rank, item.note, item.source]]
+                })
+              });
+            } catch (err) { }
+          } else if (settings.gasUrl) {
+            try {
+              await fetch(settings.gasUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({ action: 'addExamResult', exam: item })
+              });
+            } catch (err) { }
+          }
+        });
+
+        // =========================================================================
+        // 10. Googleアカウント管理 ＆ 初期設定ウィザード（スプシ・Driveフォルダ自動作成）
+        // =========================================================================
+        let googleAuth = loadJSON(STORAGE_KEYS.GOOGLE_AUTH, {
+          accessToken: '',
+          expiresAt: 0,
+          user: null,
+          spreadsheetId: '',
+          spreadsheetUrl: '',
+          examFolderId: '',
+          examFolderUrl: '',
+          doneFolderId: ''
+        });
+        let googleClientId = (() => {
+          try { return localStorage.getItem(STORAGE_KEYS.GOOGLE_CLIENT_ID) || DEFAULT_GOOGLE_CLIENT_ID; }
+          catch (e) { return DEFAULT_GOOGLE_CLIENT_ID; }
+        })();
+
+        function isGoogleSignedIn() {
+          return !!(googleAuth.accessToken && googleAuth.user && Date.now() < (googleAuth.expiresAt || 0));
+        }
+
+        function useGoogleDirectMode() {
+          return !!(isGoogleSignedIn() && googleAuth.spreadsheetId);
+        }
+
+        function matchSubjectKeyword(title) {
+          const t = String(title || '');
+          // 1. ユーザーが登録している科目名に完全一致・部分一致するものを最優先
+          for (const subj of SUBJECTS) {
+            if (subj && t.includes(subj)) return subj;
+          }
+          // 2. 略称・関連キーワードで照合（ユーザーの科目リストに存在する場合のみ）
+          for (const s of SUBJECT_KEYWORDS) {
+            if (!SUBJECTS.includes(s.key)) continue;
+            for (const w of s.words) {
+              if (t.includes(w)) return s.key;
+            }
+          }
+          return null;
+        }
+
+        function createEmptyPeriodBucket() {
+          const actual = {}, planned = {};
+          SUBJECTS.forEach(s => { actual[s] = 0; planned[s] = 0; });
+          return { actual: 0, planned: 0, bySubject: { actual, planned } };
+        }
+
+        async function saveConfigKeyToGoogleSheet(key, valueObj, rowNum) {
+          if (!useGoogleDirectMode()) return;
+          await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${googleAuth.spreadsheetId}/values/config!A${rowNum}:B${rowNum}?valueInputOption=USER_ENTERED`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ values: [[key, JSON.stringify(valueObj)]] })
+          });
+        }
+
+        async function fetchDataFromGoogleApis(baseDateStr) {
+          const base = baseDateStr ? new Date(`${baseDateStr}T00:00:00`) : new Date();
+          if (isNaN(base.getTime())) throw new Error('基準日の解析に失敗しました');
+
+          const dayStart = new Date(base.getFullYear(), base.getMonth(), base.getDate(), 0, 0, 0, 0);
+          const dayEnd = new Date(base.getFullYear(), base.getMonth(), base.getDate(), 23, 59, 59, 999);
+          const dow = (base.getDay() + 6) % 7;
+          const weekStart = new Date(dayStart); weekStart.setDate(dayStart.getDate() - dow);
+          const weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate() + 6); weekEnd.setHours(23, 59, 59, 999);
+          const monthStart = new Date(base.getFullYear(), base.getMonth(), 1, 0, 0, 0, 0);
+          const monthEnd = new Date(base.getFullYear(), base.getMonth() + 1, 0, 23, 59, 59, 999);
+          const yearStart = new Date(base.getFullYear(), 0, 1, 0, 0, 0, 0);
+          const yearEnd = new Date(base.getFullYear(), 11, 31, 23, 59, 59, 999);
+
+          const periods = {
+            today: createEmptyPeriodBucket(),
+            week: createEmptyPeriodBucket(),
+            month: createEmptyPeriodBucket(),
+            year: createEmptyPeriodBucket()
+          };
+
+          const addAct = (b, subj, mins) => {
+            b.actual += mins;
+            if (b.bySubject.actual[subj] !== undefined) b.bySubject.actual[subj] += mins;
+          };
+          const addPlan = (b, subj, mins) => {
+            b.planned += mins;
+            if (subj && b.bySubject.planned[subj] !== undefined) b.bySubject.planned[subj] += mins;
+          };
+
+          // 1. スプレッドシートの4シートを一括取得
+          const rangesQuery = ['log!A:I', 'materials!A:B', 'exams!A:I', 'config!A:B']
+            .map(r => `ranges=${encodeURIComponent(r)}`).join('&');
+          const batchRes = await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${googleAuth.spreadsheetId}/values:batchGet?${rangesQuery}`);
+          const vr = batchRes.valueRanges || [];
+          const logRows = vr[0]?.values || [];
+          const matRows = vr[1]?.values || [];
+          const examRows = vr[2]?.values || [];
+          const cfgRows = vr[3]?.values || [];
+
+          const parsedStudyLogs = [];
+          const weeklyMap = {};
+          const getWeekKey = (dt) => {
+            const d0 = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+            const w = (d0.getDay() + 6) % 7;
+            d0.setDate(d0.getDate() - w);
+            return fmtDateInput(d0);
+          };
+          const ensureWeek = (k) => {
+            if (!weeklyMap[k]) weeklyMap[k] = { weekStart: k, actual: 0, planned: 0, activeDays: new Set() };
+            return weeklyMap[k];
+          };
+
+          for (let i = 1; i < logRows.length; i++) {
+            const [dateVal, subject, material, minsVal, topic, rating, memo, startTime, endTime] = logRows[i];
+            if (!dateVal || !minsVal) continue;
+            const d = new Date(String(dateVal).replace(/-/g, '/'));
+            if (isNaN(d.getTime())) continue;
+            const mins = Number(minsVal) || 0;
+            const isoDate = fmtDateInput(d);
+            parsedStudyLogs.push({
+              date: isoDate,
+              subject: subject || '',
+              material: material || '',
+              minutes: mins,
+              topic: topic || '',
+              rating: rating || '',
+              memo: memo || '',
+              start_time: startTime || '',
+              end_time: endTime || ''
+            });
+            const wk = ensureWeek(getWeekKey(d));
+            wk.actual += mins;
+            wk.activeDays.add(isoDate);
+            if (d >= dayStart && d <= dayEnd) addAct(periods.today, subject, mins);
+            if (d >= weekStart && d <= weekEnd) addAct(periods.week, subject, mins);
+            if (d >= monthStart && d <= monthEnd) addAct(periods.month, subject, mins);
+            if (d >= yearStart && d <= yearEnd) addAct(periods.year, subject, mins);
+          }
+
+          const materials = {};
+          for (let i = 1; i < matRows.length; i++) {
+            const subj = matRows[i][0];
+            const listStr = String(matRows[i][1] || '');
+            if (subj) materials[subj] = listStr ? listStr.split(',').map(s => s.trim()).filter(Boolean) : [];
+          }
+
+          const parsedExams = [];
+          for (let i = 1; i < examRows.length; i++) {
+            const r = examRows[i];
+            if (!r || !r[1]) continue;
+            parsedExams.push({
+              id: r[0] || `ex_${i}`,
+              date: String(r[1] || '').replace(/\//g, '-'),
+              subject: r[2] || '',
+              title: r[3] || '',
+              score: Number(r[4] || 0),
+              maxScore: Number(r[5] || 100),
+              rank: r[6] || '',
+              note: r[7] || '',
+              source: r[8] || ''
+            });
+          }
+
+          let hubConfig = null;
+          let activeTimer = null;
+          for (let i = 1; i < cfgRows.length; i++) {
+            const [k, v] = cfgRows[i];
+            if (!k || !v) continue;
+            try {
+              if (k === 'hubConfig') hubConfig = JSON.parse(v);
+              if (k === 'activeTimer') activeTimer = JSON.parse(v);
+            } catch (e) { }
+          }
+
+          // 2. Googleカレンダーの予定を取得して集計（権限・API未設定でも安全に続行）
+          const todayEvents = [];
+          try {
+            const fetchStart = new Date(Math.min(yearStart.getTime(), weekStart.getTime()));
+            const fetchEnd = new Date(Math.max(yearEnd.getTime(), weekEnd.getTime()));
+            const calUrl = `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(fetchStart.toISOString())}&timeMax=${encodeURIComponent(fetchEnd.toISOString())}&singleEvents=true&orderBy=startTime&maxResults=2500`;
+            const calRes = await gApiFetch(calUrl);
+            const nowDay = new Date();
+            const realTodayStart = new Date(nowDay.getFullYear(), nowDay.getMonth(), nowDay.getDate(), 0, 0, 0, 0);
+            const realTodayEnd = new Date(nowDay.getFullYear(), nowDay.getMonth(), nowDay.getDate(), 23, 59, 59, 999);
+
+            (calRes.items || []).forEach(ev => {
+              if (!ev.start?.dateTime || !ev.end?.dateTime) return; // 終日予定は除外
+              const title = ev.summary || '';
+              const matchedSubject = matchSubjectKeyword(title);
+              if (!matchedSubject && !title.includes('勉強')) return;
+              const start = new Date(ev.start.dateTime);
+              const end = new Date(ev.end.dateTime);
+              const mins = Math.max(0, Math.round((end - start) / 60000));
+              ensureWeek(getWeekKey(start)).planned += mins;
+              if (start >= realTodayStart && start <= realTodayEnd) {
+                todayEvents.push({ title, start: fmtTime(start), end: fmtTime(end) });
+              }
+              if (start >= dayStart && start <= dayEnd) addPlan(periods.today, matchedSubject, mins);
+              if (start >= weekStart && start <= weekEnd) addPlan(periods.week, matchedSubject, mins);
+              if (start >= monthStart && start <= monthEnd) addPlan(periods.month, matchedSubject, mins);
+              if (start >= yearStart && start <= yearEnd) addPlan(periods.year, matchedSubject, mins);
+            });
+          } catch (calErr) {
+            console.warn('Calendar API取得スキップ:', calErr);
+          }
+
+          // 3. exam_results / exam_mistakes シートを安全取得（未作成でもエラーにしない）
+          let parsedDetailedResults = null;
+          let parsedMistakes = null;
+          try {
+            const extraQ = ['exam_results!A:K', 'exam_mistakes!A:K'].map(r => `ranges=${encodeURIComponent(r)}`).join('&');
+            const extraRes = await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${googleAuth.spreadsheetId}/values:batchGet?${extraQ}`);
+            const erRows = extraRes.valueRanges?.[0]?.values || [];
+            const emRows = extraRes.valueRanges?.[1]?.values || [];
+            parsedDetailedResults = [];
+            for (let i = 1; i < erRows.length; i++) {
+              const r = erRows[i];
+              if (!r || !r[0]) continue;
+              let qs = [];
+              try { qs = r[8] ? JSON.parse(r[8]) : []; } catch (_) { }
+              parsedDetailedResults.push({
+                id: r[0], date: String(r[1] || '').replace(/\//g, '-'), subject: r[2] || '', title: r[3] || '',
+                score: Number(r[4] || 0), maxScore: Number(r[5] || 100), rank: r[6] || '',
+                nextTargetScore: Number(r[7] || 0) || null, questions: Array.isArray(qs) ? qs : []
+              });
+            }
+            parsedMistakes = [];
+            for (let i = 1; i < emRows.length; i++) {
+              const r = emRows[i];
+              if (!r || !r[0]) continue;
+              parsedMistakes.push({
+                id: r[0], examId: r[1] || '', date: String(r[2] || '').replace(/\//g, '-'),
+                subject: r[3] || '', examTitle: r[4] || '', qNo: r[5] || '',
+                accuracy: Number(r[6] || 0), points: Number(r[7] || 0),
+                feeling: r[8] || 'B', causeTag: r[9] || '', memo: r[10] || ''
+              });
+            }
+          } catch (_) {
+            // 既存スプレッドシートにまだシートがない場合は初回保存時に自動作成
+          }
+
+          const weeklyHistoryArr = Object.values(weeklyMap)
+            .map(w => ({ weekStart: w.weekStart, actual: w.actual, planned: w.planned, activeDays: w.activeDays.size }))
+            .sort((a, b) => a.weekStart.localeCompare(b.weekStart));
+
+          return {
+            status: 'ok',
+            today: { actual: periods.today.actual, planned: periods.today.planned },
+            week: { actual: periods.week.actual, planned: periods.week.planned },
+            bySubject: periods.week.bySubject,
+            periods,
+            todayEvents,
+            materials,
+            examResults: parsedExams.reverse(),
+            studyLogs: parsedStudyLogs,
+            weeklyHistory: weeklyHistoryArr,
+            examDetailedResults: parsedDetailedResults,
+            examMistakes: parsedMistakes,
+            hubConfig,
+            activeTimer
+          };
+        }
+
+        function renderAccountUI() {
+          const signedIn = !!(googleAuth.user);
+          const tokenValid = isGoogleSignedIn();
+
+          const headerAvatar = document.getElementById('headerAvatarImg');
+          const headerDot = document.getElementById('headerAccountDot');
+          const headerLabel = document.getElementById('headerAccountLabel');
+
+          if (signedIn && googleAuth.user.picture) {
+            headerAvatar.src = googleAuth.user.picture;
+            headerAvatar.classList.remove('hidden');
+            headerDot.classList.add('hidden');
+          } else {
+            headerAvatar.classList.add('hidden');
+            headerDot.classList.remove('hidden');
+            headerDot.className = tokenValid ? 'h-2 w-2 rounded-full bg-emerald-500' : 'h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600';
+          }
+          headerLabel.textContent = signedIn ? (googleAuth.user.given_name || googleAuth.user.name || 'アカウント') : 'アカウント';
+
+          const accAvatar = document.getElementById('accountAvatar');
+          const accFallback = document.getElementById('accountAvatarFallback');
+          if (signedIn && googleAuth.user.picture) {
+            accAvatar.src = googleAuth.user.picture;
+            accAvatar.classList.remove('hidden');
+            accFallback.classList.add('hidden');
+          } else {
+            accAvatar.classList.add('hidden');
+            accFallback.classList.remove('hidden');
+          }
+          document.getElementById('accountName').textContent = signedIn ? (googleAuth.user.name || 'Googleユーザー') : '未ログイン';
+          document.getElementById('accountEmail').textContent = signedIn ? (googleAuth.user.email || '') : 'Googleアカウントでログインして同期';
+
+          const badge = document.getElementById('accountStatusBadge');
+          if (tokenValid) {
+            badge.textContent = '接続中';
+            badge.className = 'rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300';
+          } else if (signedIn) {
+            badge.textContent = '再認証要';
+            badge.className = 'rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-950 dark:text-amber-300';
+          } else {
+            badge.textContent = '未接続';
+            badge.className = 'rounded-full bg-slate-200 px-2.5 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-700 dark:text-slate-300';
+          }
+
+          const sLink = document.getElementById('accountSheetLink');
+          if (googleAuth.spreadsheetUrl) {
+            sLink.href = googleAuth.spreadsheetUrl;
+            sLink.textContent = 'スプレッドシートを開く ↗';
+          } else {
+            sLink.href = '#';
+            sLink.textContent = '未作成（初期設定から作成）';
+          }
+
+          const fLink = document.getElementById('accountFolderLink');
+          if (googleAuth.examFolderUrl) {
+            fLink.href = googleAuth.examFolderUrl;
+            fLink.textContent = 'フォルダを開く ↗';
+          } else {
+            fLink.href = '#';
+            fLink.textContent = '未作成（初期設定から作成）';
+          }
+
+          document.getElementById('googleSignOutBtn').classList.toggle('hidden', !signedIn);
+          document.getElementById('inputGoogleClientId').value = googleClientId || '';
+        }
+
+        function requestGoogleLogin() {
+          return new Promise((resolve, reject) => {
+            if (!googleClientId) {
+              reject(new Error('Google OAuth クライアントIDが未設定です。アカウント管理画面の「Google OAuth クライアントID設定」から登録してください。'));
+              return;
+            }
+            if (!window.google || !google.accounts || !google.accounts.oauth2) {
+              reject(new Error('GoogleログインSDKの読み込み中です。数秒後にもう一度お試しください。'));
+              return;
+            }
+            const tokenClient = google.accounts.oauth2.initTokenClient({
+              client_id: googleClientId,
+              scope: GOOGLE_SCOPES,
+              callback: async (resp) => {
+                if (resp.error) {
+                  reject(new Error(resp.error_description || resp.error));
+                  return;
+                }
+                googleAuth.accessToken = resp.access_token;
+                googleAuth.expiresAt = Date.now() + ((Number(resp.expires_in) || 3500) * 1000);
+                try {
+                  const uRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                    headers: { Authorization: `Bearer ${googleAuth.accessToken}` }
+                  });
+                  googleAuth.user = await uRes.json();
+                } catch (e) { }
+                saveJSON(STORAGE_KEYS.GOOGLE_AUTH, googleAuth);
+                renderAccountUI();
+                resolve(googleAuth);
+              }
+            });
+            tokenClient.requestAccessToken({ prompt: googleAuth.user ? '' : 'consent' });
+          });
+        }
+
+        async function gApiFetch(url, options = {}) {
+          const headers = Object.assign({ Authorization: `Bearer ${googleAuth.accessToken}` }, options.headers || {});
+          const res = await fetch(url, Object.assign({}, options, { headers }));
+          const json = await res.json();
+          if (res.status === 401) {
+            googleAuth.expiresAt = 0;
+            saveJSON(STORAGE_KEYS.GOOGLE_AUTH, googleAuth);
+            renderAccountUI();
+            throw new Error('Google認証の有効期限が切れました。「再接続する」から再ログインしてください。');
+          }
+          if (!res.ok) throw new Error(json.error?.message || `Google API Error (${res.status})`);
+          return json;
+        }
+
+        // ユーザーのGoogleドライブに専用スプレッドシート＆答練PDFフォルダを自動作成（既存があれば再利用）
+        async function autoProvisionUserWorkspace(logFn) {
+          if (!isGoogleSignedIn()) throw new Error('先にGoogleアカウントでログインしてください');
+
+          // 1. 専用スプレッドシートを検索または新規作成
+          logFn('🔍 専用スプレッドシートを確認中...');
+          const qSheet = encodeURIComponent("(name='Study Hub データ' or name='CPA Study Hub データ') and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false");
+          const foundSheets = await gApiFetch(`https://www.googleapis.com/drive/v3/files?q=${qSheet}&fields=files(id,name,webViewLink)`);
+
+          if (foundSheets.files && foundSheets.files.length > 0) {
+            const f = foundSheets.files[0];
+            googleAuth.spreadsheetId = f.id;
+            googleAuth.spreadsheetUrl = f.webViewLink || `https://docs.google.com/spreadsheets/d/${f.id}/edit`;
+            logFn(`✓ 既存のスプレッドシート（${f.name}）を検出しました（自動引き継ぎ）`);
+          } else {
+            logFn('📊 スプレッドシート「Study Hub データ」を新規作成中...');
+            const created = await gApiFetch('https://sheets.googleapis.com/v4/spreadsheets', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                properties: { title: 'Study Hub データ', locale: 'ja_JP', timeZone: 'Asia/Tokyo' },
+                sheets: [
+                  { properties: { title: 'log' } },
+                  { properties: { title: 'materials' } },
+                  { properties: { title: 'exams' } },
+                  { properties: { title: 'exam_results' } },
+                  { properties: { title: 'exam_mistakes' } },
+                  { properties: { title: 'config' } }
+                ]
+              })
+            });
+            googleAuth.spreadsheetId = created.spreadsheetId;
+            googleAuth.spreadsheetUrl = created.spreadsheetUrl;
+
+            // 選択した目的プリセットの科目・教材・初期設定を自動投入
+            const matRows = [['subject', 'materials'], ...SUBJECTS.map(s => [s, (materialsBySubject[s] || []).join(',')])];
+            while (matRows.length < 30) matRows.push(['', '']);
+            const initHubCfg = { goal: studyGoal, subjects: SUBJECTS, countdowns, settings: { sheetUrl: created.spreadsheetUrl, calendarUrl: settings.calendarUrl || '', notebookUrl: settings.notebookUrl || '' }, updatedAt: Date.now() };
+            await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${created.spreadsheetId}/values:batchUpdate`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                valueInputOption: 'USER_ENTERED',
+                data: [
+                  { range: 'log!A1:I1', values: [['date', 'subject', 'material', 'minutes', 'topic', 'rating', 'memo', 'start_time', 'end_time']] },
+                  { range: 'materials!A1:B30', values: matRows },
+                  { range: 'exams!A1:I1', values: [['id', 'date', 'subject', 'title', 'score', 'maxScore', 'rank', 'note', 'source']] },
+                  { range: 'exam_results!A1:I1', values: [['id', 'date', 'subject', 'title', 'score', 'maxScore', 'rank', 'nextTargetScore', 'questions_json']] },
+                  { range: 'exam_mistakes!A1:K1', values: [['id', 'exam_id', 'date', 'subject', 'exam_title', 'q_no', 'accuracy', 'points', 'feeling', 'cause_tag', 'memo']] },
+                  { range: 'config!A1:B3', values: [['key', 'value'], ['created_at', new Date().toISOString()], ['hubConfig', JSON.stringify(initHubCfg)]] }
+                ]
+              })
+            });
+            logFn(`✓ スプレッドシート＋${SUBJECTS.length}科目・初期教材を作成しました`);
+          }
+
+          // 2. 成績PDFフォルダを検索または新規作成
+          logFn('📁 成績PDF用フォルダを確認中...');
+          const qFolder = encodeURIComponent("(name='StudyHub_成績PDF' or name='CPA答練PDF') and mimeType='application/vnd.google-apps.folder' and trashed=false");
+          const foundFolders = await gApiFetch(`https://www.googleapis.com/drive/v3/files?q=${qFolder}&fields=files(id,name,webViewLink)`);
+          if (foundFolders.files && foundFolders.files.length > 0) {
+            const fd = foundFolders.files[0];
+            googleAuth.examFolderId = fd.id;
+            googleAuth.examFolderUrl = fd.webViewLink || `https://drive.google.com/drive/folders/${fd.id}`;
+            logFn(`✓ 既存の「${fd.name}」フォルダを検出しました`);
+          } else {
+            const fd = await gApiFetch('https://www.googleapis.com/drive/v3/files?fields=id,webViewLink', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: 'StudyHub_成績PDF', mimeType: 'application/vnd.google-apps.folder' })
+            });
+            googleAuth.examFolderId = fd.id;
+            googleAuth.examFolderUrl = fd.webViewLink || `https://drive.google.com/drive/folders/${fd.id}`;
+            const doneFd = await gApiFetch('https://www.googleapis.com/drive/v3/files?fields=id', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: '処理済み', mimeType: 'application/vnd.google-apps.folder', parents: [fd.id] })
+            });
+            googleAuth.doneFolderId = doneFd.id;
+            logFn('✓ 「StudyHub_成績PDF」＋「処理済み」フォルダを作成しました');
+          }
+
+          // 作成したスプレッドシートURLをクイックアクセスにも自動反映
+          settings.sheetUrl = googleAuth.spreadsheetUrl;
+          saveJSON(STORAGE_KEYS.SETTINGS, settings);
+          saveJSON(STORAGE_KEYS.GOOGLE_AUTH, googleAuth);
+          renderAccountUI();
+          renderQuickLinks();
+          logFn('🎉 すべての自動セットアップが完了しました！');
+        }
+
+        // アカウント管理モーダル制御
+        const accountModal = document.getElementById('accountModal');
+        function openAccountModal() {
+          renderAccountUI();
+          accountModal.classList.remove('hidden');
+          accountModal.classList.add('flex');
+        }
+        function closeAccountModal() {
+          accountModal.classList.add('hidden');
+          accountModal.classList.remove('flex');
+        }
+        document.getElementById('openAccountBtn').addEventListener('click', openAccountModal);
+        document.getElementById('closeAccountBtn').addEventListener('click', closeAccountModal);
+        accountModal.addEventListener('click', (e) => { if (e.target === accountModal) closeAccountModal(); });
+
+        document.getElementById('saveClientIdBtn').addEventListener('click', () => {
+          googleClientId = document.getElementById('inputGoogleClientId').value.trim();
+          try { localStorage.setItem(STORAGE_KEYS.GOOGLE_CLIENT_ID, googleClientId); } catch (e) { }
+          showToast('GoogleクライアントIDを保存しました');
+        });
+
+        document.getElementById('googleSignInBtn').addEventListener('click', async () => {
+          try {
+            await requestGoogleLogin();
+            showToast(`${googleAuth.user?.name || 'Googleアカウント'} でログインしました`);
+            if (!googleAuth.spreadsheetId) {
+              closeAccountModal();
+              openOnboardingModal(3);
+            } else {
+              closeAccountModal();
+              fetchAndRenderData(true);
+            }
+          } catch (err) {
+            showToast(err.message);
+          }
+        });
+
+        document.getElementById('googleSignOutBtn').addEventListener('click', () => {
+          googleAuth = { accessToken: '', expiresAt: 0, user: null, spreadsheetId: '', spreadsheetUrl: '', examFolderId: '', examFolderUrl: '', doneFolderId: '' };
+          saveJSON(STORAGE_KEYS.GOOGLE_AUTH, googleAuth);
+          renderAccountUI();
+          fetchAndRenderData(false);
+          showToast('ログアウトしました');
+        });
+
+        document.getElementById('bannerStartOnboardingBtn').addEventListener('click', () => {
+          openOnboardingModal(1);
+        });
+        document.getElementById('bannerReconnectBtn').addEventListener('click', async () => {
+          try {
+            await requestGoogleLogin();
+            showToast('Googleアカウントに再接続しました');
+            fetchAndRenderData(true);
+          } catch (err) {
+            showToast(err.message);
+          }
+        });
+
+        // 初期設定ウィザード制御（4ステップ）
+        const onboardingModal = document.getElementById('onboardingModal');
+        let pendingWizardGoal = studyGoal || 'univ_sci';
+
+        function renderWizardGoalCards() {
+          document.querySelectorAll('.wiz-goal-btn').forEach(btn => {
+            const active = btn.dataset.goal === pendingWizardGoal;
+            btn.classList.toggle('border-blue-600', active);
+            btn.classList.toggle('bg-blue-50/70', active);
+            btn.classList.toggle('dark:border-blue-500', active);
+            btn.classList.toggle('dark:bg-blue-950/40', active);
+            btn.classList.toggle('border-slate-200', !active);
+            btn.classList.toggle('bg-white', !active);
+            btn.classList.toggle('dark:border-slate-700', !active);
+            btn.classList.toggle('dark:bg-slate-800/60', !active);
+          });
+        }
+        document.querySelectorAll('.wiz-goal-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            pendingWizardGoal = btn.dataset.goal;
+            renderWizardGoalCards();
+          });
+        });
+
+        function setWizardStep(step) {
+          [1, 2, 3, 4].forEach(n => {
+            document.getElementById(`wizStep${n}`).classList.toggle('hidden', n !== step);
+            const ind = document.getElementById(`wizStepInd${n}`);
+            if (n === step) ind.className = 'rounded-lg bg-blue-600 py-1.5 text-white';
+            else if (n < step) ind.className = 'rounded-lg bg-emerald-100 py-1.5 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300';
+            else ind.className = 'rounded-lg bg-slate-100 py-1.5 text-slate-400 dark:bg-slate-800';
+          });
+        }
+        function openOnboardingModal(startStep = 1) {
+          pendingWizardGoal = studyGoal || 'univ_sci';
+          renderWizardGoalCards();
+          const preset = GOAL_PRESETS[pendingWizardGoal] || GOAL_PRESETS.cpa;
+          document.getElementById('wizExamName').value = preset.defaultExamName;
+          document.getElementById('wizExamDate').value = preset.defaultExamDate;
+          setWizardStep(startStep);
+          onboardingModal.classList.remove('hidden');
+          onboardingModal.classList.add('flex');
+        }
+        function closeOnboardingModal() {
+          try { localStorage.setItem(STORAGE_KEYS.ONBOARDING_DISMISSED, '1'); } catch (e) { }
+          onboardingModal.classList.add('hidden');
+          onboardingModal.classList.remove('flex');
+        }
+        document.getElementById('openOnboardingFromAccountBtn').addEventListener('click', () => {
+          closeAccountModal();
+          openOnboardingModal(1);
+        });
+        document.getElementById('closeOnboardingBtn').addEventListener('click', closeOnboardingModal);
+        onboardingModal.addEventListener('click', (e) => { if (e.target === onboardingModal) closeOnboardingModal(); });
+
+        document.getElementById('wizToStep2Btn').addEventListener('click', () => {
+          applyGoalPreset(pendingWizardGoal);
+          if (isGoogleSignedIn()) {
+            saveMaterialsToCloud();
+            saveHubConfigToCloud();
+            setWizardStep(3);
+          } else {
+            setWizardStep(2);
+          }
+        });
+        document.getElementById('wizBackTo1Btn').addEventListener('click', () => setWizardStep(1));
+
+        document.getElementById('wizLoginBtn').addEventListener('click', async () => {
+          const st = document.getElementById('wizStep2Status');
+          st.textContent = 'Googleログイン画面を開いています...';
+          try {
+            await requestGoogleLogin();
+            st.textContent = `✓ ${googleAuth.user?.email || 'ログイン完了'}`;
+            setWizardStep(3);
+          } catch (err) {
+            st.textContent = err.message;
+          }
+        });
+
+        document.getElementById('wizAutoCreateBtn').addEventListener('click', async () => {
+          const btn = document.getElementById('wizAutoCreateBtn');
+          const logEl = document.getElementById('wizProvisionLog');
+          logEl.innerHTML = '';
+          const appendLog = (line) => {
+            const div = document.createElement('div');
+            div.textContent = line;
+            logEl.appendChild(div);
+          };
+          btn.disabled = true;
+          try {
+            await autoProvisionUserWorkspace(appendLog);
+            document.getElementById('wizToStep4Btn').classList.remove('hidden');
+            showToast('スプレッドシートとフォルダを自動作成しました');
+            fetchAndRenderData(false);
+          } catch (err) {
+            appendLog('❌ ' + err.message);
+          } finally {
+            btn.disabled = false;
+          }
+        });
+
+        document.getElementById('wizToStep4Btn').addEventListener('click', () => setWizardStep(4));
+
+        document.getElementById('wizFinishBtn').addEventListener('click', () => {
+          const name = document.getElementById('wizExamName').value.trim();
+          const date = document.getElementById('wizExamDate').value;
+          if (name && date && !countdowns.some(c => c.name === name && c.date === date)) {
+            countdowns.unshift({ id: 'c_' + Date.now(), name, date, color: 'rose' });
+            saveJSON(STORAGE_KEYS.COUNTDOWNS, countdowns);
+            renderCountdowns();
+          }
+          saveMaterialsToCloud();
+          saveHubConfigToCloud();
+          closeOnboardingModal();
+          fetchAndRenderData(false);
+          showToast('初期設定が完了しました！');
+        });
+
+        // =========================================================================
+        // 11. 答練成績表OCR ＆ 誤答・体感難易度（A/B/C）分析 ＆ Sheets同期
+        // =========================================================================
+        function getSubjectType(subject) {
+          const s = String(subject || '');
+          if (/計算|管理会計|租税法|数学|物理|化学/.test(s)) return 'calc';
+          return 'theory';
+        }
+
+        function getMistakeCauseTagsForSubject(subject) {
+          return getSubjectType(subject) === 'calc' ? CALC_MISTAKE_TAGS : THEORY_MISTAKE_TAGS;
+        }
+
+        // 既存スプレッドシートに exam_results / exam_mistakes シートが無ければ自動作成
+        async function ensureExamAnalysisSheets() {
+          if (!useGoogleDirectMode()) return false;
+          const meta = await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${googleAuth.spreadsheetId}?fields=sheets.properties.title`);
+          const existing = new Set((meta.sheets || []).map(s => s.properties?.title));
+          const requests = [];
+          if (!existing.has('exam_results')) requests.push({ addSheet: { properties: { title: 'exam_results' } } });
+          if (!existing.has('exam_mistakes')) requests.push({ addSheet: { properties: { title: 'exam_mistakes' } } });
+          if (requests.length) {
+            await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${googleAuth.spreadsheetId}:batchUpdate`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ requests })
+            });
+            const headerData = [];
+            if (!existing.has('exam_results')) {
+              headerData.push({ range: 'exam_results!A1:I1', values: [['id', 'date', 'subject', 'title', 'score', 'maxScore', 'rank', 'nextTargetScore', 'questions_json']] });
+            }
+            if (!existing.has('exam_mistakes')) {
+              headerData.push({ range: 'exam_mistakes!A1:K1', values: [['id', 'exam_id', 'date', 'subject', 'exam_title', 'q_no', 'accuracy', 'points', 'feeling', 'cause_tag', 'memo']] });
+            }
+            if (headerData.length) {
+              await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${googleAuth.spreadsheetId}/values:batchUpdate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ valueInputOption: 'USER_ENTERED', data: headerData })
+              });
+            }
+          }
+          return true;
+        }
+
+        async function syncExamAnalysisToSheet(resultObj, mistakeObjs) {
+          if (useGoogleDirectMode()) {
+            await ensureExamAnalysisSheets();
+            await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${googleAuth.spreadsheetId}/values/exam_results!A:I:append?valueInputOption=USER_ENTERED`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                values: [[
+                  resultObj.id, resultObj.date, resultObj.subject, resultObj.title,
+                  resultObj.score, resultObj.maxScore, resultObj.rank || '',
+                  resultObj.nextTargetScore || '', JSON.stringify(resultObj.questions || [])
+                ]]
+              })
+            });
+            if (mistakeObjs.length) {
+              const rows = mistakeObjs.map(m => [
+                m.id, m.examId, m.date, m.subject, m.examTitle,
+                m.qNo, m.accuracy, m.points, m.feeling, m.causeTag || '', m.memo || ''
+              ]);
+              await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${googleAuth.spreadsheetId}/values/exam_mistakes!A:K:append?valueInputOption=USER_ENTERED`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ values: rows })
+              });
+            }
+            // 既存の exams シートにもサマリーを追加
+            await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${googleAuth.spreadsheetId}/values/exams!A:I:append?valueInputOption=USER_ENTERED`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                values: [[
+                  resultObj.id, resultObj.date, resultObj.subject, resultObj.title,
+                  resultObj.score, resultObj.maxScore, resultObj.rank || '',
+                  `誤答${mistakeObjs.length}問（60%以上誤答:${mistakeObjs.filter(m => m.accuracy >= 60).length}問）`, 'OCR分析'
+                ]]
+              })
+            });
+          } else if (settings.gasUrl) {
+            try {
+              await fetch(settings.gasUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({ action: 'saveExamAnalysis', result: resultObj, mistakes: mistakeObjs })
+              });
+            } catch (_) { }
+          }
+        }
+
+        // クライアント直接 Gemini API 呼び出し（設定画面のAPIキー使用）または /api/ocr フォールバック
+        async function extractExamQuestionsByOcr(prepared) {
+          const apiKey = (settings.geminiApiKey || '').trim();
+          const todayStr = fmtDateInput(new Date());
+          if (apiKey) {
+            const prompt = [
+              '添付された答練・模試の成績表（問題別正答率表の画像またはPDF）から、基本情報と「問題番号」「全体正答率(%)」「配点(分かれば)」を正確に抽出し、JSONのみで返してください。',
+              `【選択可能な科目リスト】${SUBJECTS.join('、')}`,
+              `【ファイル名参考】${prepared.fileName || '不明'}`,
+              `【日付デフォルト】${todayStr}`,
+              '以下のJSON形式のみで返答してください：',
+              '{ "exam": { "date": "YYYY-MM-DD", "subject": "科目リストから1つ", "title": "答練名", "score": 72, "maxScore": 100, "rank": "判定や偏差値" }, "questions": [ { "qNo": "問1", "accuracy": 82, "points": 5 } ] }'
+            ].join('\n');
+            const models = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'];
+            let lastErr = 'Gemini APIエラー';
+            for (const model of models) {
+              try {
+                const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }, { inlineData: { mimeType: prepared.mimeType, data: prepared.base64Data } }] }],
+                    generationConfig: { temperature: 0.1, responseMimeType: 'application/json' }
+                  })
+                });
+                const j = await r.json();
+                if (!r.ok) { lastErr = j?.error?.message || `HTTP ${r.status}`; continue; }
+                const txt = (j?.candidates?.[0]?.content?.parts?.[0]?.text || '').replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+                const parsed = JSON.parse(txt);
+                const qs = Array.isArray(parsed?.questions)
+                  ? parsed.questions.map((q, idx) => ({
+                    qNo: String(q.qNo ?? q.number ?? `問${idx + 1}`),
+                    accuracy: Math.max(0, Math.min(100, Number(q.accuracy ?? q.rate ?? 50) || 0)),
+                    points: Number(q.points || 0) || 0
+                  }))
+                  : [];
+                if (qs.length) return { exam: parsed?.exam || {}, questions: qs };
+              } catch (e) { lastErr = e.message; }
+            }
+            throw new Error(lastErr);
+          }
+
+          // APIキー未設定時は /api/ocr (mode: 'exam_questions') を試行
+          const res = await fetch('/api/ocr', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              values: [[item.id, item.date, item.subject, item.title, item.score, item.maxScore, item.rank, item.note, item.source]]
+              mode: 'exam_questions',
+              base64Data: prepared.base64Data,
+              mimeType: prepared.mimeType,
+              fileName: prepared.fileName,
+              subjects: SUBJECTS
             })
           });
-        } catch (err) { }
-      } else if (settings.gasUrl) {
-        try {
-          await fetch(settings.gasUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({ action: 'addExamResult', exam: item })
+          const raw = await res.text();
+          let json = {};
+          try { json = raw ? JSON.parse(raw) : {}; } catch (_) { }
+          if (!res.ok || json.status !== 'ok') {
+            throw new Error(json.message || 'OCR抽出に失敗しました（設定画面でGemini APIキーを入力するか、テキスト貼付・手入力をご利用ください）');
+          }
+          return { exam: json.exam || {}, questions: json.questions || [] };
+        }
+
+        function parsePastedQuestionText(text) {
+          const lines = String(text || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+          const out = [];
+          lines.forEach((line, idx) => {
+            const nums = line.match(/\d+(?:\.\d+)?/g) || [];
+            if (!nums.length) return;
+            const qMatch = line.match(/^(?:問|第|Q|No\.?|#)?\s*([0-9A-Za-z\-]+)/i);
+            let qNo = qMatch ? qMatch[0].trim() : `問${idx + 1}`;
+            if (/^\d+$/.test(qNo)) qNo = `問${qNo}`;
+            const pctMatch = line.match(/(\d+(?:\.\d+)?)\s*%/);
+            let acc = pctMatch ? Number(pctMatch[1]) : (nums.length >= 2 ? Number(nums[1]) : Number(nums[0]));
+            acc = Math.max(0, Math.min(100, Math.round(acc)));
+            const ptsMatch = line.match(/(\d+(?:\.\d+)?)\s*点/);
+            const points = ptsMatch ? Number(ptsMatch[1]) : (nums.length >= 3 ? Number(nums[2]) : 0);
+            out.push({ qNo, accuracy: acc, points, isWrong: false, feeling: 'A', causeTag: '', memo: '' });
           });
-        } catch (err) { }
-      }
-    });
-
-    // =========================================================================
-    // 10. Googleアカウント管理 ＆ 初期設定ウィザード（スプシ・Driveフォルダ自動作成）
-    // =========================================================================
-    let googleAuth = loadJSON(STORAGE_KEYS.GOOGLE_AUTH, {
-      accessToken: '',
-      expiresAt: 0,
-      user: null,
-      spreadsheetId: '',
-      spreadsheetUrl: '',
-      examFolderId: '',
-      examFolderUrl: '',
-      doneFolderId: ''
-    });
-    let googleClientId = (() => {
-      try { return localStorage.getItem(STORAGE_KEYS.GOOGLE_CLIENT_ID) || DEFAULT_GOOGLE_CLIENT_ID; }
-      catch (e) { return DEFAULT_GOOGLE_CLIENT_ID; }
-    })();
-
-    function isGoogleSignedIn() {
-      return !!(googleAuth.accessToken && googleAuth.user && Date.now() < (googleAuth.expiresAt || 0));
-    }
-
-    function useGoogleDirectMode() {
-      return !!(isGoogleSignedIn() && googleAuth.spreadsheetId);
-    }
-
-    function matchSubjectKeyword(title) {
-      const t = String(title || '');
-      // 1. ユーザーが登録している科目名に完全一致・部分一致するものを最優先
-      for (const subj of SUBJECTS) {
-        if (subj && t.includes(subj)) return subj;
-      }
-      // 2. 略称・関連キーワードで照合（ユーザーの科目リストに存在する場合のみ）
-      for (const s of SUBJECT_KEYWORDS) {
-        if (!SUBJECTS.includes(s.key)) continue;
-        for (const w of s.words) {
-          if (t.includes(w)) return s.key;
+          return out;
         }
-      }
-      return null;
-    }
 
-    function createEmptyPeriodBucket() {
-      const actual = {}, planned = {};
-      SUBJECTS.forEach(s => { actual[s] = 0; planned[s] = 0; });
-      return { actual: 0, planned: 0, bySubject: { actual, planned } };
-    }
+        // モーダル状態管理
+        const examAnalysisModal = document.getElementById('examAnalysisModal');
+        let eaDraftQuestions = [];
 
-    async function saveConfigKeyToGoogleSheet(key, valueObj, rowNum) {
-      if (!useGoogleDirectMode()) return;
-      await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${googleAuth.spreadsheetId}/values/config!A${rowNum}:B${rowNum}?valueInputOption=USER_ENTERED`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ values: [[key, JSON.stringify(valueObj)]] })
-      });
-    }
+        function populateEaSubjectSelect() {
+          const sel = document.getElementById('eaSubject');
+          if (!sel) return;
+          const prev = sel.value;
+          sel.innerHTML = SUBJECTS.map(s => `<option value="${escapeHTML(s)}">${escapeHTML(s)}</option>`).join('');
+          if (prev && SUBJECTS.includes(prev)) sel.value = prev;
+        }
 
-    async function fetchDataFromGoogleApis(baseDateStr) {
-      const base = baseDateStr ? new Date(`${baseDateStr}T00:00:00`) : new Date();
-      if (isNaN(base.getTime())) throw new Error('基準日の解析に失敗しました');
-
-      const dayStart = new Date(base.getFullYear(), base.getMonth(), base.getDate(), 0, 0, 0, 0);
-      const dayEnd = new Date(base.getFullYear(), base.getMonth(), base.getDate(), 23, 59, 59, 999);
-      const dow = (base.getDay() + 6) % 7;
-      const weekStart = new Date(dayStart); weekStart.setDate(dayStart.getDate() - dow);
-      const weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate() + 6); weekEnd.setHours(23, 59, 59, 999);
-      const monthStart = new Date(base.getFullYear(), base.getMonth(), 1, 0, 0, 0, 0);
-      const monthEnd = new Date(base.getFullYear(), base.getMonth() + 1, 0, 23, 59, 59, 999);
-      const yearStart = new Date(base.getFullYear(), 0, 1, 0, 0, 0, 0);
-      const yearEnd = new Date(base.getFullYear(), 11, 31, 23, 59, 59, 999);
-
-      const periods = {
-        today: createEmptyPeriodBucket(),
-        week: createEmptyPeriodBucket(),
-        month: createEmptyPeriodBucket(),
-        year: createEmptyPeriodBucket()
-      };
-
-      const addAct = (b, subj, mins) => {
-        b.actual += mins;
-        if (b.bySubject.actual[subj] !== undefined) b.bySubject.actual[subj] += mins;
-      };
-      const addPlan = (b, subj, mins) => {
-        b.planned += mins;
-        if (subj && b.bySubject.planned[subj] !== undefined) b.bySubject.planned[subj] += mins;
-      };
-
-      // 1. スプレッドシートの4シートを一括取得
-      const rangesQuery = ['log!A:I', 'materials!A:B', 'exams!A:I', 'config!A:B']
-        .map(r => `ranges=${encodeURIComponent(r)}`).join('&');
-      const batchRes = await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${googleAuth.spreadsheetId}/values:batchGet?${rangesQuery}`);
-      const vr = batchRes.valueRanges || [];
-      const logRows = vr[0]?.values || [];
-      const matRows = vr[1]?.values || [];
-      const examRows = vr[2]?.values || [];
-      const cfgRows = vr[3]?.values || [];
-
-      for (let i = 1; i < logRows.length; i++) {
-        const [dateVal, subject, , minsVal] = logRows[i];
-        if (!dateVal || !minsVal) continue;
-        const d = new Date(String(dateVal).replace(/-/g, '/'));
-        if (isNaN(d.getTime())) continue;
-        const mins = Number(minsVal) || 0;
-        if (d >= dayStart && d <= dayEnd) addAct(periods.today, subject, mins);
-        if (d >= weekStart && d <= weekEnd) addAct(periods.week, subject, mins);
-        if (d >= monthStart && d <= monthEnd) addAct(periods.month, subject, mins);
-        if (d >= yearStart && d <= yearEnd) addAct(periods.year, subject, mins);
-      }
-
-      const materials = {};
-      for (let i = 1; i < matRows.length; i++) {
-        const subj = matRows[i][0];
-        const listStr = String(matRows[i][1] || '');
-        if (subj) materials[subj] = listStr ? listStr.split(',').map(s => s.trim()).filter(Boolean) : [];
-      }
-
-      const parsedExams = [];
-      for (let i = 1; i < examRows.length; i++) {
-        const r = examRows[i];
-        if (!r || !r[1]) continue;
-        parsedExams.push({
-          id: r[0] || `ex_${i}`,
-          date: String(r[1] || '').replace(/\//g, '-'),
-          subject: r[2] || '',
-          title: r[3] || '',
-          score: Number(r[4] || 0),
-          maxScore: Number(r[5] || 100),
-          rank: r[6] || '',
-          note: r[7] || '',
-          source: r[8] || ''
-        });
-      }
-
-      let hubConfig = null;
-      let activeTimer = null;
-      for (let i = 1; i < cfgRows.length; i++) {
-        const [k, v] = cfgRows[i];
-        if (!k || !v) continue;
-        try {
-          if (k === 'hubConfig') hubConfig = JSON.parse(v);
-          if (k === 'activeTimer') activeTimer = JSON.parse(v);
-        } catch (e) { }
-      }
-
-      // 2. Googleカレンダーの予定を取得して集計（権限・API未設定でも安全に続行）
-      const todayEvents = [];
-      try {
-        const fetchStart = new Date(Math.min(yearStart.getTime(), weekStart.getTime()));
-        const fetchEnd = new Date(Math.max(yearEnd.getTime(), weekEnd.getTime()));
-        const calUrl = `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(fetchStart.toISOString())}&timeMax=${encodeURIComponent(fetchEnd.toISOString())}&singleEvents=true&orderBy=startTime&maxResults=2500`;
-        const calRes = await gApiFetch(calUrl);
-        const nowDay = new Date();
-        const realTodayStart = new Date(nowDay.getFullYear(), nowDay.getMonth(), nowDay.getDate(), 0, 0, 0, 0);
-        const realTodayEnd = new Date(nowDay.getFullYear(), nowDay.getMonth(), nowDay.getDate(), 23, 59, 59, 999);
-
-        (calRes.items || []).forEach(ev => {
-          if (!ev.start?.dateTime || !ev.end?.dateTime) return; // 終日予定は除外
-          const title = ev.summary || '';
-          const matchedSubject = matchSubjectKeyword(title);
-          if (!matchedSubject && !title.includes('勉強')) return;
-          const start = new Date(ev.start.dateTime);
-          const end = new Date(ev.end.dateTime);
-          const mins = Math.max(0, Math.round((end - start) / 60000));
-          if (start >= realTodayStart && start <= realTodayEnd) {
-            todayEvents.push({ title, start: fmtTime(start), end: fmtTime(end) });
+        function openExamAnalysisModal() {
+          populateEaSubjectSelect();
+          document.getElementById('eaDate').value = fmtDateInput(new Date());
+          document.getElementById('eaTitle').value = '';
+          document.getElementById('eaScore').value = '';
+          document.getElementById('eaMaxScore').value = '100';
+          document.getElementById('eaRank').value = '';
+          document.getElementById('eaNextTarget').value = '';
+          document.getElementById('eaOcrStatus').classList.add('hidden');
+          document.getElementById('eaPasteBox').classList.add('hidden');
+          const keyBadge = document.getElementById('eaApiKeyStatus');
+          if (settings.geminiApiKey) {
+            keyBadge.textContent = '✓ Gemini APIキー設定済み（直接OCR可）';
+            keyBadge.className = 'text-[10px] font-bold text-emerald-600 dark:text-emerald-400';
+          } else {
+            keyBadge.textContent = 'APIキー未設定（サーバーOCR / テキスト貼付 / 手入力に対応）';
+            keyBadge.className = 'text-[10px] font-semibold text-amber-600 dark:text-amber-400';
           }
-          if (start >= dayStart && start <= dayEnd) addPlan(periods.today, matchedSubject, mins);
-          if (start >= weekStart && start <= weekEnd) addPlan(periods.week, matchedSubject, mins);
-          if (start >= monthStart && start <= monthEnd) addPlan(periods.month, matchedSubject, mins);
-          if (start >= yearStart && start <= yearEnd) addPlan(periods.year, matchedSubject, mins);
+          eaDraftQuestions = [];
+          renderEaQuestionList();
+          examAnalysisModal.classList.remove('hidden');
+          examAnalysisModal.classList.add('flex');
+        }
+
+        function closeExamAnalysisModal() {
+          examAnalysisModal.classList.add('hidden');
+          examAnalysisModal.classList.remove('flex');
+        }
+
+        function renderEaQuestionList() {
+          const container = document.getElementById('eaQuestionList');
+          const summaryEl = document.getElementById('eaSummaryLive');
+          if (!container) return;
+          const wrongCount = eaDraftQuestions.filter(q => q.isWrong).length;
+          summaryEl.textContent = `問題数: ${eaDraftQuestions.length} / 誤答選択: ${wrongCount}問`;
+
+          if (!eaDraftQuestions.length) {
+            container.innerHTML = `<div class="rounded-xl border border-dashed border-slate-300 p-5 text-center text-xs text-slate-400 dark:border-slate-700">上のボタンから成績表スクショをOCR抽出するか、テキスト貼付・手入力で問題を追加してください。</div>`;
+            return;
+          }
+
+          const subj = document.getElementById('eaSubject').value || SUBJECTS[0];
+          const causeTags = getMistakeCauseTagsForSubject(subj);
+          const typeLabel = getSubjectType(subj) === 'calc' ? '計算3分類' : '理論5分類';
+
+          container.innerHTML = '';
+          eaDraftQuestions.forEach((q, idx) => {
+            const bandColor = q.accuracy >= 60
+              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+              : q.accuracy >= 40
+                ? 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
+                : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300';
+
+            const row = document.createElement('div');
+            row.className = `rounded-xl border p-3 transition ${q.isWrong ? 'border-rose-300 bg-rose-50/50 dark:border-rose-900 dark:bg-rose-950/20' : 'border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900'}`;
+
+            row.innerHTML = `
+              <div class="flex flex-wrap items-center gap-2">
+                <button type="button" data-act="toggleWrong" data-idx="${idx}"
+                  class="rounded-lg px-2.5 py-1.5 text-xs font-bold transition ${q.isWrong ? 'bg-rose-600 text-white' : 'border border-slate-300 bg-slate-50 text-slate-600 hover:border-rose-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'}">
+                  ${q.isWrong ? '✕ 誤答' : '○ 正解'}
+                </button>
+                <input type="text" data-field="qNo" data-idx="${idx}" value="${escapeHTML(q.qNo)}"
+                  class="w-16 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-bold dark:border-slate-700 dark:bg-slate-800" />
+                <div class="flex items-center gap-1">
+                  <span class="text-[11px] text-slate-400">正答率</span>
+                  <input type="number" min="0" max="100" data-field="accuracy" data-idx="${idx}" value="${q.accuracy}"
+                    class="w-14 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-bold text-right dark:border-slate-700 dark:bg-slate-800" />
+                  <span class="rounded px-1.5 py-0.5 text-[10px] font-bold ${bandColor}">%</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <span class="text-[11px] text-slate-400">配点</span>
+                  <input type="number" min="0" max="100" data-field="points" data-idx="${idx}" value="${q.points || ''}" placeholder="自動"
+                    class="w-14 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-right dark:border-slate-700 dark:bg-slate-800" />
+                </div>
+                <button type="button" data-act="removeRow" data-idx="${idx}"
+                  class="ml-auto rounded-lg px-2 py-1 text-[11px] text-slate-400 hover:bg-slate-100 hover:text-rose-500 dark:hover:bg-slate-800">削除</button>
+              </div>
+              ${q.isWrong ? `
+                <div class="mt-2.5 space-y-2 border-t border-rose-200/70 pt-2.5 dark:border-rose-900/50">
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    <span class="text-[11px] font-bold text-slate-500 mr-1">体感難易度:</span>
+                    ${[
+                      { k: 'A', label: 'A: 取れたはず', cls: 'bg-emerald-600 text-white border-emerald-600' },
+                      { k: 'B', label: 'B: 迷った', cls: 'bg-amber-500 text-white border-amber-500' },
+                      { k: 'C', label: 'C: 捨て問と判断', cls: 'bg-rose-600 text-white border-rose-600' }
+                    ].map(opt => `
+                      <button type="button" data-act="setFeeling" data-idx="${idx}" data-val="${opt.k}"
+                        class="rounded-lg border px-2.5 py-1 text-[11px] font-bold transition ${q.feeling === opt.k ? opt.cls : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'}">
+                        ${opt.label}
+                      </button>
+                    `).join('')}
+                  </div>
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    <span class="text-[11px] font-bold text-slate-500 mr-1">失点原因(${typeLabel}・任意):</span>
+                    ${causeTags.map(tag => `
+                      <button type="button" data-act="setCause" data-idx="${idx}" data-val="${escapeHTML(tag)}"
+                        class="rounded-full border px-2 py-0.5 text-[10px] font-semibold transition ${q.causeTag === tag ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 bg-white text-slate-600 hover:border-indigo-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'}">
+                        ${escapeHTML(tag)}
+                      </button>
+                    `).join('')}
+                  </div>
+                  <input type="text" data-field="memo" data-idx="${idx}" value="${escapeHTML(q.memo || '')}" placeholder="論点・反省メモ（任意：例 連結タイムテーブルの税効果漏れ）"
+                    class="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] dark:border-slate-700 dark:bg-slate-800" />
+                </div>
+              ` : ''}
+            `;
+            container.appendChild(row);
+          });
+        }
+
+        document.getElementById('openExamAnalysisBtn')?.addEventListener('click', openExamAnalysisModal);
+        document.getElementById('closeExamAnalysisBtn')?.addEventListener('click', closeExamAnalysisModal);
+        document.getElementById('cancelExamAnalysisBtn')?.addEventListener('click', closeExamAnalysisModal);
+        examAnalysisModal?.addEventListener('click', (e) => { if (e.target === examAnalysisModal) closeExamAnalysisModal(); });
+        document.getElementById('eaSubject')?.addEventListener('change', renderEaQuestionList);
+
+        document.getElementById('eaTogglePasteBtn')?.addEventListener('click', () => {
+          document.getElementById('eaPasteBox').classList.toggle('hidden');
         });
-      } catch (calErr) {
-        console.warn('Calendar API取得スキップ:', calErr);
-      }
+        document.getElementById('eaAddRowBtn')?.addEventListener('click', () => {
+          eaDraftQuestions.push({ qNo: `問${eaDraftQuestions.length + 1}`, accuracy: 65, points: 0, isWrong: false, feeling: 'A', causeTag: '', memo: '' });
+          renderEaQuestionList();
+        });
+        document.getElementById('eaSampleLoadBtn')?.addEventListener('click', () => {
+          eaDraftQuestions = [
+            { qNo: '問1', accuracy: 86, points: 10, isWrong: false, feeling: 'A', causeTag: '', memo: '' },
+            { qNo: '問2', accuracy: 74, points: 10, isWrong: true, feeling: 'A', causeTag: getMistakeCauseTagsForSubject(document.getElementById('eaSubject').value)[0], memo: '' },
+            { qNo: '問3', accuracy: 68, points: 10, isWrong: true, feeling: 'C', causeTag: getMistakeCauseTagsForSubject(document.getElementById('eaSubject').value)[1], memo: '' },
+            { qNo: '問4', accuracy: 62, points: 10, isWrong: false, feeling: 'A', causeTag: '', memo: '' },
+            { qNo: '問5', accuracy: 55, points: 10, isWrong: false, feeling: 'B', causeTag: '', memo: '' },
+            { qNo: '問6', accuracy: 44, points: 10, isWrong: true, feeling: 'B', causeTag: '', memo: '' },
+            { qNo: '問7', accuracy: 35, points: 10, isWrong: false, feeling: 'C', causeTag: '', memo: '' },
+            { qNo: '問8', accuracy: 22, points: 10, isWrong: true, feeling: 'C', causeTag: '', memo: '' },
+            { qNo: '問9', accuracy: 81, points: 10, isWrong: false, feeling: 'A', causeTag: '', memo: '' },
+            { qNo: '問10', accuracy: 64, points: 10, isWrong: true, feeling: 'C', causeTag: '', memo: '' }
+          ];
+          if (!document.getElementById('eaTitle').value) document.getElementById('eaTitle').value = '短答直前答練 サンプル回';
+          if (!document.getElementById('eaScore').value) document.getElementById('eaScore').value = '50';
+          renderEaQuestionList();
+        });
+        document.getElementById('eaParseTextBtn')?.addEventListener('click', () => {
+          const parsed = parsePastedQuestionText(document.getElementById('eaPasteText').value);
+          if (!parsed.length) { showToast('問題番号と正答率を読み取れませんでした'); return; }
+          eaDraftQuestions = [...eaDraftQuestions, ...parsed];
+          document.getElementById('eaPasteText').value = '';
+          document.getElementById('eaPasteBox').classList.add('hidden');
+          renderEaQuestionList();
+          showToast(`${parsed.length}問を追加しました`);
+        });
 
-      return {
-        status: 'ok',
-        today: { actual: periods.today.actual, planned: periods.today.planned },
-        week: { actual: periods.week.actual, planned: periods.week.planned },
-        bySubject: periods.week.bySubject,
-        periods,
-        todayEvents,
-        materials,
-        examResults: parsedExams.reverse(),
-        hubConfig,
-        activeTimer
-      };
-    }
-
-    function renderAccountUI() {
-      const signedIn = !!(googleAuth.user);
-      const tokenValid = isGoogleSignedIn();
-
-      const headerAvatar = document.getElementById('headerAvatarImg');
-      const headerDot = document.getElementById('headerAccountDot');
-      const headerLabel = document.getElementById('headerAccountLabel');
-
-      if (signedIn && googleAuth.user.picture) {
-        headerAvatar.src = googleAuth.user.picture;
-        headerAvatar.classList.remove('hidden');
-        headerDot.classList.add('hidden');
-      } else {
-        headerAvatar.classList.add('hidden');
-        headerDot.classList.remove('hidden');
-        headerDot.className = tokenValid ? 'h-2 w-2 rounded-full bg-emerald-500' : 'h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600';
-      }
-      headerLabel.textContent = signedIn ? (googleAuth.user.given_name || googleAuth.user.name || 'アカウント') : 'アカウント';
-
-      const accAvatar = document.getElementById('accountAvatar');
-      const accFallback = document.getElementById('accountAvatarFallback');
-      if (signedIn && googleAuth.user.picture) {
-        accAvatar.src = googleAuth.user.picture;
-        accAvatar.classList.remove('hidden');
-        accFallback.classList.add('hidden');
-      } else {
-        accAvatar.classList.add('hidden');
-        accFallback.classList.remove('hidden');
-      }
-      document.getElementById('accountName').textContent = signedIn ? (googleAuth.user.name || 'Googleユーザー') : '未ログイン';
-      document.getElementById('accountEmail').textContent = signedIn ? (googleAuth.user.email || '') : 'Googleアカウントでログインして同期';
-
-      const badge = document.getElementById('accountStatusBadge');
-      if (tokenValid) {
-        badge.textContent = '接続中';
-        badge.className = 'rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300';
-      } else if (signedIn) {
-        badge.textContent = '再認証要';
-        badge.className = 'rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-950 dark:text-amber-300';
-      } else {
-        badge.textContent = '未接続';
-        badge.className = 'rounded-full bg-slate-200 px-2.5 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-700 dark:text-slate-300';
-      }
-
-      const sLink = document.getElementById('accountSheetLink');
-      if (googleAuth.spreadsheetUrl) {
-        sLink.href = googleAuth.spreadsheetUrl;
-        sLink.textContent = 'スプレッドシートを開く ↗';
-      } else {
-        sLink.href = '#';
-        sLink.textContent = '未作成（初期設定から作成）';
-      }
-
-      const fLink = document.getElementById('accountFolderLink');
-      if (googleAuth.examFolderUrl) {
-        fLink.href = googleAuth.examFolderUrl;
-        fLink.textContent = 'フォルダを開く ↗';
-      } else {
-        fLink.href = '#';
-        fLink.textContent = '未作成（初期設定から作成）';
-      }
-
-      document.getElementById('googleSignOutBtn').classList.toggle('hidden', !signedIn);
-      document.getElementById('inputGoogleClientId').value = googleClientId || '';
-    }
-
-    function requestGoogleLogin() {
-      return new Promise((resolve, reject) => {
-        if (!googleClientId) {
-          reject(new Error('Google OAuth クライアントIDが未設定です。アカウント管理画面の「Google OAuth クライアントID設定」から登録してください。'));
-          return;
-        }
-        if (!window.google || !google.accounts || !google.accounts.oauth2) {
-          reject(new Error('GoogleログインSDKの読み込み中です。数秒後にもう一度お試しください。'));
-          return;
-        }
-        const tokenClient = google.accounts.oauth2.initTokenClient({
-          client_id: googleClientId,
-          scope: GOOGLE_SCOPES,
-          callback: async (resp) => {
-            if (resp.error) {
-              reject(new Error(resp.error_description || resp.error));
-              return;
+        const eaImageInput = document.getElementById('eaImageInput');
+        document.getElementById('eaUploadBtn')?.addEventListener('click', () => {
+          eaImageInput.value = '';
+          eaImageInput.click();
+        });
+        eaImageInput?.addEventListener('change', async (e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          const st = document.getElementById('eaOcrStatus');
+          st.textContent = '⏳ 成績表から問題番号と全体正答率(%)をOCR抽出中...';
+          st.classList.remove('hidden');
+          try {
+            const prepared = await prepareFileForOcr(file);
+            const extracted = await extractExamQuestionsByOcr(prepared);
+            if (extracted.exam) {
+              if (extracted.exam.date) document.getElementById('eaDate').value = extracted.exam.date;
+              if (extracted.exam.subject && SUBJECTS.includes(extracted.exam.subject)) document.getElementById('eaSubject').value = extracted.exam.subject;
+              if (extracted.exam.title) document.getElementById('eaTitle').value = extracted.exam.title;
+              if (extracted.exam.score) document.getElementById('eaScore').value = extracted.exam.score;
+              if (extracted.exam.maxScore) document.getElementById('eaMaxScore').value = extracted.exam.maxScore;
+              if (extracted.exam.rank) document.getElementById('eaRank').value = extracted.exam.rank;
             }
-            googleAuth.accessToken = resp.access_token;
-            googleAuth.expiresAt = Date.now() + ((Number(resp.expires_in) || 3500) * 1000);
-            try {
-              const uRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                headers: { Authorization: `Bearer ${googleAuth.accessToken}` }
-              });
-              googleAuth.user = await uRes.json();
-            } catch (e) { }
-            saveJSON(STORAGE_KEYS.GOOGLE_AUTH, googleAuth);
-            renderAccountUI();
-            resolve(googleAuth);
+            eaDraftQuestions = extracted.questions.map(q => ({
+              qNo: q.qNo, accuracy: q.accuracy, points: q.points || 0,
+              isWrong: false, feeling: 'A', causeTag: '', memo: ''
+            }));
+            renderEaQuestionList();
+            st.textContent = `✓ ${eaDraftQuestions.length}問を抽出しました！間違えた問題だけタップして振り分けてください。`;
+          } catch (err) {
+            st.textContent = `⚠ ${err.message}`;
+            document.getElementById('eaPasteBox').classList.remove('hidden');
           }
         });
-        tokenClient.requestAccessToken({ prompt: googleAuth.user ? '' : 'consent' });
-      });
-    }
 
-    async function gApiFetch(url, options = {}) {
-      const headers = Object.assign({ Authorization: `Bearer ${googleAuth.accessToken}` }, options.headers || {});
-      const res = await fetch(url, Object.assign({}, options, { headers }));
-      const json = await res.json();
-      if (res.status === 401) {
-        googleAuth.expiresAt = 0;
-        saveJSON(STORAGE_KEYS.GOOGLE_AUTH, googleAuth);
-        renderAccountUI();
-        throw new Error('Google認証の有効期限が切れました。「再接続する」から再ログインしてください。');
-      }
-      if (!res.ok) throw new Error(json.error?.message || `Google API Error (${res.status})`);
-      return json;
-    }
-
-    // ユーザーのGoogleドライブに専用スプレッドシート＆成績PDFフォルダを自動作成（既存があれば再利用）
-    async function autoProvisionUserWorkspace(logFn) {
-      if (!isGoogleSignedIn()) throw new Error('先にGoogleアカウントでログインしてください');
-
-      // 1. 専用スプレッドシートを検索または新規作成
-      logFn('🔍 専用スプレッドシートを確認中...');
-      const qSheet = encodeURIComponent("(name='Study Hub データ' or name='CPA Study Hub データ') and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false");
-      const foundSheets = await gApiFetch(`https://www.googleapis.com/drive/v3/files?q=${qSheet}&fields=files(id,name,webViewLink)`);
-
-      if (foundSheets.files && foundSheets.files.length > 0) {
-        const f = foundSheets.files[0];
-        googleAuth.spreadsheetId = f.id;
-        googleAuth.spreadsheetUrl = f.webViewLink || `https://docs.google.com/spreadsheets/d/${f.id}/edit`;
-        logFn(`✓ 既存のスプレッドシート（${f.name}）を検出しました（自動引き継ぎ）`);
-      } else {
-        logFn('📊 スプレッドシート「Study Hub データ」を新規作成中...');
-        const created = await gApiFetch('https://sheets.googleapis.com/v4/spreadsheets', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            properties: { title: 'Study Hub データ', locale: 'ja_JP', timeZone: 'Asia/Tokyo' },
-            sheets: [
-              { properties: { title: 'log' } },
-              { properties: { title: 'materials' } },
-              { properties: { title: 'exams' } },
-              { properties: { title: 'config' } }
-            ]
-          })
+        document.getElementById('eaQuestionList')?.addEventListener('click', (e) => {
+          const btn = e.target.closest('button[data-act]');
+          if (!btn) return;
+          const idx = Number(btn.dataset.idx);
+          const q = eaDraftQuestions[idx];
+          if (!q) return;
+          const act = btn.dataset.act;
+          if (act === 'toggleWrong') { q.isWrong = !q.isWrong; renderEaQuestionList(); }
+          else if (act === 'removeRow') { eaDraftQuestions.splice(idx, 1); renderEaQuestionList(); }
+          else if (act === 'setFeeling') { q.feeling = btn.dataset.val; renderEaQuestionList(); }
+          else if (act === 'setCause') { q.causeTag = (q.causeTag === btn.dataset.val) ? '' : btn.dataset.val; renderEaQuestionList(); }
         });
-        googleAuth.spreadsheetId = created.spreadsheetId;
-        googleAuth.spreadsheetUrl = created.spreadsheetUrl;
-
-        // 選択した目的プリセットの科目・教材・初期設定を自動投入
-        const matRows = [['subject', 'materials'], ...SUBJECTS.map(s => [s, (materialsBySubject[s] || []).join(',')])];
-        while (matRows.length < 30) matRows.push(['', '']);
-        const initHubCfg = { goal: studyGoal, subjects: SUBJECTS, countdowns, settings: { sheetUrl: created.spreadsheetUrl, calendarUrl: settings.calendarUrl || '', notebookUrl: settings.notebookUrl || '' }, updatedAt: Date.now() };
-        await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${created.spreadsheetId}/values:batchUpdate`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            valueInputOption: 'USER_ENTERED',
-            data: [
-              { range: 'log!A1:I1', values: [['date', 'subject', 'material', 'minutes', 'topic', 'rating', 'memo', 'start_time', 'end_time']] },
-              { range: 'materials!A1:B30', values: matRows },
-              { range: 'exams!A1:I1', values: [['id', 'date', 'subject', 'title', 'score', 'maxScore', 'rank', 'note', 'source']] },
-              { range: 'config!A1:B3', values: [['key', 'value'], ['created_at', new Date().toISOString()], ['hubConfig', JSON.stringify(initHubCfg)]] }
-            ]
-          })
+        document.getElementById('eaQuestionList')?.addEventListener('input', (e) => {
+          const el = e.target;
+          const field = el.dataset?.field;
+          if (!field) return;
+          const idx = Number(el.dataset.idx);
+          const q = eaDraftQuestions[idx];
+          if (!q) return;
+          if (field === 'accuracy' || field === 'points') q[field] = Number(el.value) || 0;
+          else q[field] = el.value;
         });
-        logFn(`✓ スプレッドシート＋${SUBJECTS.length}科目・初期教材を作成しました`);
-      }
 
-      // 2. 成績PDFフォルダを検索または新規作成
-      logFn('📁 成績PDF用フォルダを確認中...');
-      const qFolder = encodeURIComponent("(name='StudyHub_成績PDF' or name='CPA答練PDF') and mimeType='application/vnd.google-apps.folder' and trashed=false");
-      const foundFolders = await gApiFetch(`https://www.googleapis.com/drive/v3/files?q=${qFolder}&fields=files(id,name,webViewLink)`);
-      if (foundFolders.files && foundFolders.files.length > 0) {
-        const fd = foundFolders.files[0];
-        googleAuth.examFolderId = fd.id;
-        googleAuth.examFolderUrl = fd.webViewLink || `https://drive.google.com/drive/folders/${fd.id}`;
-        logFn(`✓ 既存の「${fd.name}」フォルダを検出しました`);
-      } else {
-        const fd = await gApiFetch('https://www.googleapis.com/drive/v3/files?fields=id,webViewLink', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: 'StudyHub_成績PDF', mimeType: 'application/vnd.google-apps.folder' })
+        document.getElementById('saveExamAnalysisBtn')?.addEventListener('click', async () => {
+          const date = document.getElementById('eaDate').value || fmtDateInput(new Date());
+          const subject = document.getElementById('eaSubject').value || SUBJECTS[0];
+          const title = document.getElementById('eaTitle').value.trim();
+          if (!title) { showToast('答練・模試名を入力してください'); return; }
+          if (!eaDraftQuestions.length) { showToast('問題一覧を1問以上追加してください'); return; }
+
+          const maxScore = Number(document.getElementById('eaMaxScore').value) || 100;
+          const perQ = eaDraftQuestions.length ? Number((maxScore / eaDraftQuestions.length).toFixed(1)) : 0;
+          const normalizedQs = eaDraftQuestions.map(q => ({
+            qNo: q.qNo, accuracy: Number(q.accuracy) || 0,
+            points: Number(q.points) > 0 ? Number(q.points) : perQ,
+            isWrong: !!q.isWrong
+          }));
+          const calcScore = normalizedQs.reduce((sum, q) => sum + (q.isWrong ? 0 : q.points), 0);
+          const scoreInput = document.getElementById('eaScore').value;
+          const score = scoreInput !== '' ? Number(scoreInput) : Math.round(calcScore);
+          const rank = document.getElementById('eaRank').value.trim();
+          const nextTargetInput = document.getElementById('eaNextTarget').value;
+          const nextTargetScore = nextTargetInput !== '' ? Number(nextTargetInput) : null;
+
+          const examId = `exr_${Date.now()}`;
+          const resultObj = { id: examId, date, subject, title, score, maxScore, rank, nextTargetScore, questions: normalizedQs };
+          const mistakeObjs = eaDraftQuestions
+            .map((q, idx) => ({ q, norm: normalizedQs[idx] }))
+            .filter(({ q }) => q.isWrong)
+            .map(({ q, norm }, idx) => ({
+              id: `exm_${Date.now()}_${idx}`,
+              examId, date, subject, examTitle: title,
+              qNo: norm.qNo, accuracy: norm.accuracy, points: norm.points,
+              feeling: q.feeling || 'A', causeTag: q.causeTag || '', memo: q.memo || ''
+            }));
+
+          examDetailedResults = [resultObj, ...examDetailedResults.filter(r => !String(r.id).startsWith('exr_demo'))];
+          examMistakes = [...mistakeObjs, ...examMistakes.filter(m => !String(m.id).startsWith('exm_demo'))];
+          saveJSON(STORAGE_KEYS.EXAM_RESULTS, examDetailedResults);
+          saveJSON(STORAGE_KEYS.EXAM_MISTAKES, examMistakes);
+
+          // 既存カード一覧にも反映
+          examResults = [{
+            id: examId, date, subject, title, score, maxScore, rank,
+            note: `誤答${mistakeObjs.length}問（60%以上誤答:${mistakeObjs.filter(m => m.accuracy >= 60).length}問）`,
+            source: 'OCR分析'
+          }, ...examResults.filter(x => !String(x.id).startsWith('ex_demo'))];
+          saveJSON(STORAGE_KEYS.EXAMS, examResults);
+
+          const saveBtn = document.getElementById('saveExamAnalysisBtn');
+          saveBtn.disabled = true;
+          try {
+            await syncExamAnalysisToSheet(resultObj, mistakeObjs);
+            showToast(`保存しました（誤答${mistakeObjs.length}問を分析へ反映）`);
+          } catch (err) {
+            console.warn('exam_results/exam_mistakes同期警告:', err);
+            showToast('ローカル保存しました（シート同期は再ログイン後に反映されます）');
+          } finally {
+            saveBtn.disabled = false;
+          }
+
+          closeExamAnalysisModal();
+          renderExamResults();
+          renderExamMistakeDashboard();
+          renderPersonalCoach();
         });
-        googleAuth.examFolderId = fd.id;
-        googleAuth.examFolderUrl = fd.webViewLink || `https://drive.google.com/drive/folders/${fd.id}`;
-        const doneFd = await gApiFetch('https://www.googleapis.com/drive/v3/files?fields=id', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: '処理済み', mimeType: 'application/vnd.google-apps.folder', parents: [fd.id] })
-        });
-        googleAuth.doneFolderId = doneFd.id;
-        logFn('✓ 「StudyHub_成績PDF」＋「処理済み」フォルダを作成しました');
-      }
 
-      // 作成したスプレッドシートURLをクイックアクセスにも自動反映
-      settings.sheetUrl = googleAuth.spreadsheetUrl;
-      saveJSON(STORAGE_KEYS.SETTINGS, settings);
-      saveJSON(STORAGE_KEYS.GOOGLE_AUTH, googleAuth);
-      renderAccountUI();
-      renderQuickLinks();
-      logFn('🎉 すべての自動セットアップが完了しました！');
-    }
+        // ダッシュボード描画：正答率帯別・次判定ギャップ・選球眼スコア・最優先復習リスト
+        function renderExamMistakeDashboard() {
+          const bandBox = document.getElementById('accuracyBandBars');
+          const gapBox = document.getElementById('nextRankGapBox');
+          const eyeVal = document.getElementById('eyeScoreVal');
+          const eyeBadge = document.getElementById('eyeScoreBadge');
+          const eyeDetail = document.getElementById('eyeScoreDetail');
+          const causeBox = document.getElementById('mistakeReasonSummary');
+          const revList = document.getElementById('priorityReviewList');
+          const revCount = document.getElementById('priorityReviewCount');
+          const examCountBadge = document.getElementById('bandExamCountBadge');
+          if (!bandBox) return;
 
-    // アカウント管理モーダル制御
-    const accountModal = document.getElementById('accountModal');
-    function openAccountModal() {
-      renderAccountUI();
-      accountModal.classList.remove('hidden');
-      accountModal.classList.add('flex');
-    }
-    function closeAccountModal() {
-      accountModal.classList.add('hidden');
-      accountModal.classList.remove('flex');
-    }
-    document.getElementById('openAccountBtn').addEventListener('click', openAccountModal);
-    document.getElementById('closeAccountBtn').addEventListener('click', closeAccountModal);
-    accountModal.addEventListener('click', (e) => { if (e.target === accountModal) closeAccountModal(); });
+          const allResults = examDetailedResults || [];
+          const allMistakes = examMistakes || [];
+          examCountBadge.textContent = `分析対象: ${allResults.length}回分`;
 
-    document.getElementById('saveClientIdBtn').addEventListener('click', () => {
-      googleClientId = document.getElementById('inputGoogleClientId').value.trim();
-      try { localStorage.setItem(STORAGE_KEYS.GOOGLE_CLIENT_ID, googleClientId); } catch (e) { }
-      showToast('GoogleクライアントIDを保存しました');
-    });
+          // 1. 全体正答率帯別の自分の正答率
+          const bands = [
+            { label: '正答率 60%以上（基礎・必取）', test: a => a >= 60, total: 0, correct: 0, color: 'bg-emerald-500' },
+            { label: '正答率 40〜59%（合否分岐）', test: a => a >= 40 && a < 60, total: 0, correct: 0, color: 'bg-blue-500' },
+            { label: '正答率 40%未満（難問・埋没）', test: a => a < 40, total: 0, correct: 0, color: 'bg-slate-400' }
+          ];
+          allResults.forEach(r => {
+            (r.questions || []).forEach(q => {
+              const b = bands.find(x => x.test(Number(q.accuracy) || 0));
+              if (!b) return;
+              b.total += 1;
+              if (!q.isWrong) b.correct += 1;
+            });
+          });
+          bandBox.innerHTML = bands.map(b => {
+            const pct = b.total > 0 ? Math.round((b.correct / b.total) * 100) : 0;
+            return `
+              <div>
+                <div class="mb-1 flex items-center justify-between text-xs">
+                  <span class="font-semibold text-slate-700 dark:text-slate-200">${b.label}</span>
+                  <span class="font-bold">${b.total > 0 ? `${pct}% (${b.correct}/${b.total}問)` : '--'}</span>
+                </div>
+                <div class="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                  <div class="h-full rounded-full ${b.color}" style="width:${pct}%"></div>
+                </div>
+              </div>`;
+          }).join('');
 
-    document.getElementById('googleSignInBtn').addEventListener('click', async () => {
-      try {
-        await requestGoogleLogin();
-        showToast(`${googleAuth.user?.name || 'Googleアカウント'} でログインしました`);
-        if (!googleAuth.spreadsheetId) {
-          closeAccountModal();
-          openOnboardingModal(3);
-        } else {
-          closeAccountModal();
-          fetchAndRenderData(true);
+          // 次の判定まであと何問・何点か
+          if (allResults.length > 0) {
+            const latest = [...allResults].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+            const maxS = latest.maxScore || 100;
+            const curPct = maxS > 0 ? (latest.score / maxS) * 100 : 0;
+            let nextRankLabel = 'A判定ライン(80%)';
+            let targetScore = latest.nextTargetScore;
+            if (!targetScore) {
+              if (curPct < 60) { targetScore = Math.ceil(maxS * 0.6); nextRankLabel = 'C→B判定ライン(60%)'; }
+              else if (curPct < 70) { targetScore = Math.ceil(maxS * 0.7); nextRankLabel = '合格・B+ライン(70%)'; }
+              else if (curPct < 80) { targetScore = Math.ceil(maxS * 0.8); nextRankLabel = 'A判定ライン(80%)'; }
+              else { targetScore = Math.min(maxS, latest.score + 5); nextRankLabel = '上位安定ライン(+5点)'; }
+            } else {
+              nextRankLabel = `設定目標(${targetScore}点)`;
+            }
+            const gapPts = Math.max(0, Math.round((targetScore - latest.score) * 10) / 10);
+            const avgPtsPerQ = (latest.questions && latest.questions.length)
+              ? (latest.questions.reduce((s, q) => s + (Number(q.points) || 0), 0) / latest.questions.length) || (maxS / latest.questions.length)
+              : 5;
+            const needQs = gapPts > 0 ? Math.ceil(gapPts / Math.max(1, avgPtsPerQ)) : 0;
+            const latestHighAccWrong = (latest.questions || []).filter(q => q.isWrong && Number(q.accuracy) >= 60).length;
+            gapBox.innerHTML = gapPts > 0
+              ? `<strong>直近「${escapeHTML(latest.title)}」(${latest.score}/${maxS}点)</strong>：<br>次の <strong>${nextRankLabel}</strong> まであと <strong>${gapPts}点（約${needQs}問）</strong>。正答率60%以上の取りこぼし <strong>${latestHighAccWrong}問</strong> を拾えば${latestHighAccWrong >= needQs ? '即到達できます！' : '大きく近づきます。'}`
+              : `<strong>直近「${escapeHTML(latest.title)}」(${latest.score}/${maxS}点)</strong>：目標ラインに到達済みです！`;
+          }
+
+          // 2. 難易度選球眼スコア（体感C判定なのに全体正答率60%以上だった問題数から算出）
+          const cMistakes = allMistakes.filter(m => m.feeling === 'C');
+          const cMissHighAcc = cMistakes.filter(m => Number(m.accuracy) >= 60);
+          const eyeScore = allMistakes.length
+            ? Math.max(0, Math.round(100 - cMissHighAcc.length * 18 - (cMistakes.length > 0 ? (cMissHighAcc.length / cMistakes.length) * 20 : 0)))
+            : null;
+
+          if (eyeScore === null) {
+            eyeVal.textContent = '--';
+            eyeBadge.textContent = 'データ待ち';
+            eyeBadge.className = 'ml-auto rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-bold text-slate-500';
+            eyeDetail.textContent = '誤答の体感難易度（A/B/C）を登録すると選球眼スコアを算出します。';
+          } else {
+            eyeVal.textContent = String(eyeScore);
+            const isGood = eyeScore >= 80, isWarn = eyeScore >= 55 && eyeScore < 80;
+            eyeBadge.textContent = isGood ? '優秀' : isWarn ? 'ややズレあり' : '要改善';
+            eyeBadge.className = `ml-auto rounded-full px-2.5 py-0.5 text-[11px] font-bold ${isGood ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : isWarn ? 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300' : 'bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300'}`;
+            eyeDetail.textContent = `体感「C（捨て問）」判定 ${cMistakes.length}問のうち、全体正答率60%以上が ${cMissHighAcc.length}問 含まれています。${cMissHighAcc.length >= 2 ? '本番での取捨選択（スキャン）精度を高めましょう。' : '取捨選択の精度は良好です。'}`;
+          }
+
+          // 失点原因タグ集計
+          const tagCounts = {};
+          allMistakes.forEach(m => { if (m.causeTag) tagCounts[m.causeTag] = (tagCounts[m.causeTag] || 0) + 1; });
+          const sortedTags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+          causeBox.innerHTML = sortedTags.length
+            ? sortedTags.map(([tag, cnt]) => `<span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">${escapeHTML(tag)} (${cnt})</span>`).join('')
+            : `<span class="text-[11px] text-slate-400">失点原因タグはまだ未登録です</span>`;
+
+          // 3. 最優先復習リスト（全体正答率60%以上の誤答）
+          const priorityItems = allMistakes
+            .filter(m => Number(m.accuracy) >= 60)
+            .sort((a, b) => (Number(b.accuracy) || 0) - (Number(a.accuracy) || 0));
+          const unreviewed = priorityItems.filter(m => !reviewedMistakeIds.includes(m.id));
+          revCount.textContent = `残り ${unreviewed.length} / ${priorityItems.length}問`;
+
+          if (!priorityItems.length) {
+            revList.innerHTML = `<div class="rounded-xl bg-slate-50 p-4 text-center text-xs text-slate-400 dark:bg-slate-800/60">正答率60%以上の誤答はありません 🎉</div>`;
+          } else {
+            revList.innerHTML = priorityItems.map(m => {
+              const done = reviewedMistakeIds.includes(m.id);
+              const fBadge = m.feeling === 'C'
+                ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300'
+                : m.feeling === 'B'
+                  ? 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
+                  : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300';
+              return `
+                <div class="flex items-start gap-2 rounded-xl border p-2.5 text-xs ${done ? 'border-slate-200 bg-slate-50/70 opacity-60 dark:border-slate-800 dark:bg-slate-800/30' : 'border-rose-200/70 bg-rose-50/30 dark:border-rose-900/50 dark:bg-rose-950/15'}">
+                  <button type="button" data-review-id="${escapeHTML(m.id)}"
+                    class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-[10px] font-bold ${done ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-slate-300 bg-white text-transparent hover:border-emerald-500 dark:border-slate-600 dark:bg-slate-800'}">✓</button>
+                  <div class="min-w-0 flex-1">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <span class="font-bold text-slate-800 dark:text-slate-100 ${done ? 'line-through' : ''}">${escapeHTML(m.subject)} ${escapeHTML(m.qNo)}</span>
+                      <span class="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-blue-950 dark:text-blue-300">正答率${m.accuracy}%</span>
+                      <span class="rounded px-1.5 py-0.5 text-[10px] font-bold ${fBadge}">体感${escapeHTML(m.feeling)}</span>
+                    </div>
+                    <div class="mt-0.5 truncate text-[10px] text-slate-500 dark:text-slate-400">${escapeHTML(m.examTitle)}${m.causeTag ? ` · ${escapeHTML(m.causeTag)}` : ''}${m.memo ? ` · ${escapeHTML(m.memo)}` : ''}</div>
+                  </div>
+                </div>`;
+            }).join('');
+          }
         }
-      } catch (err) {
-        showToast(err.message);
-      }
-    });
 
-    document.getElementById('googleSignOutBtn').addEventListener('click', () => {
-      googleAuth = { accessToken: '', expiresAt: 0, user: null, spreadsheetId: '', spreadsheetUrl: '', examFolderId: '', examFolderUrl: '', doneFolderId: '' };
-      saveJSON(STORAGE_KEYS.GOOGLE_AUTH, googleAuth);
-      renderAccountUI();
-      fetchAndRenderData(false);
-      showToast('ログアウトしました');
-    });
+        document.getElementById('priorityReviewList')?.addEventListener('click', (e) => {
+          const btn = e.target.closest('button[data-review-id]');
+          if (!btn) return;
+          const id = btn.dataset.reviewId;
+          if (reviewedMistakeIds.includes(id)) reviewedMistakeIds = reviewedMistakeIds.filter(x => x !== id);
+          else reviewedMistakeIds.push(id);
+          saveJSON(STORAGE_KEYS.REVIEWED_MISTAKES, reviewedMistakeIds);
+          renderExamMistakeDashboard();
+        });
 
-    document.getElementById('bannerStartOnboardingBtn').addEventListener('click', () => {
-      openOnboardingModal(1);
-    });
-    document.getElementById('bannerReconnectBtn').addEventListener('click', async () => {
-      try {
-        await requestGoogleLogin();
-        showToast('Googleアカウントに再接続しました');
-        fetchAndRenderData(true);
-      } catch (err) {
-        showToast(err.message);
-      }
-    });
+        // =========================================================================
+        // 12. 学習ログ × 答練成績 パーソナル改善コーチ（10パターン自動判定）
+        // =========================================================================
+        function parseHourFromTimeStr(t) {
+          const m = String(t || '').match(/^(\d{1,2}):(\d{2})/);
+          return m ? Number(m[1]) : null;
+        }
+        function ratingToScore(r) {
+          const s = String(r || '');
+          if (s.includes('◎')) return 3;
+          if (s.includes('○')) return 2;
+          if (s.includes('△')) return 1;
+          return null;
+        }
+        function getTimeBand(hour) {
+          if (hour === null) return 'day';
+          if (hour >= 5 && hour <= 11) return 'morning';
+          if (hour >= 12 && hour <= 17) return 'day';
+          return 'night';
+        }
 
-    // 初期設定ウィザード制御（4ステップ）
-    const onboardingModal = document.getElementById('onboardingModal');
-    let pendingWizardGoal = studyGoal || 'univ_sci';
+        function computeSessionMatrix(logs) {
+          const matrix = {
+            morning: { label: '朝 (5〜11時)', calc: { mins: [], scores: [] }, theory: { mins: [], scores: [] } },
+            day: { label: '昼 (12〜17時)', calc: { mins: [], scores: [] }, theory: { mins: [], scores: [] } },
+            night: { label: '夜 (18〜4時)', calc: { mins: [], scores: [] }, theory: { mins: [], scores: [] } }
+          };
+          (logs || []).forEach(l => {
+            const mins = Number(l.minutes) || 0;
+            if (mins <= 0) return;
+            const hr = parseHourFromTimeStr(l.start_time) ?? parseHourFromTimeStr(l.end_time);
+            const band = getTimeBand(hr);
+            const type = getSubjectType(l.subject);
+            matrix[band][type].mins.push(mins);
+            const sc = ratingToScore(l.rating);
+            if (sc !== null) matrix[band][type].scores.push(sc);
+          });
+          const avg = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+          ['morning', 'day', 'night'].forEach(b => {
+            ['calc', 'theory'].forEach(t => {
+              matrix[b][t].avgMins = avg(matrix[b][t].mins);
+              matrix[b][t].avgScore = avg(matrix[b][t].scores);
+              matrix[b][t].count = matrix[b][t].mins.length;
+            });
+          });
+          return matrix;
+        }
 
-    function renderWizardGoalCards() {
-      document.querySelectorAll('.wiz-goal-btn').forEach(btn => {
-        const active = btn.dataset.goal === pendingWizardGoal;
-        btn.classList.toggle('border-blue-600', active);
-        btn.classList.toggle('bg-blue-50/70', active);
-        btn.classList.toggle('dark:border-blue-500', active);
-        btn.classList.toggle('dark:bg-blue-950/40', active);
-        btn.classList.toggle('border-slate-200', !active);
-        btn.classList.toggle('bg-white', !active);
-        btn.classList.toggle('dark:border-slate-700', !active);
-        btn.classList.toggle('dark:bg-slate-800/60', !active);
-      });
-    }
-    document.querySelectorAll('.wiz-goal-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        pendingWizardGoal = btn.dataset.goal;
-        renderWizardGoalCards();
-      });
-    });
+        function evaluateCoach10Patterns() {
+          const logs = studyLogs || [];
+          const mistakes = examMistakes || [];
+          const allExams = examResults || [];
+          const matrix = computeSessionMatrix(logs);
+          const data = currentData || DEMO_DATA;
+          const weekSlice = resolvePeriodData(data, 'week').slice;
+          const weekActualMap = weekSlice.bySubject?.actual || {};
+          const weekTotalActual = weekSlice.actual || Object.values(weekActualMap).reduce((a, b) => a + b, 0);
 
-    function setWizardStep(step) {
-      [1, 2, 3, 4].forEach(n => {
-        document.getElementById(`wizStep${n}`).classList.toggle('hidden', n !== step);
-        const ind = document.getElementById(`wizStepInd${n}`);
-        if (n === step) ind.className = 'rounded-lg bg-blue-600 py-1.5 text-white';
-        else if (n < step) ind.className = 'rounded-lg bg-emerald-100 py-1.5 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300';
-        else ind.className = 'rounded-lg bg-slate-100 py-1.5 text-slate-400 dark:bg-slate-800';
-      });
-    }
-    function openOnboardingModal(startStep = 1) {
-      pendingWizardGoal = studyGoal || 'univ_sci';
-      renderWizardGoalCards();
-      const preset = GOAL_PRESETS[pendingWizardGoal] || GOAL_PRESETS.cpa;
-      document.getElementById('wizExamName').value = preset.defaultExamName;
-      document.getElementById('wizExamDate').value = preset.defaultExamDate;
-      setWizardStep(startStep);
-      onboardingModal.classList.remove('hidden');
-      onboardingModal.classList.add('flex');
-    }
-    function closeOnboardingModal() {
-      try { localStorage.setItem(STORAGE_KEYS.ONBOARDING_DISMISSED, '1'); } catch (e) { }
-      onboardingModal.classList.add('hidden');
-      onboardingModal.classList.remove('flex');
-    }
-    document.getElementById('openOnboardingFromAccountBtn').addEventListener('click', () => {
-      closeAccountModal();
-      openOnboardingModal(1);
-    });
-    document.getElementById('closeOnboardingBtn').addEventListener('click', closeOnboardingModal);
-    onboardingModal.addEventListener('click', (e) => { if (e.target === onboardingModal) closeOnboardingModal(); });
+          const patterns = [];
+          const pushPattern = (id, priority, triggered, title, metric, advice, badge) => {
+            patterns.push({ id, priority, triggered, title, metric, advice, badge });
+          };
 
-    document.getElementById('wizToStep2Btn').addEventListener('click', () => {
-      applyGoalPreset(pendingWizardGoal);
-      if (isGoogleSignedIn()) {
-        saveMaterialsToCloud();
-        saveHubConfigToCloud();
-        setWizardStep(3);
-      } else {
-        setWizardStep(2);
-      }
-    });
-    document.getElementById('wizBackTo1Btn').addEventListener('click', () => setWizardStep(1));
+          // ① 朝計算の失速（朝の計算1クール45分未満＋答練伸び悩み）
+          const morningCalcAvg = matrix.morning.calc.avgMins;
+          const calcExams = allExams.filter(e => getSubjectType(e.subject) === 'calc');
+          const calcExamPct = calcExams.length ? calcExams.reduce((s, e) => s + ((e.score / (e.maxScore || 100)) * 100), 0) / calcExams.length : null;
+          const p1 = morningCalcAvg !== null && morningCalcAvg < 45 && (calcExamPct === null || calcExamPct < 75);
+          pushPattern('p1', 85, p1, '① 朝計算の失速',
+            morningCalcAvg !== null ? `朝計算の平均1クール: ${Math.round(morningCalcAvg)}分` : '朝計算のログ不足',
+            '朝の計算1クールが45分未満で失速気味です。朝は理論の暗記・回転に充て、まとまった集中が作りやすい午後へ計算演習を移動しましょう。', '時間帯最適化');
 
-    document.getElementById('wizLoginBtn').addEventListener('click', async () => {
-      const st = document.getElementById('wizStep2Status');
-      st.textContent = 'Googleログイン画面を開いています...';
-      try {
-        await requestGoogleLogin();
-        st.textContent = `✓ ${googleAuth.user?.email || 'ログイン完了'}`;
-        setWizardStep(3);
-      } catch (err) {
-        st.textContent = err.message;
-      }
-    });
+          // ② 夜理論の集中低下（夜21時以降の理論集中度低下・先走りミス）
+          const lateTheoryLogs = logs.filter(l => {
+            const h = parseHourFromTimeStr(l.start_time);
+            return getSubjectType(l.subject) === 'theory' && h !== null && (h >= 21 || h <= 3);
+          });
+          const lateTheoryScores = lateTheoryLogs.map(l => ratingToScore(l.rating)).filter(x => x !== null);
+          const lateTheoryAvg = lateTheoryScores.length ? lateTheoryScores.reduce((a, b) => a + b, 0) / lateTheoryScores.length : null;
+          const hasRushMistake = mistakes.some(m => m.causeTag === '先走り読み・設問誤読');
+          const p2 = (lateTheoryAvg !== null && lateTheoryAvg <= 1.7) || (lateTheoryLogs.length > 0 && hasRushMistake);
+          pushPattern('p2', 82, p2, '② 夜理論の集中低下',
+            lateTheoryAvg !== null ? `21時以降の理論集中度: ${(lateTheoryAvg / 3 * 100).toFixed(0)}%` : '21時以降の理論ログあり',
+            '夜21時以降の理論学習で集中度低下・先走り読みが出ています。夜は手を動かして進められる「計算の個別問題」へ切り替えましょう。', '時間帯最適化');
 
-    document.getElementById('wizAutoCreateBtn').addEventListener('click', async () => {
-      const btn = document.getElementById('wizAutoCreateBtn');
-      const logEl = document.getElementById('wizProvisionLog');
-      logEl.innerHTML = '';
-      const appendLog = (line) => {
-        const div = document.createElement('div');
-        div.textContent = line;
-        logEl.appendChild(div);
-      };
-      btn.disabled = true;
-      try {
-        await autoProvisionUserWorkspace(appendLog);
-        document.getElementById('wizToStep4Btn').classList.remove('hidden');
-        showToast('スプレッドシートとフォルダを自動作成しました');
-        fetchAndRenderData(false);
-      } catch (err) {
-        appendLog('❌ ' + err.message);
-      } finally {
-        btn.disabled = false;
-      }
-    });
+          // ③ 1クール超過による集中切れ（120分超の連続学習後の集中度急落）
+          let longDropCount = 0;
+          const sortedLogs = [...logs].sort((a, b) => `${a.date} ${a.start_time}`.localeCompare(`${b.date} ${b.start_time}`));
+          for (let i = 0; i < sortedLogs.length; i++) {
+            if (Number(sortedLogs[i].minutes) > 120) {
+              const next = sortedLogs[i + 1];
+              const curSc = ratingToScore(sortedLogs[i].rating);
+              const nextSc = next && next.date === sortedLogs[i].date ? ratingToScore(next.rating) : null;
+              if ((nextSc !== null && curSc !== null && nextSc < curSc) || (nextSc !== null && nextSc === 1) || curSc === 1) {
+                longDropCount++;
+              }
+            }
+          }
+          const p3 = longDropCount > 0;
+          pushPattern('p3', 80, p3, '③ 1クール超過による集中切れ',
+            `120分超後の集中低下: ${longDropCount}回検出`,
+            '120分を超える連続学習の直後に集中度が急落しています。「90分学習＋15分休憩」のブロック制に区切って後半の質を守りましょう。', 'リズム改善');
 
-    document.getElementById('wizToStep4Btn').addEventListener('click', () => setWizardStep(4));
+          // ④ 基礎（正答率60%以上）の取りこぼし過多
+          const highAccMistakes = mistakes.filter(m => Number(m.accuracy) >= 60);
+          const p4 = highAccMistakes.length >= 3 && (weekTotalActual >= 600 || logs.length >= 5);
+          pushPattern('p4', 95, p4, '④ 基礎（正答率60%以上）の取りこぼし過多',
+            `正答率60%以上の誤答: ${highAccMistakes.length}問`,
+            '勉強量は確保できている一方で、全体正答率60%以上の基礎問題で取りこぼしが多い状態です。難問に手を広げず「Aランク回転教材」へ集中しましょう。', '最優先');
 
-    document.getElementById('wizFinishBtn').addEventListener('click', () => {
-      const name = document.getElementById('wizExamName').value.trim();
-      const date = document.getElementById('wizExamDate').value;
-      if (name && date && !countdowns.some(c => c.name === name && c.date === date)) {
-        countdowns.unshift({ id: 'c_' + Date.now(), name, date, color: 'rose' });
-        saveJSON(STORAGE_KEYS.COUNTDOWNS, countdowns);
+          // ⑤ 本番での問題選球眼ズレ（体感C判定の中に正答率60%以上が2問以上）
+          const cHighAcc = mistakes.filter(m => m.feeling === 'C' && Number(m.accuracy) >= 60);
+          const p5 = cHighAcc.length >= 2;
+          pushPattern('p5', 92, p5, '⑤ 本番での問題選球眼ズレ',
+            `体感C判定×正答率60%以上: ${cHighAcc.length}問`,
+            '捨て問(C)と判断した問題の中に、周囲の60%以上が解けている基本問題が複数あります。解答開始3分の全体スキャンと総論整理を徹底しましょう。', '本番戦略');
+
+          // ⑥ 時間投入過多の「空回り科目」検出（週間時間の35%以上投入＋答練横ばい/伸び悩み）
+          let spinSubject = null, spinShare = 0;
+          if (weekTotalActual > 0) {
+            SUBJECTS.forEach(s => {
+              const share = (weekActualMap[s] || 0) / weekTotalActual;
+              if (share >= 0.35) {
+                const subEx = allExams.filter(e => e.subject === s).sort((a, b) => new Date(b.date) - new Date(a.date));
+                const stagnant = !subEx.length || (subEx[0].score / (subEx[0].maxScore || 100) < 0.72) || (subEx.length >= 2 && subEx[0].score <= subEx[1].score + 2);
+                if (stagnant && share > spinShare) { spinSubject = s; spinShare = share; }
+              }
+            });
+          }
+          const p6 = !!spinSubject;
+          pushPattern('p6', 84, p6, '⑥ 時間投入過多の「空回り科目」検出',
+            spinSubject ? `${spinSubject}: 週間比率 ${(spinShare * 100).toFixed(0)}%` : '偏りなし',
+            `「${spinSubject || '特定科目'}」に週間時間の35%以上を投入していますが点数が伸び悩んでいます。作業的な反復を止め、抽象・背景理解への回帰と講師相談を行いましょう。`, '配分見直し');
+
+          // ⑦ 計画過多・慢性的な予実マイナス（3週連続達成率70%未満＋オフ日なし）
+          const recent3Weeks = (weeklyHistory || []).slice(-3);
+          const low3Weeks = recent3Weeks.length >= 3 && recent3Weeks.every(w => w.planned > 0 && (w.actual / w.planned) < 0.7 && w.activeDays >= 7);
+          const p7 = low3Weeks;
+          pushPattern('p7', 78, p7, '⑦ 計画過多・慢性的な予実マイナス',
+            recent3Weeks.length >= 3 ? `直近3週の達成率: ${recent3Weeks.map(w => Math.round((w.actual / Math.max(1, w.planned)) * 100) + '%').join(' / ')}` : '3週分の履歴蓄積中',
+            '3週連続で達成率70%未満かつオフ日なしの過密計画になっています。週1日の「予備日（調整日）」をあらかじめカレンダーに設定しましょう。', '計画調整');
+
+          // ⑧ 直前期の回転スピード不足（試験2週間前以内）
+          const today0 = new Date(); today0.setHours(0, 0, 0, 0);
+          let nearestExam = null, minDays = Infinity;
+          (countdowns || []).forEach(c => {
+            const t = new Date(`${c.date}T00:00:00`);
+            const diff = Math.ceil((t - today0) / 86400000);
+            if (diff >= 0 && diff < minDays) { minDays = diff; nearestExam = c; }
+          });
+          const p8 = nearestExam !== null && minDays <= 14;
+          pushPattern('p8', 98, p8, '⑧ 直前期の回転スピード不足',
+            nearestExam ? `${nearestExam.name} まで残り${minDays}日` : '直前試験なし',
+            `試験まで2週間以内（残り${minDays}日）です。全範囲を丁寧に解き直すのではなく、「間違えた箇所・正答率60%以上の誤答」のみの高速回転へ切り替えましょう。`, '直前期モード');
+
+          // ⑨ 計算の「着手前思考」不足（計算ミスで論点誤認・注意点漏れが70%以上）
+          const calcTagged = mistakes.filter(m => getSubjectType(m.subject) === 'calc' && m.causeTag);
+          const calcPreThink = calcTagged.filter(m => m.causeTag === '論点誤認・前提ミス' || m.causeTag === '注意点漏れ・ケアレス');
+          const calcRatio = calcTagged.length ? (calcPreThink.length / calcTagged.length) : 0;
+          const p9 = calcTagged.length >= 2 && calcRatio >= 0.7;
+          pushPattern('p9', 88, p9, '⑨ 計算の「着手前思考」不足',
+            calcTagged.length ? `論点誤認・注意点漏れ比率: ${Math.round(calcRatio * 100)}% (${calcPreThink.length}/${calcTagged.length}問)` : '計算タグ未蓄積',
+            '計算ミスの70%以上が「論点誤認・注意点漏れ」です。電卓を叩く前に10秒だけ立ち止まり、前提条件・問われている数値を確認する「着手前10秒ルール」を徹底しましょう。', '計算対策');
+
+          // ⑩ 理論の「線引き外・構造見落とし」過多（理論ミスで線引き外見落とし・関連知識不足が60%以上）
+          const theoryTagged = mistakes.filter(m => getSubjectType(m.subject) === 'theory' && m.causeTag);
+          const theoryStruct = theoryTagged.filter(m => m.causeTag === '線引き外の見落とし' || m.causeTag === '関連知識・構造不足');
+          const theoryRatio = theoryTagged.length ? (theoryStruct.length / theoryTagged.length) : 0;
+          const p10 = theoryTagged.length >= 2 && theoryRatio >= 0.6;
+          pushPattern('p10', 87, p10, '⑩ 理論の「線引き外・構造見落とし」過多',
+            theoryTagged.length ? `線引き外・関連知識不足比率: ${Math.round(theoryRatio * 100)}% (${theoryStruct.length}/${theoryTagged.length}問)` : '理論タグ未蓄積',
+            '理論ミスの60%以上が「線引き外の見落とし・関連知識不足」です。マーク箇所だけでなく前後1文を再読し、関連論点のページ番号をテキストへ書き込みましょう。', '理論対策');
+
+          return { patterns, matrix };
+        }
+
+        function renderPersonalCoach() {
+          const grid = document.getElementById('coachAdviceGrid');
+          const badge = document.getElementById('coachActiveCountBadge');
+          const matrixBox = document.getElementById('sessionMatrixBox');
+          const allList = document.getElementById('coachAllPatternsList');
+          if (!grid) return;
+
+          const { patterns, matrix } = evaluateCoach10Patterns();
+          const active = patterns.filter(p => p.triggered).sort((a, b) => b.priority - a.priority);
+          badge.textContent = active.length ? `${active.length}件の改善提案あり` : '全10パターン良好 ✓';
+          badge.className = active.length
+            ? 'rounded-full bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-700 dark:bg-rose-950 dark:text-rose-300'
+            : 'rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300';
+
+          if (!active.length) {
+            grid.innerHTML = `
+              <div class="col-span-full rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 text-xs text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200">
+                <strong>現在の学習バランス・答練分析に大きなボトルネックは検出されていません。</strong> このリズムを維持しつつ、答練の誤答(A/B/C)を継続登録するとさらに精度が上がります。
+              </div>`;
+          } else {
+            grid.innerHTML = active.slice(0, 4).map((p, i) => `
+              <div class="flex flex-col justify-between rounded-2xl border ${i === 0 ? 'border-rose-300 bg-rose-50/40 dark:border-rose-900/70 dark:bg-rose-950/20' : 'border-indigo-200 bg-white dark:border-slate-800 dark:bg-slate-900'} p-4 shadow-sm">
+                <div>
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="rounded-full ${i === 0 ? 'bg-rose-600 text-white' : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300'} px-2 py-0.5 text-[10px] font-bold">優先度 #${i + 1} · ${escapeHTML(p.badge)}</span>
+                    <span class="text-[10px] font-semibold text-slate-400">${escapeHTML(p.metric)}</span>
+                  </div>
+                  <div class="mt-2 text-sm font-extrabold text-slate-900 dark:text-slate-100">${escapeHTML(p.title)}</div>
+                  <p class="mt-1.5 text-xs leading-relaxed text-slate-600 dark:text-slate-300">${escapeHTML(p.advice)}</p>
+                </div>
+              </div>`).join('');
+          }
+
+          // 時間帯 × 科目タイプ別マトリクス
+          matrixBox.innerHTML = ['morning', 'day', 'night'].map(k => {
+            const m = matrix[k];
+            const fmtCell = (obj) => obj.count
+              ? `${Math.round(obj.avgMins)}分 / 集中${obj.avgScore ? Math.round((obj.avgScore / 3) * 100) + '%' : '--'} <span class="text-slate-400">(${obj.count}件)</span>`
+              : `<span class="text-slate-400">記録なし</span>`;
+            return `
+              <div class="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3 text-xs dark:border-slate-800 dark:bg-slate-800/40">
+                <div class="mb-1.5 font-bold text-slate-700 dark:text-slate-200">${m.label}</div>
+                <div class="flex justify-between text-[11px]"><span class="font-semibold text-blue-600 dark:text-blue-400">計算系</span><span>${fmtCell(m.calc)}</span></div>
+                <div class="mt-1 flex justify-between text-[11px]"><span class="font-semibold text-emerald-600 dark:text-emerald-400">理論系</span><span>${fmtCell(m.theory)}</span></div>
+              </div>`;
+          }).join('');
+
+          // 全10パターン一覧
+          allList.innerHTML = patterns.map(p => `
+            <div class="flex items-start justify-between gap-2 rounded-xl border p-2.5 text-[11px] ${p.triggered ? 'border-rose-200 bg-rose-50/40 dark:border-rose-900/50 dark:bg-rose-950/20' : 'border-slate-200 bg-slate-50/40 dark:border-slate-800 dark:bg-slate-800/30'}">
+              <div>
+                <div class="font-bold ${p.triggered ? 'text-rose-700 dark:text-rose-300' : 'text-slate-600 dark:text-slate-300'}">${escapeHTML(p.title)}</div>
+                <div class="text-[10px] text-slate-400">${escapeHTML(p.metric)}</div>
+              </div>
+              <span class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${p.triggered ? 'bg-rose-600 text-white' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'}">${p.triggered ? '該当' : 'OK'}</span>
+            </div>`).join('');
+        }
+
+        document.getElementById('toggleAllCoachPatternsBtn')?.addEventListener('click', () => {
+          document.getElementById('coachAllPatternsPanel')?.classList.toggle('hidden');
+        });
+
+        initTheme();
+        initHeaderDate();
+        renderAccountUI();
         renderCountdowns();
-      }
-      saveMaterialsToCloud();
-      saveHubConfigToCloud();
-      closeOnboardingModal();
-      fetchAndRenderData(false);
-      showToast('初期設定が完了しました！');
-    });
+        renderQuickLinks();
+        renderExamResults();
+        renderExamMistakeDashboard();
+        renderPersonalCoach();
+        renderSubjectChips();
+        renderExamSubjectOptions();
+        renderRatingChips();
 
-    initTheme();
-    initHeaderDate();
-    renderAccountUI();
-    renderCountdowns();
-    renderQuickLinks();
-    renderExamResults();
-    renderSubjectChips();
-    renderExamSubjectOptions();
-    renderRatingChips();
+        if (localStorage.getItem(STORAGE_KEYS.TIMER_FIRST_START)) {
+          startTimeInput.value = fmtTime(new Date(Number(localStorage.getItem(STORAGE_KEYS.TIMER_FIRST_START))));
+        }
+        if (localStorage.getItem(STORAGE_KEYS.TIMER_START)) startTimer(false);
+        else updateTimerUI();
 
-    if (localStorage.getItem(STORAGE_KEYS.TIMER_FIRST_START)) {
-      startTimeInput.value = fmtTime(new Date(Number(localStorage.getItem(STORAGE_KEYS.TIMER_FIRST_START))));
-    }
-    if (localStorage.getItem(STORAGE_KEYS.TIMER_START)) startTimer(false);
-    else updateTimerUI();
+        const savedTab = (() => { try { return localStorage.getItem(STORAGE_KEYS.ACTIVE_TAB); } catch (e) { return 'hubView'; } })();
+        switchAppTab(savedTab === 'logView' ? 'logView' : 'hubView');
+        fetchAndRenderData(false);
 
-    const savedTab = (() => { try { return localStorage.getItem(STORAGE_KEYS.ACTIVE_TAB); } catch (e) { return 'hubView'; } })();
-    switchAppTab(savedTab === 'logView' ? 'logView' : 'hubView');
-    fetchAndRenderData(false);
-
-    // 初回アクセス時は自動で初期設定ウィザードを案内
-    const onboardingDismissed = (() => { try { return localStorage.getItem(STORAGE_KEYS.ONBOARDING_DISMISSED); } catch (e) { return '1'; } })();
-    if (!googleAuth.user && !settings.gasUrl && !onboardingDismissed) {
-      openOnboardingModal(1);
-    }
+        // 初回アクセス時は自動で初期設定ウィザードを案内
+        const onboardingDismissed = (() => { try { return localStorage.getItem(STORAGE_KEYS.ONBOARDING_DISMISSED); } catch (e) { return '1'; } })();
+        if (!googleAuth.user && !settings.gasUrl && !onboardingDismissed) {
+          openOnboardingModal(1);
+        }
   </script>
 </body>
 
