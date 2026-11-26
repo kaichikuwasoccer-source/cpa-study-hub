@@ -131,6 +131,7 @@ module.exports = async function handler(req, res) {
 
     let geminiRes = null;
     let geminiJson = null;
+    let usedModel = '';
     let lastErrorMsg = 'Gemini API Error';
 
     for (const model of models) {
@@ -143,6 +144,7 @@ module.exports = async function handler(req, res) {
         });
         geminiJson = await geminiRes.json();
         if (geminiRes.ok) {
+          usedModel = model;
           break;
         }
         lastErrorMsg = geminiJson?.error?.message || `Gemini API Error (${geminiRes.status})`;
@@ -171,11 +173,15 @@ module.exports = async function handler(req, res) {
               ? !Boolean(q.is_correct)
               : Boolean(q.isWrong === true || q.isWrong === 'true' || q.result === '×' || q.result === '✕' || q.result === '誤');
             const qTypeRaw = q.q_type || q.qType || '';
+            let officialRank = (q.official_rank ?? q.officialRank) ? String(q.official_rank ?? q.officialRank).trim() : '';
+            if (!officialRank) {
+              officialRank = accuracy >= 60 ? 'A' : accuracy >= 40 ? 'B' : 'C';
+            }
             return {
               qNo: String(q.q_no ?? q.qNo ?? q.number ?? `${idx + 1}`),
               accuracy,
               points: Number(q.points || 0) || 1,
-              officialRank: (q.official_rank ?? q.officialRank) ? String(q.official_rank ?? q.officialRank) : null,
+              officialRank,
               qType: (qTypeRaw === 'calc' || qTypeRaw === 'theory') ? qTypeRaw : '',
               isWrong
             };
@@ -212,6 +218,7 @@ module.exports = async function handler(req, res) {
       }
       return res.status(200).json({
         status: 'ok',
+        model: usedModel,
         exam_title: topTitle,
         date: parsed?.date || null,
         subjects: parsed?.subjects || null,
