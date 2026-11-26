@@ -1001,6 +1001,15 @@
       </div>
 
       <div class="flex-1 space-y-4 overflow-y-auto px-5 py-4 text-xs">
+        <!-- 0. 複数科目タブ切替バー（一括OCR・複数科目入力対応） -->
+        <div class="flex flex-wrap items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50/80 p-2 dark:border-slate-800 dark:bg-slate-800/50">
+          <div id="eaExamTabs" class="flex flex-wrap items-center gap-1.5"></div>
+          <button id="eaAddExamTabBtn" type="button"
+            class="ml-auto rounded-lg border border-dashed border-slate-300 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-600 hover:border-indigo-400 hover:text-indigo-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 transition">
+            ＋ 科目を追加
+          </button>
+        </div>
+
         <!-- 1. 答練基本情報 -->
         <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-6">
           <div class="col-span-1 sm:col-span-2">
@@ -1047,10 +1056,10 @@
             <span id="eaApiKeyStatus" class="text-[10px] font-semibold text-slate-400"></span>
           </div>
           <div class="flex flex-wrap items-center gap-2">
-            <input id="eaImageInput" type="file" accept="image/*,application/pdf" class="hidden" />
+            <input id="eaImageInput" type="file" accept="image/*,application/pdf" multiple class="hidden" />
             <button id="eaUploadBtn" type="button"
               class="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-bold text-white hover:bg-indigo-700 transition">
-              📷 成績表スクショからAI OCR抽出
+              📷 成績表から一括OCR（複数科目・複数枚OK）
             </button>
             <button id="eaTogglePasteBtn" type="button"
               class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 transition">
@@ -3587,20 +3596,31 @@
           }
         }
 
-        // クライアント直接 Gemini API 呼び出し（設定画面のAPIキー使用）または /api/ocr フォールバック
+        // クライアント直接 Gemini API 呼び出し（設定画面のAPIキー使用）または /api/ocr フォールバック（複数科目対応）
         async function extractExamQuestionsByOcr(prepared) {
           const apiKey = (settings.geminiApiKey || '').trim();
           const todayStr = fmtDateInput(new Date());
           const examSubjects = getExamSubjectList();
+          const normQs = (arr) => Array.isArray(arr)
+            ? arr.map((q, idx) => ({
+              qNo: String(q.qNo ?? q.number ?? `問${idx + 1}`),
+              accuracy: Math.max(0, Math.min(100, Number(q.accuracy ?? q.rate ?? 50) || 0)),
+              points: Number(q.points || 0) || 0,
+              qType: (q.qType === 'calc' || q.qType === 'theory') ? q.qType : '',
+              isWrong: Boolean(q.isWrong === true || q.isWrong === 'true' || q.result === '×' || q.result === '✕' || q.result === '誤')
+            }))
+            : [];
+
           if (apiKey) {
             const prompt = [
-              '添付された答練・模試の成績表（問題別正答率表の画像またはPDF）から、基本情報と各問題の「問題番号」「全体正答率(%)」「配点(分かれば)」「計算/理論区分(calcまたはtheory、分かれば)」「本人の正誤(isWrong: 誤答・不正解・×・△・0点・正答と解答番号不一致ならtrue、正解・○または判別不能ならfalse)」を正確に抽出し、JSONのみで返してください。',
+              '添付された答練・模試の成績表（問題別正答率表の画像またはPDF）から、記載されているすべての科目について基本情報と各問題の「問題番号」「全体正答率(%)」「配点(分かれば)」「計算/理論区分(calcまたはtheory、分かれば)」「本人の正誤(isWrong: 誤答・不正解・×・△・0点・正答と解答番号不一致ならtrue、正解・○または判別不能ならfalse)」を正確に抽出し、JSONのみで返してください。',
+              '1つの画像/PDFに複数科目（例：財務会計論・管理会計・監査論・企業法など）が載っている場合は、必ず科目ごとに exams 配列へ分けて出力してください。',
               '※公認会計士試験の財務会計論について：小テスト等で計算・理論が分かれている場合は「財務(計算)」「財務(理論)」、本番形式の答練・模試で合算されている場合は「財務会計論（計算＋理論）」を選択してください。',
               `【選択可能な科目リスト】${examSubjects.join('、')}`,
               `【ファイル名参考】${prepared.fileName || '不明'}`,
               `【日付デフォルト】${todayStr}`,
               '以下のJSON形式のみで返答してください：',
-              '{ "exam": { "date": "YYYY-MM-DD", "subject": "科目リストから1つ", "title": "答練名", "score": 72, "maxScore": 100, "rank": "判定や偏差値" }, "questions": [ { "qNo": "問1", "accuracy": 82, "points": 5, "qType": "calc または theory（不明なら空文字）", "isWrong": false } ] }'
+              '{ "exams": [ { "date": "YYYY-MM-DD", "subject": "科目リストから1つ", "title": "答練名", "score": 72, "maxScore": 100, "rank": "判定や偏差値", "questions": [ { "qNo": "問1", "accuracy": 82, "points": 5, "qType": "calc または theory（不明なら空文字）", "isWrong": false } ] } ] }'
             ].join('\n');
             const models = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'];
             let lastErr = 'Gemini APIエラー';
@@ -3618,16 +3638,21 @@
                 if (!r.ok) { lastErr = j?.error?.message || `HTTP ${r.status}`; continue; }
                 const txt = (j?.candidates?.[0]?.content?.parts?.[0]?.text || '').replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
                 const parsed = JSON.parse(txt);
-                const qs = Array.isArray(parsed?.questions)
-                  ? parsed.questions.map((q, idx) => ({
-                    qNo: String(q.qNo ?? q.number ?? `問${idx + 1}`),
-                    accuracy: Math.max(0, Math.min(100, Number(q.accuracy ?? q.rate ?? 50) || 0)),
-                    points: Number(q.points || 0) || 0,
-                    qType: (q.qType === 'calc' || q.qType === 'theory') ? q.qType : '',
-                    isWrong: Boolean(q.isWrong === true || q.isWrong === 'true' || q.result === '×' || q.result === '✕' || q.result === '誤')
+                const rawExams = Array.isArray(parsed?.exams)
+                  ? parsed.exams
+                  : [{ ...(parsed?.exam || {}), questions: parsed?.questions || [] }];
+                const normalized = rawExams
+                  .map(ex => ({
+                    date: String(ex?.date || todayStr).replace(/\//g, '-'),
+                    subject: examSubjects.includes(ex?.subject) ? ex.subject : examSubjects[0],
+                    title: String(ex?.title || prepared.fileName || '答練'),
+                    score: ex?.score ?? '',
+                    maxScore: Number(ex?.maxScore) || (String(ex?.subject || '').includes('計算＋理論') ? 200 : 100),
+                    rank: String(ex?.rank || ''),
+                    questions: normQs(ex?.questions)
                   }))
-                  : [];
-                if (qs.length) return { exam: parsed?.exam || {}, questions: qs };
+                  .filter(ex => ex.questions.length > 0);
+                if (normalized.length) return { exams: normalized };
               } catch (e) { lastErr = e.message; }
             }
             throw new Error(lastErr);
@@ -3651,7 +3676,20 @@
           if (!res.ok || json.status !== 'ok') {
             throw new Error(json.message || 'OCR抽出に失敗しました（設定画面でGemini APIキーを入力するか、テキスト貼付・手入力をご利用ください）');
           }
-          return { exam: json.exam || {}, questions: json.questions || [] };
+          const rawExams = Array.isArray(json.exams)
+            ? json.exams
+            : [{ ...(json.exam || {}), questions: json.questions || [] }];
+          return {
+            exams: rawExams.map(ex => ({
+              date: String(ex?.date || todayStr).replace(/\//g, '-'),
+              subject: examSubjects.includes(ex?.subject) ? ex.subject : examSubjects[0],
+              title: String(ex?.title || prepared.fileName || '答練'),
+              score: ex?.score ?? '',
+              maxScore: Number(ex?.maxScore) || (String(ex?.subject || '').includes('計算＋理論') ? 200 : 100),
+              rank: String(ex?.rank || ''),
+              questions: normQs(ex?.questions)
+            })).filter(ex => ex.questions.length > 0)
+          };
         }
 
         function parsePastedQuestionText(text) {
@@ -3674,9 +3712,80 @@
           return out;
         }
 
-        // モーダル状態管理
+        // モーダル状態管理（複数科目タブ対応）
         const examAnalysisModal = document.getElementById('examAnalysisModal');
+        let eaDraftExams = [];
+        let eaActiveExamIdx = 0;
         let eaDraftQuestions = [];
+
+        function makeEmptyEaDraft(subjOverride) {
+          const opts = getExamSubjectList();
+          const subj = subjOverride && opts.includes(subjOverride) ? subjOverride : opts[0];
+          return {
+            date: fmtDateInput(new Date()),
+            subject: subj,
+            title: '',
+            score: '',
+            maxScore: subj === '財務会計論（計算＋理論）' ? 200 : 100,
+            rank: '',
+            nextTargetScore: '',
+            questions: []
+          };
+        }
+
+        function syncEaFormToDraft() {
+          const cur = eaDraftExams[eaActiveExamIdx];
+          if (!cur) return;
+          cur.date = document.getElementById('eaDate').value || fmtDateInput(new Date());
+          cur.subject = document.getElementById('eaSubject').value || getExamSubjectList()[0];
+          cur.title = document.getElementById('eaTitle').value;
+          cur.score = document.getElementById('eaScore').value;
+          cur.maxScore = document.getElementById('eaMaxScore').value || '100';
+          cur.rank = document.getElementById('eaRank').value;
+          cur.nextTargetScore = document.getElementById('eaNextTarget').value;
+          cur.questions = eaDraftQuestions;
+        }
+
+        function loadEaDraftToForm(idx) {
+          eaActiveExamIdx = Math.max(0, Math.min(idx, eaDraftExams.length - 1));
+          const cur = eaDraftExams[eaActiveExamIdx];
+          if (!cur) return;
+          populateEaSubjectSelect();
+          document.getElementById('eaDate').value = cur.date || fmtDateInput(new Date());
+          document.getElementById('eaSubject').value = getExamSubjectList().includes(cur.subject) ? cur.subject : getExamSubjectList()[0];
+          document.getElementById('eaTitle').value = cur.title || '';
+          document.getElementById('eaScore').value = cur.score !== undefined && cur.score !== null ? String(cur.score) : '';
+          document.getElementById('eaMaxScore').value = String(cur.maxScore || 100);
+          document.getElementById('eaRank').value = cur.rank || '';
+          document.getElementById('eaNextTarget').value = cur.nextTargetScore !== undefined && cur.nextTargetScore !== null ? String(cur.nextTargetScore) : '';
+          eaDraftQuestions = cur.questions || [];
+          renderEaExamTabs();
+          renderEaQuestionList();
+        }
+
+        function renderEaExamTabs() {
+          const tabBox = document.getElementById('eaExamTabs');
+          const saveBtn = document.getElementById('saveExamAnalysisBtn');
+          if (!tabBox) return;
+          tabBox.innerHTML = eaDraftExams.map((ex, i) => {
+            const active = i === eaActiveExamIdx;
+            const wrongCnt = (ex.questions || []).filter(q => q.isWrong).length;
+            const qCnt = (ex.questions || []).length;
+            return `
+              <div class="inline-flex items-center rounded-lg border ${active ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200'}">
+                <button type="button" data-ea-tab="${i}" class="px-2.5 py-1 text-[11px] font-bold">
+                  ${escapeHTML(ex.subject || `科目${i + 1}`)} <span class="opacity-80">(${qCnt}問${wrongCnt ? `/誤${wrongCnt}` : ''})</span>
+                </button>
+                ${eaDraftExams.length > 1 ? `<button type="button" data-ea-del="${i}" class="pr-2 text-[11px] opacity-70 hover:opacity-100" title="この科目を削除">×</button>` : ''}
+              </div>`;
+          }).join('');
+          if (saveBtn) {
+            const filledCount = eaDraftExams.filter(ex => (ex.questions || []).length > 0).length;
+            saveBtn.textContent = eaDraftExams.length > 1
+              ? `全${Math.max(1, filledCount)}科目をまとめて保存する`
+              : '分析結果を保存する';
+          }
+        }
 
         function isMixedExamSubject(subj) {
           const s = String(subj || '');
@@ -3694,12 +3803,6 @@
 
         function openExamAnalysisModal() {
           populateEaSubjectSelect();
-          document.getElementById('eaDate').value = fmtDateInput(new Date());
-          document.getElementById('eaTitle').value = '';
-          document.getElementById('eaScore').value = '';
-          document.getElementById('eaMaxScore').value = '100';
-          document.getElementById('eaRank').value = '';
-          document.getElementById('eaNextTarget').value = '';
           document.getElementById('eaOcrStatus').classList.add('hidden');
           document.getElementById('eaPasteBox').classList.add('hidden');
           const keyBadge = document.getElementById('eaApiKeyStatus');
@@ -3710,8 +3813,8 @@
             keyBadge.textContent = 'APIキー未設定（サーバーOCR / テキスト貼付 / 手入力に対応）';
             keyBadge.className = 'text-[10px] font-semibold text-amber-600 dark:text-amber-400';
           }
-          eaDraftQuestions = [];
-          renderEaQuestionList();
+          eaDraftExams = [makeEmptyEaDraft()];
+          loadEaDraftToForm(0);
           examAnalysisModal.classList.remove('hidden');
           examAnalysisModal.classList.add('flex');
         }
@@ -3727,6 +3830,8 @@
           if (!container) return;
           const wrongCount = eaDraftQuestions.filter(q => q.isWrong).length;
           summaryEl.textContent = `問題数: ${eaDraftQuestions.length} / 誤答選択: ${wrongCount}問`;
+          if (eaDraftExams[eaActiveExamIdx]) eaDraftExams[eaActiveExamIdx].questions = eaDraftQuestions;
+          renderEaExamTabs();
 
           if (!eaDraftQuestions.length) {
             container.innerHTML = `<div class="rounded-xl border border-dashed border-slate-300 p-5 text-center text-xs text-slate-400 dark:border-slate-700">上のボタンから成績表スクショをOCR抽出するか、テキスト貼付・手入力で問題を追加してください。</div>`;
@@ -3816,11 +3921,44 @@
         document.getElementById('closeExamAnalysisBtn')?.addEventListener('click', closeExamAnalysisModal);
         document.getElementById('cancelExamAnalysisBtn')?.addEventListener('click', closeExamAnalysisModal);
         examAnalysisModal?.addEventListener('click', (e) => { if (e.target === examAnalysisModal) closeExamAnalysisModal(); });
+        document.getElementById('eaExamTabs')?.addEventListener('click', (e) => {
+          const delBtn = e.target.closest('button[data-ea-del]');
+          if (delBtn) {
+            const delIdx = Number(delBtn.dataset.eaDel);
+            if (eaDraftExams.length <= 1) return;
+            syncEaFormToDraft();
+            eaDraftExams.splice(delIdx, 1);
+            loadEaDraftToForm(Math.min(eaActiveExamIdx, eaDraftExams.length - 1));
+            return;
+          }
+          const tabBtn = e.target.closest('button[data-ea-tab]');
+          if (!tabBtn) return;
+          syncEaFormToDraft();
+          loadEaDraftToForm(Number(tabBtn.dataset.eaTab));
+        });
+        document.getElementById('eaAddExamTabBtn')?.addEventListener('click', () => {
+          syncEaFormToDraft();
+          const cur = eaDraftExams[eaActiveExamIdx];
+          const opts = getExamSubjectList();
+          const used = new Set(eaDraftExams.map(x => x.subject));
+          const nextSubj = opts.find(s => !used.has(s)) || opts[0];
+          const fresh = makeEmptyEaDraft(nextSubj);
+          if (cur?.date) fresh.date = cur.date;
+          if (cur?.title) fresh.title = cur.title;
+          eaDraftExams.push(fresh);
+          loadEaDraftToForm(eaDraftExams.length - 1);
+        });
+        ['eaDate', 'eaTitle', 'eaScore', 'eaMaxScore', 'eaRank', 'eaNextTarget'].forEach(id => {
+          document.getElementById(id)?.addEventListener('input', () => syncEaFormToDraft());
+        });
+
         document.getElementById('eaSubject')?.addEventListener('change', (e) => {
           const maxEl = document.getElementById('eaMaxScore');
           if (e.target.value === '財務会計論（計算＋理論）' && maxEl && maxEl.value === '100') {
             maxEl.value = '200';
           }
+          syncEaFormToDraft();
+          renderEaExamTabs();
           renderEaQuestionList();
         });
         document.getElementById('inputExamSubject')?.addEventListener('change', (e) => {
@@ -3870,33 +4008,45 @@
           eaImageInput.click();
         });
         eaImageInput?.addEventListener('change', async (e) => {
-          const file = e.target.files?.[0];
-          if (!file) return;
+          const files = Array.from(e.target.files || []);
+          if (!files.length) return;
           const st = document.getElementById('eaOcrStatus');
-          st.textContent = '⏳ 成績表から問題番号と全体正答率(%)をOCR抽出中...';
+          st.textContent = `⏳ ${files.length}件のファイルから全科目の問題番号・正答率・正誤を一括OCR抽出中...`;
           st.classList.remove('hidden');
           try {
-            const prepared = await prepareFileForOcr(file);
-            const extracted = await extractExamQuestionsByOcr(prepared);
-            if (extracted.exam) {
-              if (extracted.exam.date) document.getElementById('eaDate').value = extracted.exam.date;
-              const allowedSubjs = getExamSubjectList();
-              if (extracted.exam.subject && allowedSubjs.includes(extracted.exam.subject)) document.getElementById('eaSubject').value = extracted.exam.subject;
-              if (extracted.exam.title) document.getElementById('eaTitle').value = extracted.exam.title;
-              if (extracted.exam.score) document.getElementById('eaScore').value = extracted.exam.score;
-              if (extracted.exam.maxScore) document.getElementById('eaMaxScore').value = extracted.exam.maxScore;
-              if (extracted.exam.rank) document.getElementById('eaRank').value = extracted.exam.rank;
+            syncEaFormToDraft();
+            const extractedAll = [];
+            for (let i = 0; i < files.length; i++) {
+              st.textContent = `⏳ OCR解析中 (${i + 1}/${files.length}件目: ${files[i].name})...`;
+              const prepared = await prepareFileForOcr(files[i]);
+              const res = await extractExamQuestionsByOcr(prepared);
+              (res.exams || []).forEach(ex => {
+                extractedAll.push({
+                  date: ex.date || fmtDateInput(new Date()),
+                  subject: ex.subject || getExamSubjectList()[0],
+                  title: ex.title || files[i].name || '答練',
+                  score: ex.score ?? '',
+                  maxScore: ex.maxScore || (String(ex.subject || '').includes('計算＋理論') ? 200 : 100),
+                  rank: ex.rank || '',
+                  nextTargetScore: '',
+                  questions: (ex.questions || []).map(q => ({
+                    qNo: q.qNo, accuracy: q.accuracy, points: q.points || 0,
+                    qType: (q.qType === 'calc' || q.qType === 'theory') ? q.qType : '',
+                    isWrong: !!q.isWrong, feeling: 'A', causeTag: '', memo: ''
+                  }))
+                });
+              });
             }
-            eaDraftQuestions = extracted.questions.map(q => ({
-              qNo: q.qNo, accuracy: q.accuracy, points: q.points || 0,
-              qType: (q.qType === 'calc' || q.qType === 'theory') ? q.qType : '',
-              isWrong: !!q.isWrong, feeling: 'A', causeTag: '', memo: ''
-            }));
-            renderEaQuestionList();
-            const autoWrongCnt = eaDraftQuestions.filter(q => q.isWrong).length;
-            st.textContent = autoWrongCnt > 0
-              ? `✓ ${eaDraftQuestions.length}問を抽出（うち誤答 ${autoWrongCnt}問を自動検出）！必要に応じて正誤を微修正し、体感難易度(A/B/C)を振り分けてください。`
-              : `✓ ${eaDraftQuestions.length}問を抽出しました！間違えた問題だけタップして振り分けてください。`;
+            if (!extractedAll.length) throw new Error('問題一覧を抽出できませんでした');
+            const hasOnlyEmptyFirst = eaDraftExams.length === 1 && !eaDraftExams[0].questions.length && !eaDraftExams[0].title;
+            eaDraftExams = hasOnlyEmptyFirst ? extractedAll : [...eaDraftExams, ...extractedAll];
+            loadEaDraftToForm(hasOnlyEmptyFirst ? 0 : eaDraftExams.length - extractedAll.length);
+
+            const totalQs = extractedAll.reduce((s, ex) => s + ex.questions.length, 0);
+            const totalWrong = extractedAll.reduce((s, ex) => s + ex.questions.filter(q => q.isWrong).length, 0);
+            st.textContent = totalWrong > 0
+              ? `✓ ${extractedAll.length}科目・合計${totalQs}問を一括抽出（うち誤答 ${totalWrong}問を自動検出）！上の科目タブを切り替えながら A/B/C を振り分けてまとめて保存できます。`
+              : `✓ ${extractedAll.length}科目・合計${totalQs}問を一括抽出しました！上の科目タブを切り替えながら誤答をタップして振り分けてください。`;
           } catch (err) {
             st.textContent = `⚠ ${err.message}`;
             document.getElementById('eaPasteBox').classList.remove('hidden');
@@ -3928,60 +4078,78 @@
         });
 
         document.getElementById('saveExamAnalysisBtn')?.addEventListener('click', async () => {
-          const date = document.getElementById('eaDate').value || fmtDateInput(new Date());
-          const subject = document.getElementById('eaSubject').value || SUBJECTS[0];
-          const title = document.getElementById('eaTitle').value.trim();
-          if (!title) { showToast('答練・模試名を入力してください'); return; }
-          if (!eaDraftQuestions.length) { showToast('問題一覧を1問以上追加してください'); return; }
-
-          const maxScore = Number(document.getElementById('eaMaxScore').value) || 100;
-          const perQ = eaDraftQuestions.length ? Number((maxScore / eaDraftQuestions.length).toFixed(1)) : 0;
-          const normalizedQs = eaDraftQuestions.map(q => ({
-            qNo: q.qNo, accuracy: Number(q.accuracy) || 0,
-            points: Number(q.points) > 0 ? Number(q.points) : perQ,
-            isWrong: !!q.isWrong
-          }));
-          const calcScore = normalizedQs.reduce((sum, q) => sum + (q.isWrong ? 0 : q.points), 0);
-          const scoreInput = document.getElementById('eaScore').value;
-          const score = scoreInput !== '' ? Number(scoreInput) : Math.round(calcScore);
-          const rank = document.getElementById('eaRank').value.trim();
-          const nextTargetInput = document.getElementById('eaNextTarget').value;
-          const nextTargetScore = nextTargetInput !== '' ? Number(nextTargetInput) : null;
-
-          const examId = `exr_${Date.now()}`;
-          const resultObj = { id: examId, date, subject, title, score, maxScore, rank, nextTargetScore, questions: normalizedQs };
-          const mistakeObjs = eaDraftQuestions
-            .map((q, idx) => ({ q, norm: normalizedQs[idx] }))
-            .filter(({ q }) => q.isWrong)
-            .map(({ q, norm }, idx) => ({
-              id: `exm_${Date.now()}_${idx}`,
-              examId, date, subject, examTitle: title,
-              qNo: norm.qNo, accuracy: norm.accuracy, points: norm.points,
-              qType: (q.qType === 'calc' || q.qType === 'theory') ? q.qType : getSubjectType(subject),
-              feeling: q.feeling || 'A', causeTag: q.causeTag || '', memo: q.memo || ''
-            }));
-
-          examDetailedResults = [resultObj, ...examDetailedResults.filter(r => !String(r.id).startsWith('exr_demo'))];
-          examMistakes = [...mistakeObjs, ...examMistakes.filter(m => !String(m.id).startsWith('exm_demo'))];
-          saveJSON(STORAGE_KEYS.EXAM_RESULTS, examDetailedResults);
-          saveJSON(STORAGE_KEYS.EXAM_MISTAKES, examMistakes);
-
-          // 既存カード一覧にも反映
-          examResults = [{
-            id: examId, date, subject, title, score, maxScore, rank,
-            note: `誤答${mistakeObjs.length}問（60%以上誤答:${mistakeObjs.filter(m => m.accuracy >= 60).length}問）`,
-            source: 'OCR分析'
-          }, ...examResults.filter(x => !String(x.id).startsWith('ex_demo'))];
-          saveJSON(STORAGE_KEYS.EXAMS, examResults);
+          syncEaFormToDraft();
+          const validExams = eaDraftExams.filter(ex => (ex.questions || []).length > 0);
+          if (!validExams.length) { showToast('問題一覧を1問以上追加してください'); return; }
 
           const saveBtn = document.getElementById('saveExamAnalysisBtn');
           saveBtn.disabled = true;
+          const nowTs = Date.now();
+          let totalSavedMistakes = 0;
+          let sheetSyncWarn = false;
+
           try {
-            await syncExamAnalysisToSheet(resultObj, mistakeObjs);
-            showToast(`保存しました（誤答${mistakeObjs.length}問を分析へ反映）`);
-          } catch (err) {
-            console.warn('exam_results/exam_mistakes同期警告:', err);
-            showToast('ローカル保存しました（シート同期は再ログイン後に反映されます）');
+            const newDetailed = [];
+            const newMistakes = [];
+            const newSummaryCards = [];
+
+            for (let eIdx = 0; eIdx < validExams.length; eIdx++) {
+              const ex = validExams[eIdx];
+              const date = ex.date || fmtDateInput(new Date());
+              const subject = ex.subject || getExamSubjectList()[0];
+              const title = (ex.title || '').trim() || `${subject} 答練`;
+              const maxScore = Number(ex.maxScore) || (subject.includes('計算＋理論') ? 200 : 100);
+              const perQ = ex.questions.length ? Number((maxScore / ex.questions.length).toFixed(1)) : 0;
+              const normalizedQs = ex.questions.map(q => ({
+                qNo: q.qNo, accuracy: Number(q.accuracy) || 0,
+                points: Number(q.points) > 0 ? Number(q.points) : perQ,
+                isWrong: !!q.isWrong
+              }));
+              const calcScore = normalizedQs.reduce((sum, q) => sum + (q.isWrong ? 0 : q.points), 0);
+              const score = (ex.score !== '' && ex.score !== undefined && ex.score !== null) ? Number(ex.score) : Math.round(calcScore);
+              const rank = String(ex.rank || '').trim();
+              const nextTargetScore = (ex.nextTargetScore !== '' && ex.nextTargetScore !== undefined && ex.nextTargetScore !== null) ? Number(ex.nextTargetScore) : null;
+
+              const examId = `exr_${nowTs}_${eIdx}`;
+              const resultObj = { id: examId, date, subject, title, score, maxScore, rank, nextTargetScore, questions: normalizedQs };
+              const mistakeObjs = ex.questions
+                .map((q, idx) => ({ q, norm: normalizedQs[idx] }))
+                .filter(({ q }) => q.isWrong)
+                .map(({ q, norm }, idx) => ({
+                  id: `exm_${nowTs}_${eIdx}_${idx}`,
+                  examId, date, subject, examTitle: title,
+                  qNo: norm.qNo, accuracy: norm.accuracy, points: norm.points,
+                  qType: (q.qType === 'calc' || q.qType === 'theory') ? q.qType : getSubjectType(subject),
+                  feeling: q.feeling || 'A', causeTag: q.causeTag || '', memo: q.memo || ''
+                }));
+
+              totalSavedMistakes += mistakeObjs.length;
+              newDetailed.push(resultObj);
+              newMistakes.push(...mistakeObjs);
+              newSummaryCards.push({
+                id: examId, date, subject, title, score, maxScore, rank,
+                note: `誤答${mistakeObjs.length}問（60%以上誤答:${mistakeObjs.filter(m => m.accuracy >= 60).length}問）`,
+                source: 'OCR分析'
+              });
+
+              try {
+                await syncExamAnalysisToSheet(resultObj, mistakeObjs);
+              } catch (err) {
+                console.warn('exam_results/exam_mistakes同期警告:', err);
+                sheetSyncWarn = true;
+              }
+            }
+
+            examDetailedResults = [...newDetailed, ...examDetailedResults.filter(r => !String(r.id).startsWith('exr_demo'))];
+            examMistakes = [...newMistakes, ...examMistakes.filter(m => !String(m.id).startsWith('exm_demo'))];
+            examResults = [...newSummaryCards, ...examResults.filter(x => !String(x.id).startsWith('ex_demo'))];
+            saveJSON(STORAGE_KEYS.EXAM_RESULTS, examDetailedResults);
+            saveJSON(STORAGE_KEYS.EXAM_MISTAKES, examMistakes);
+            saveJSON(STORAGE_KEYS.EXAMS, examResults);
+
+            showToast(sheetSyncWarn
+              ? `${validExams.length}科目（誤答${totalSavedMistakes}問）をローカル保存しました`
+              : `${validExams.length}科目（誤答${totalSavedMistakes}問）を一括保存しました！`);
           } finally {
             saveBtn.disabled = false;
           }

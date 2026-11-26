@@ -33,15 +33,25 @@ module.exports = async function handler(req, res) {
     const cpaFinanceRule = '※公認会計士試験の財務会計論について：小テストやレギュラー答練等で「計算」「理論」が分かれて記載されている場合は「財務(計算)」「財務(理論)」を選択し、短答直前答練・模擬試験・論文答練等の本番形式で計算と理論が合算（1科目）になっている場合は「財務会計論（計算＋理論）」を選択してください。';
     const prompt = isQuestionMode
       ? [
-        '添付された答練・模試の成績表（問題別正答率表の画像またはPDF）から、基本情報と各問題の「問題番号」「全体正答率(%)」「配点(分かれば)」「計算/理論区分(calcまたはtheory、分かれば)」「本人の正誤(isWrong: 誤答・不正解・×・△・0点・正答と解答番号不一致ならtrue、正解・○ならfalse、記載がなく判別不能ならfalse)」を正確に抽出し、JSONのみで返してください。',
+        '添付された答練・模試の成績表（問題別正答率表の画像またはPDF）から、記載されているすべての科目について基本情報と各問題の「問題番号」「全体正答率(%)」「配点(分かれば)」「計算/理論区分(calcまたはtheory、分かれば)」「本人の正誤(isWrong: 誤答・不正解・×・△・0点・正答と解答番号不一致ならtrue、正解・○または判別不能ならfalse)」を正確に抽出し、JSONのみで返してください。',
+        '1つの画像/PDFに複数科目（例：財務会計論・管理会計・監査論・企業法など）が載っている場合は、必ず科目ごとに exams 配列へ分けて出力してください。',
         cpaFinanceRule,
         `【選択可能な科目リスト】${subjectList.join('、')}`,
         `【ファイル名参考】${fileName || '不明'}`,
         `【日付デフォルト】${todayStr}`,
         '以下のJSON形式のみで返答してください：',
         '{',
-        '  "exam": { "date": "YYYY-MM-DD", "subject": "科目リストから1つ", "title": "答練名", "score": 72, "maxScore": 100, "rank": "判定や偏差値（なければ空文字）" },',
-        '  "questions": [ { "qNo": "問1", "accuracy": 82, "points": 5, "qType": "calc または theory（不明なら空文字）", "isWrong": false } ]',
+        '  "exams": [',
+        '    {',
+        '      "date": "YYYY-MM-DD",',
+        '      "subject": "科目リストから1つ",',
+        '      "title": "答練・模試名",',
+        '      "score": 72,',
+        '      "maxScore": 100,',
+        '      "rank": "判定や偏差値（なければ空文字）",',
+        '      "questions": [ { "qNo": "問1", "accuracy": 82, "points": 5, "qType": "calc または theory（不明なら空文字）", "isWrong": false } ]',
+        '    }',
+        '  ]',
         '}'
       ].join('\n')
       : [
@@ -122,8 +132,8 @@ module.exports = async function handler(req, res) {
     const parsed = JSON.parse(cleaned);
 
     if (isQuestionMode) {
-      const qs = Array.isArray(parsed?.questions)
-        ? parsed.questions
+      const normQuestions = (rawQs) => Array.isArray(rawQs)
+        ? rawQs
           .filter(q => q && (q.qNo !== undefined || q.number !== undefined))
           .map((q, idx) => ({
             qNo: String(q.qNo ?? q.number ?? `問${idx + 1}`),
@@ -133,21 +143,34 @@ module.exports = async function handler(req, res) {
             isWrong: Boolean(q.isWrong === true || q.isWrong === 'true' || q.result === '×' || q.result === '✕' || q.result === '誤')
           }))
         : [];
-      if (!qs.length) {
+
+      const rawExams = Array.isArray(parsed?.exams)
+        ? parsed.exams
+        : [{ ...(parsed?.exam || {}), questions: parsed?.questions || [] }];
+
+      const normalizedExams = rawExams
+        .map(ex => {
+          const qs = normQuestions(ex?.questions);
+          return {
+            date: String(ex?.date || todayStr).replace(/\//g, '-'),
+            subject: String(ex?.subject || subjectList[0]),
+            title: String(ex?.title || fileName || '答練'),
+            score: Number(ex?.score) || 0,
+            maxScore: Number(ex?.maxScore) || (String(ex?.subject || '').includes('計算＋理論') ? 200 : 100),
+            rank: String(ex?.rank || ''),
+            questions: qs
+          };
+        })
+        .filter(ex => ex.questions.length > 0);
+
+      if (!normalizedExams.length) {
         return res.status(422).json({ status: 'error', message: '問題番号・正答率を読み取れませんでした。表がはっきり写っている画像でお試しください。' });
       }
-      const ex = parsed?.exam || {};
       return res.status(200).json({
         status: 'ok',
-        exam: {
-          date: String(ex.date || todayStr).replace(/\//g, '-'),
-          subject: String(ex.subject || subjectList[0]),
-          title: String(ex.title || fileName || '答練'),
-          score: Number(ex.score) || 0,
-          maxScore: Number(ex.maxScore) || 100,
-          rank: String(ex.rank || '')
-        },
-        questions: qs
+        exams: normalizedExams,
+        exam: normalizedExams[0],
+        questions: normalizedExams[0].questions
       });
     }
 
