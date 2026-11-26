@@ -3594,13 +3594,13 @@
           const examSubjects = getExamSubjectList();
           if (apiKey) {
             const prompt = [
-              '添付された答練・模試の成績表（問題別正答率表の画像またはPDF）から、基本情報と「問題番号」「全体正答率(%)」「配点(分かれば)」「計算/理論区分(calcまたはtheory、分かれば)」を正確に抽出し、JSONのみで返してください。',
+              '添付された答練・模試の成績表（問題別正答率表の画像またはPDF）から、基本情報と各問題の「問題番号」「全体正答率(%)」「配点(分かれば)」「計算/理論区分(calcまたはtheory、分かれば)」「本人の正誤(isWrong: 誤答・不正解・×・△・0点・正答と解答番号不一致ならtrue、正解・○または判別不能ならfalse)」を正確に抽出し、JSONのみで返してください。',
               '※公認会計士試験の財務会計論について：小テスト等で計算・理論が分かれている場合は「財務(計算)」「財務(理論)」、本番形式の答練・模試で合算されている場合は「財務会計論（計算＋理論）」を選択してください。',
               `【選択可能な科目リスト】${examSubjects.join('、')}`,
               `【ファイル名参考】${prepared.fileName || '不明'}`,
               `【日付デフォルト】${todayStr}`,
               '以下のJSON形式のみで返答してください：',
-              '{ "exam": { "date": "YYYY-MM-DD", "subject": "科目リストから1つ", "title": "答練名", "score": 72, "maxScore": 100, "rank": "判定や偏差値" }, "questions": [ { "qNo": "問1", "accuracy": 82, "points": 5, "qType": "calc または theory（不明なら空文字）" } ] }'
+              '{ "exam": { "date": "YYYY-MM-DD", "subject": "科目リストから1つ", "title": "答練名", "score": 72, "maxScore": 100, "rank": "判定や偏差値" }, "questions": [ { "qNo": "問1", "accuracy": 82, "points": 5, "qType": "calc または theory（不明なら空文字）", "isWrong": false } ] }'
             ].join('\n');
             const models = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'];
             let lastErr = 'Gemini APIエラー';
@@ -3623,7 +3623,8 @@
                     qNo: String(q.qNo ?? q.number ?? `問${idx + 1}`),
                     accuracy: Math.max(0, Math.min(100, Number(q.accuracy ?? q.rate ?? 50) || 0)),
                     points: Number(q.points || 0) || 0,
-                    qType: (q.qType === 'calc' || q.qType === 'theory') ? q.qType : ''
+                    qType: (q.qType === 'calc' || q.qType === 'theory') ? q.qType : '',
+                    isWrong: Boolean(q.isWrong === true || q.isWrong === 'true' || q.result === '×' || q.result === '✕' || q.result === '誤')
                   }))
                   : [];
                 if (qs.length) return { exam: parsed?.exam || {}, questions: qs };
@@ -3667,7 +3668,8 @@
             acc = Math.max(0, Math.min(100, Math.round(acc)));
             const ptsMatch = line.match(/(\d+(?:\.\d+)?)\s*点/);
             const points = ptsMatch ? Number(ptsMatch[1]) : (nums.length >= 3 ? Number(nums[2]) : 0);
-            out.push({ qNo, accuracy: acc, points, isWrong: false, feeling: 'A', causeTag: '', memo: '' });
+            const isWrong = /[×✕✗✖△誤]|不正解|\bNG\b|\bX\b/i.test(line);
+            out.push({ qNo, accuracy: acc, points, qType: '', isWrong, feeling: 'A', causeTag: '', memo: '' });
           });
           return out;
         }
@@ -3888,10 +3890,13 @@
             eaDraftQuestions = extracted.questions.map(q => ({
               qNo: q.qNo, accuracy: q.accuracy, points: q.points || 0,
               qType: (q.qType === 'calc' || q.qType === 'theory') ? q.qType : '',
-              isWrong: false, feeling: 'A', causeTag: '', memo: ''
+              isWrong: !!q.isWrong, feeling: 'A', causeTag: '', memo: ''
             }));
             renderEaQuestionList();
-            st.textContent = `✓ ${eaDraftQuestions.length}問を抽出しました！間違えた問題だけタップして振り分けてください。`;
+            const autoWrongCnt = eaDraftQuestions.filter(q => q.isWrong).length;
+            st.textContent = autoWrongCnt > 0
+              ? `✓ ${eaDraftQuestions.length}問を抽出（うち誤答 ${autoWrongCnt}問を自動検出）！必要に応じて正誤を微修正し、体感難易度(A/B/C)を振り分けてください。`
+              : `✓ ${eaDraftQuestions.length}問を抽出しました！間違えた問題だけタップして振り分けてください。`;
           } catch (err) {
             st.textContent = `⚠ ${err.message}`;
             document.getElementById('eaPasteBox').classList.remove('hidden');

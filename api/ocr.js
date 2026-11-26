@@ -33,7 +33,7 @@ module.exports = async function handler(req, res) {
     const cpaFinanceRule = '※公認会計士試験の財務会計論について：小テストやレギュラー答練等で「計算」「理論」が分かれて記載されている場合は「財務(計算)」「財務(理論)」を選択し、短答直前答練・模擬試験・論文答練等の本番形式で計算と理論が合算（1科目）になっている場合は「財務会計論（計算＋理論）」を選択してください。';
     const prompt = isQuestionMode
       ? [
-        '添付された答練・模試の成績表（問題別正答率表の画像またはPDF）から、基本情報と「問題番号」「全体正答率(%)」「配点(分かれば)」「計算/理論区分(calcまたはtheory、分かれば)」を正確に抽出し、JSONのみで返してください。',
+        '添付された答練・模試の成績表（問題別正答率表の画像またはPDF）から、基本情報と各問題の「問題番号」「全体正答率(%)」「配点(分かれば)」「計算/理論区分(calcまたはtheory、分かれば)」「本人の正誤(isWrong: 誤答・不正解・×・△・0点・正答と解答番号不一致ならtrue、正解・○ならfalse、記載がなく判別不能ならfalse)」を正確に抽出し、JSONのみで返してください。',
         cpaFinanceRule,
         `【選択可能な科目リスト】${subjectList.join('、')}`,
         `【ファイル名参考】${fileName || '不明'}`,
@@ -41,7 +41,7 @@ module.exports = async function handler(req, res) {
         '以下のJSON形式のみで返答してください：',
         '{',
         '  "exam": { "date": "YYYY-MM-DD", "subject": "科目リストから1つ", "title": "答練名", "score": 72, "maxScore": 100, "rank": "判定や偏差値（なければ空文字）" },',
-        '  "questions": [ { "qNo": "問1", "accuracy": 82, "points": 5, "qType": "calc または theory（不明なら空文字）" } ]',
+        '  "questions": [ { "qNo": "問1", "accuracy": 82, "points": 5, "qType": "calc または theory（不明なら空文字）", "isWrong": false } ]',
         '}'
       ].join('\n')
       : [
@@ -129,7 +129,8 @@ module.exports = async function handler(req, res) {
             qNo: String(q.qNo ?? q.number ?? `問${idx + 1}`),
             accuracy: Math.max(0, Math.min(100, Number(q.accuracy ?? q.rate ?? 50) || 0)),
             points: Number(q.points || 0) || 0,
-            qType: (q.qType === 'calc' || q.qType === 'theory') ? q.qType : ''
+            qType: (q.qType === 'calc' || q.qType === 'theory') ? q.qType : '',
+            isWrong: Boolean(q.isWrong === true || q.isWrong === 'true' || q.result === '×' || q.result === '✕' || q.result === '誤')
           }))
         : [];
       if (!qs.length) {
