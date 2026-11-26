@@ -3596,31 +3596,40 @@
           }
         }
 
-        // クライアント直接 Gemini API 呼び出し（設定画面のAPIキー使用）または /api/ocr フォールバック（複数科目対応）
+        // クライアント直接 Gemini API 呼び出し（設定画面のAPIキー使用）または /api/ocr フォールバック（全試験・複数科目対応）
         async function extractExamQuestionsByOcr(prepared) {
           const apiKey = (settings.geminiApiKey || '').trim();
           const todayStr = fmtDateInput(new Date());
           const examSubjects = getExamSubjectList();
           const normQs = (arr) => Array.isArray(arr)
-            ? arr.map((q, idx) => ({
-              qNo: String(q.qNo ?? q.number ?? `問${idx + 1}`),
-              accuracy: Math.max(0, Math.min(100, Number(q.accuracy ?? q.rate ?? 50) || 0)),
-              points: Number(q.points || 0) || 0,
-              qType: (q.qType === 'calc' || q.qType === 'theory') ? q.qType : '',
-              isWrong: Boolean(q.isWrong === true || q.isWrong === 'true' || q.result === '×' || q.result === '✕' || q.result === '誤')
-            }))
+            ? arr.map((q, idx) => {
+              const accRaw = Number(String(q.accuracy ?? q.rate ?? 50).replace(/%/g, ''));
+              const accuracy = Number.isFinite(accRaw) ? Math.max(0, Math.min(100, Math.round(accRaw * 10) / 10)) : 50;
+              const isWrong = (q.is_correct !== undefined)
+                ? !Boolean(q.is_correct)
+                : Boolean(q.isWrong === true || q.isWrong === 'true' || q.result === '×' || q.result === '✕' || q.result === '誤');
+              const qt = q.q_type || q.qType || '';
+              return {
+                qNo: String(q.q_no ?? q.qNo ?? q.number ?? `${idx + 1}`),
+                accuracy,
+                points: Number(q.points || 0) || 1,
+                officialRank: (q.official_rank ?? q.officialRank) ? String(q.official_rank ?? q.officialRank) : null,
+                qType: (qt === 'calc' || qt === 'theory') ? qt : '',
+                isWrong
+              };
+            })
             : [];
 
           if (apiKey) {
             const prompt = [
-              '添付された答練・模試の成績表（問題別正答率表の画像またはPDF）から、記載されているすべての科目について基本情報と各問題の「問題番号」「全体正答率(%)」「配点(分かれば)」「計算/理論区分(calcまたはtheory、分かれば)」「本人の正誤(isWrong: 誤答・不正解・×・△・0点・正答と解答番号不一致ならtrue、正解・○または判別不能ならfalse)」を正確に抽出し、JSONのみで返してください。',
-              '1つの画像/PDFに複数科目（例：財務会計論・管理会計・監査論・企業法など）が載っている場合は、必ず科目ごとに exams 配列へ分けて出力してください。',
-              '※公認会計士試験の財務会計論について：小テスト等で計算・理論が分かれている場合は「財務(計算)」「財務(理論)」、本番形式の答練・模試で合算されている場合は「財務会計論（計算＋理論）」を選択してください。',
-              `【選択可能な科目リスト】${examSubjects.join('、')}`,
-              `【ファイル名参考】${prepared.fileName || '不明'}`,
-              `【日付デフォルト】${todayStr}`,
-              '以下のJSON形式のみで返答してください：',
-              '{ "exams": [ { "date": "YYYY-MM-DD", "subject": "科目リストから1つ", "title": "答練名", "score": 72, "maxScore": 100, "rank": "判定や偏差値", "questions": [ { "qNo": "問1", "accuracy": 82, "points": 5, "qType": "calc または theory（不明なら空文字）", "isWrong": false } ] } ] }'
+              'あなたは日本のあらゆる試験（公認会計士、大学受験・共通テスト模試、税理士、行政書士、社労士など）の模試・答練・定期テストの個人成績表を解析する高精度OCRエンジンです。',
+              'アップロードされた画像またはPDF（複数ページ・複数科目含む）から、成績サマリーと問題別の正誤・正答率データをすべて抽出し、指定されたJSONフォーマットのみを出力してください。',
+              '1. 複数科目は必ず科目ごとに subjects 配列へ分割。社労士の選択式/択一式も分割。公認会計士の財務会計論は計算・理論分割なら「財務(計算)」「財務(理論)」、本番形式合算なら「財務会計論（計算＋理論）」。',
+              `   登録済み科目リスト（該当時は表記を合わせる）: ${examSubjects.join('、')}`,
+              '2. 問題別明細(questions): q_no(階層は1-2等ハイフン連結), is_correct(○/満点はtrue、×/0点/満点未満の部分点はfalse), accuracy(0〜100数値、全国平均点と配点のみなら (全国平均点÷配点)×100 小数第1位), official_rank(予備校難易度ランク A/B/C/易/普/難 等、無ければnull), points(記載なければ1), q_type(calc/theory/空文字)。',
+              `【ファイル名参考】${prepared.fileName || '模試・答練'}`,
+              '出力JSONスキーマのみ返答：',
+              '{ "exam_title": "string", "date": "YYYY-MM-DD | null", "subjects": [ { "subject": "string", "score": 0, "max_score": 100, "rank": "string", "questions": [ { "q_no": "1-1", "is_correct": true, "accuracy": 82.4, "official_rank": "A", "points": 5, "q_type": "" } ] } ] }'
             ].join('\n');
             const models = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'];
             let lastErr = 'Gemini APIエラー';
@@ -3638,20 +3647,28 @@
                 if (!r.ok) { lastErr = j?.error?.message || `HTTP ${r.status}`; continue; }
                 const txt = (j?.candidates?.[0]?.content?.parts?.[0]?.text || '').replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
                 const parsed = JSON.parse(txt);
-                const rawExams = Array.isArray(parsed?.exams)
-                  ? parsed.exams
-                  : [{ ...(parsed?.exam || {}), questions: parsed?.questions || [] }];
-                const normalized = rawExams
-                  .map(ex => ({
-                    date: String(ex?.date || todayStr).replace(/\//g, '-'),
-                    subject: examSubjects.includes(ex?.subject) ? ex.subject : examSubjects[0],
-                    title: String(ex?.title || prepared.fileName || '答練'),
-                    score: ex?.score ?? '',
-                    maxScore: Number(ex?.maxScore) || (String(ex?.subject || '').includes('計算＋理論') ? 200 : 100),
-                    rank: String(ex?.rank || ''),
-                    questions: normQs(ex?.questions)
-                  }))
-                  .filter(ex => ex.questions.length > 0);
+                const topTitle = String(parsed?.exam_title || prepared.fileName || '模試・答練');
+                const topDate = parsed?.date ? String(parsed.date).replace(/\//g, '-') : todayStr;
+                const rawList = Array.isArray(parsed?.subjects)
+                  ? parsed.subjects
+                  : Array.isArray(parsed?.exams)
+                    ? parsed.exams
+                    : [{ ...(parsed?.exam || {}), questions: parsed?.questions || [] }];
+                const normalized = rawList
+                  .map(ex => {
+                    const qs = normQs(ex?.questions);
+                    const subj = String(ex?.subject || examSubjects[0]);
+                    return {
+                      date: String(ex?.date || topDate || todayStr).replace(/\//g, '-'),
+                      subject: subj,
+                      title: String(ex?.title || topTitle || '模試・答練'),
+                      score: ex?.score ?? '',
+                      maxScore: Number(ex?.max_score ?? ex?.maxScore) || (subj.includes('計算＋理論') ? 200 : 100),
+                      rank: String(ex?.rank || ''),
+                      questions: qs
+                    };
+                  })
+                  .filter(ex => ex.subject);
                 if (normalized.length) return { exams: normalized };
               } catch (e) { lastErr = e.message; }
             }
@@ -3682,13 +3699,13 @@
           return {
             exams: rawExams.map(ex => ({
               date: String(ex?.date || todayStr).replace(/\//g, '-'),
-              subject: examSubjects.includes(ex?.subject) ? ex.subject : examSubjects[0],
-              title: String(ex?.title || prepared.fileName || '答練'),
+              subject: String(ex?.subject || examSubjects[0]),
+              title: String(ex?.title || prepared.fileName || '模試・答練'),
               score: ex?.score ?? '',
-              maxScore: Number(ex?.maxScore) || (String(ex?.subject || '').includes('計算＋理論') ? 200 : 100),
+              maxScore: Number(ex?.maxScore ?? ex?.max_score) || (String(ex?.subject || '').includes('計算＋理論') ? 200 : 100),
               rank: String(ex?.rank || ''),
               questions: normQs(ex?.questions)
-            })).filter(ex => ex.questions.length > 0)
+            })).filter(ex => ex.subject)
           };
         }
 
@@ -3750,9 +3767,9 @@
           eaActiveExamIdx = Math.max(0, Math.min(idx, eaDraftExams.length - 1));
           const cur = eaDraftExams[eaActiveExamIdx];
           if (!cur) return;
-          populateEaSubjectSelect();
+          populateEaSubjectSelect(cur.subject);
           document.getElementById('eaDate').value = cur.date || fmtDateInput(new Date());
-          document.getElementById('eaSubject').value = getExamSubjectList().includes(cur.subject) ? cur.subject : getExamSubjectList()[0];
+          document.getElementById('eaSubject').value = cur.subject || getExamSubjectList()[0];
           document.getElementById('eaTitle').value = cur.title || '';
           document.getElementById('eaScore').value = cur.score !== undefined && cur.score !== null ? String(cur.score) : '';
           document.getElementById('eaMaxScore').value = String(cur.maxScore || 100);
@@ -3792,13 +3809,15 @@
           return s.includes('計算＋理論') || s === '管理会計' || s === '租税法' || s === '総合・模試';
         }
 
-        function populateEaSubjectSelect() {
+        function populateEaSubjectSelect(extraSubject) {
           const sel = document.getElementById('eaSubject');
           if (!sel) return;
           const prev = sel.value;
-          const opts = getExamSubjectList();
+          const opts = [...getExamSubjectList()];
+          if (extraSubject && !opts.includes(extraSubject)) opts.push(extraSubject);
           sel.innerHTML = opts.map(s => `<option value="${escapeHTML(s)}">${escapeHTML(s)}</option>`).join('');
-          if (prev && opts.includes(prev)) sel.value = prev;
+          if (extraSubject && opts.includes(extraSubject)) sel.value = extraSubject;
+          else if (prev && opts.includes(prev)) sel.value = prev;
         }
 
         function openExamAnalysisModal() {
@@ -3874,6 +3893,7 @@
                   <input type="number" min="0" max="100" data-field="points" data-idx="${idx}" value="${q.points || ''}" placeholder="自動"
                     class="w-14 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-right dark:border-slate-700 dark:bg-slate-800" />
                 </div>
+                ${q.officialRank ? `<span class="rounded-md bg-indigo-50 px-1.5 py-0.5 text-[10px] font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">公式:${escapeHTML(q.officialRank)}</span>` : ''}
                 <button type="button" data-act="removeRow" data-idx="${idx}"
                   class="ml-auto rounded-lg px-2 py-1 text-[11px] text-slate-400 hover:bg-slate-100 hover:text-rose-500 dark:hover:bg-slate-800">削除</button>
               </div>
@@ -4031,6 +4051,7 @@
                   nextTargetScore: '',
                   questions: (ex.questions || []).map(q => ({
                     qNo: q.qNo, accuracy: q.accuracy, points: q.points || 0,
+                    officialRank: q.officialRank || null,
                     qType: (q.qType === 'calc' || q.qType === 'theory') ? q.qType : '',
                     isWrong: !!q.isWrong, feeling: 'A', causeTag: '', memo: ''
                   }))

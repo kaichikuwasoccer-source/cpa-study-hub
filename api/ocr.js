@@ -30,26 +30,55 @@ module.exports = async function handler(req, res) {
 
     const todayStr = new Date().toISOString().slice(0, 10);
     const isQuestionMode = mode === 'exam_questions';
-    const cpaFinanceRule = '※公認会計士試験の財務会計論について：小テストやレギュラー答練等で「計算」「理論」が分かれて記載されている場合は「財務(計算)」「財務(理論)」を選択し、短答直前答練・模擬試験・論文答練等の本番形式で計算と理論が合算（1科目）になっている場合は「財務会計論（計算＋理論）」を選択してください。';
+    const cpaFinanceRule = '   - 公認会計士試験の財務会計論で、小テストやレギュラー答練等のように計算・理論が分かれている場合は「財務(計算)」「財務(理論)」、本番形式（短答直前答練・模擬試験・論文答練等）で合算されている場合は「財務会計論（計算＋理論）」としてください。';
     const prompt = isQuestionMode
       ? [
-        '添付された答練・模試の成績表（問題別正答率表の画像またはPDF）から、記載されているすべての科目について基本情報と各問題の「問題番号」「全体正答率(%)」「配点(分かれば)」「計算/理論区分(calcまたはtheory、分かれば)」「本人の正誤(isWrong: 誤答・不正解・×・△・0点・正答と解答番号不一致ならtrue、正解・○または判別不能ならfalse)」を正確に抽出し、JSONのみで返してください。',
-        '1つの画像/PDFに複数科目（例：財務会計論・管理会計・監査論・企業法など）が載っている場合は、必ず科目ごとに exams 配列へ分けて出力してください。',
+        'あなたは日本のあらゆる試験（公認会計士、大学受験・共通テスト模試、税理士、行政書士、社労士など）の模試・答練・定期テストの個人成績表を解析する高精度OCRエンジンです。',
+        'アップロードされた画像またはPDF（複数ページ・複数科目含む）から、成績サマリーと問題別の正誤・正答率データをすべて抽出し、指定されたJSONフォーマットのみを出力してください。',
+        '',
+        '【解析・変換ルール】',
+        '1. 複数科目の分割:',
+        '   - 1枚の画像や複数ページに複数科目（例：英語・数学・物理、または簿記論・財務諸表論、憲法・行政法・民法など）が含まれる場合は、必ず科目ごとにオブジェクトを分割して `subjects` 配列に格納してください。',
+        '   - 社労士試験のように「選択式」と「択一式」が分かれている場合は、科目名を「社労士（選択式）」「社労士（択一式）」のように分けて抽出してください。',
         cpaFinanceRule,
-        `【選択可能な科目リスト】${subjectList.join('、')}`,
-        `【ファイル名参考】${fileName || '不明'}`,
-        `【日付デフォルト】${todayStr}`,
-        '以下のJSON形式のみで返答してください：',
+        `   - 登録済み科目リスト（該当するものがあれば表記を合わせる）: ${subjectList.join('、')}`,
+        '',
+        '2. サマリー情報の抽出:',
+        `   - \`exam_title\`: 模試・答練の正式名称（例：「第1回 全統共通テスト模試」「全国統一公開模試」「短答直前答練 第2回」）。不明な場合は「${fileName || '模試・答練'}」。`,
+        '   - `date`: 実施日を `YYYY-MM-DD` 形式で抽出。記載がない場合は `null`。',
+        '   - `subject`: 科目名（例：「財務(計算)」「財務会計論（計算＋理論）」「英語」「簿記論」「行政法」）。',
+        '   - `score` / `max_score`: 素点と満点（数値）。満点の記載がない場合、共通テストや資格試験の標準満点（100や200など）または設問配点の合計から推測し、それも不明なら `100` とする。',
+        '   - `rank`: 偏差値・順位・合格判定をまとめた文字列（例：「偏差値 62.4 / A判定 / 1,240位」「上位12.5% / A」）。',
+        '',
+        '3. 問題別明細（`questions` 配列）の抽出と表記ゆれ吸収:',
+        '   - 成績表の「設問別成績」「正答率表」「問題別正誤」の表を1問ずつすべて抽出してください。問題別明細が画像内に存在しない場合は空配列 `[]` にしてください。',
+        '   - `q_no`（文字列）: 問題番号。階層がある場合はハイフンで繋ぐ（例：`第1問 問2` → `"1-2"`、`問15` → `"15"`、`選択 労基 A` → `"選択-労基-A"`）。',
+        '   - `is_correct`（真偽値）: 「○」「〇」「1」「正解」、または「得点 == 配点（満点）」の場合は `true`。「×」「0」「不正解」、または満点未満の部分点（例：配点5点中3点）はすべて復習対象として `false` にする（正誤記載がなく判別不能なら `true`）。',
+        '   - `accuracy`（数値 0〜100）: 全体正答率（%）。`%` 記号は取り除いて数値化（例：`"82.4%"` → `82.4`）。大学受験模試などで「全体正答率」の列がなく「全国平均点」と「配点」のみ記載されている場合は、必ず `(全国平均点 ÷ 配点) × 100` を計算して小数第1位まで格納する。',
+        '   - `official_rank`（文字列または `null`）: 予備校が記載している難易度ランク（`"A"`, `"B"`, `"C"`, `"易"`, `"普"`, `"難"` など）があればそのまま抽出。記載がない場合は `null`。',
+        '   - `points`（数値）: 配点。記載があればその数値、記載がない場合（1問1点の択一式など）は `1` とする。',
+        '   - `q_type`（任意文字列）: 計算問題なら `"calc"`、理論問題なら `"theory"`、判別不要/不明なら `""`。',
+        '',
+        '【出力JSONスキーマ（JSONのみ・余計な説明やコードブロック記号不要）】',
         '{',
-        '  "exams": [',
+        '  "exam_title": "string",',
+        '  "date": "YYYY-MM-DD | null",',
+        '  "subjects": [',
         '    {',
-        '      "date": "YYYY-MM-DD",',
-        '      "subject": "科目リストから1つ",',
-        '      "title": "答練・模試名",',
-        '      "score": 72,',
-        '      "maxScore": 100,',
-        '      "rank": "判定や偏差値（なければ空文字）",',
-        '      "questions": [ { "qNo": "問1", "accuracy": 82, "points": 5, "qType": "calc または theory（不明なら空文字）", "isWrong": false } ]',
+        '      "subject": "string",',
+        '      "score": 0,',
+        '      "max_score": 100,',
+        '      "rank": "string",',
+        '      "questions": [',
+        '        {',
+        '          "q_no": "string",',
+        '          "is_correct": true,',
+        '          "accuracy": 82.4,',
+        '          "official_rank": "A",',
+        '          "points": 5,',
+        '          "q_type": ""',
+        '        }',
+        '      ]',
         '    }',
         '  ]',
         '}'
@@ -134,40 +163,58 @@ module.exports = async function handler(req, res) {
     if (isQuestionMode) {
       const normQuestions = (rawQs) => Array.isArray(rawQs)
         ? rawQs
-          .filter(q => q && (q.qNo !== undefined || q.number !== undefined))
-          .map((q, idx) => ({
-            qNo: String(q.qNo ?? q.number ?? `問${idx + 1}`),
-            accuracy: Math.max(0, Math.min(100, Number(q.accuracy ?? q.rate ?? 50) || 0)),
-            points: Number(q.points || 0) || 0,
-            qType: (q.qType === 'calc' || q.qType === 'theory') ? q.qType : '',
-            isWrong: Boolean(q.isWrong === true || q.isWrong === 'true' || q.result === '×' || q.result === '✕' || q.result === '誤')
-          }))
+          .filter(q => q && (q.q_no !== undefined || q.qNo !== undefined || q.number !== undefined))
+          .map((q, idx) => {
+            const accRaw = Number(String(q.accuracy ?? q.rate ?? 50).replace(/%/g, ''));
+            const accuracy = Number.isFinite(accRaw) ? Math.max(0, Math.min(100, Math.round(accRaw * 10) / 10)) : 50;
+            const isWrong = (q.is_correct !== undefined)
+              ? !Boolean(q.is_correct)
+              : Boolean(q.isWrong === true || q.isWrong === 'true' || q.result === '×' || q.result === '✕' || q.result === '誤');
+            const qTypeRaw = q.q_type || q.qType || '';
+            return {
+              qNo: String(q.q_no ?? q.qNo ?? q.number ?? `${idx + 1}`),
+              accuracy,
+              points: Number(q.points || 0) || 1,
+              officialRank: (q.official_rank ?? q.officialRank) ? String(q.official_rank ?? q.officialRank) : null,
+              qType: (qTypeRaw === 'calc' || qTypeRaw === 'theory') ? qTypeRaw : '',
+              isWrong
+            };
+          })
         : [];
 
-      const rawExams = Array.isArray(parsed?.exams)
-        ? parsed.exams
-        : [{ ...(parsed?.exam || {}), questions: parsed?.questions || [] }];
+      const topTitle = String(parsed?.exam_title || fileName || '模試・答練');
+      const topDate = parsed?.date ? String(parsed.date).replace(/\//g, '-') : todayStr;
+      const rawList = Array.isArray(parsed?.subjects)
+        ? parsed.subjects
+        : Array.isArray(parsed?.exams)
+          ? parsed.exams
+          : [{ ...(parsed?.exam || {}), questions: parsed?.questions || [] }];
 
-      const normalizedExams = rawExams
+      const normalizedExams = rawList
         .map(ex => {
           const qs = normQuestions(ex?.questions);
+          const subj = String(ex?.subject || subjectList[0]);
+          const sumPts = qs.reduce((s, q) => s + (Number(q.points) || 0), 0);
           return {
-            date: String(ex?.date || todayStr).replace(/\//g, '-'),
-            subject: String(ex?.subject || subjectList[0]),
-            title: String(ex?.title || fileName || '答練'),
+            date: String(ex?.date || topDate || todayStr).replace(/\//g, '-'),
+            subject: subj,
+            title: String(ex?.title || topTitle || '模試・答練'),
             score: Number(ex?.score) || 0,
-            maxScore: Number(ex?.maxScore) || (String(ex?.subject || '').includes('計算＋理論') ? 200 : 100),
+            maxScore: Number(ex?.max_score ?? ex?.maxScore) || (sumPts > 0 ? sumPts : (subj.includes('計算＋理論') ? 200 : 100)),
             rank: String(ex?.rank || ''),
             questions: qs
           };
         })
-        .filter(ex => ex.questions.length > 0);
+        .filter(ex => ex.subject);
 
       if (!normalizedExams.length) {
-        return res.status(422).json({ status: 'error', message: '問題番号・正答率を読み取れませんでした。表がはっきり写っている画像でお試しください。' });
+        return res.status(422).json({ status: 'error', message: '成績データを読み取れませんでした。表がはっきり写っている画像またはPDFでお試しください。' });
       }
       return res.status(200).json({
         status: 'ok',
+        exam_title: topTitle,
+        date: parsed?.date || null,
+        subjects: parsed?.subjects || null,
         exams: normalizedExams,
         exam: normalizedExams[0],
         questions: normalizedExams[0].questions
