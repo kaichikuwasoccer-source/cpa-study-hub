@@ -1,0 +1,19 @@
+{
+  "name": "CPA Study Hub",
+  "short_name": "Study Hub",
+  "description": "学習記録・ポモドーロタイマー・予実分析・答練誤答分析を統合した学習管理アプリ（オフライン記録対応）",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#2563eb",
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "./icon2.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

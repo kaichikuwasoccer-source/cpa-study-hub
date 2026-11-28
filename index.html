@@ -6,7 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#2563eb" />
   <title>CPA Study Hub</title>
+  <link rel="manifest" href="./manifest.json" />
   <link rel="apple-touch-icon" href="icon2.png?v=2" />
   <link rel="icon" type="image/png" href="icon2.png?v=2" />
   <!-- Tailwind CSS -->
@@ -35,6 +37,26 @@
       },
     };
   </script>
+  <style>
+    /* スマホ表示での横はみ出し・iOS Safariのdate/time崩れ・Safe Area対策 */
+    html, body {
+      overflow-x: hidden;
+    }
+    input[type="date"],
+    input[type="time"] {
+      -webkit-appearance: none;
+      appearance: none;
+      min-width: 0;
+      max-width: 100%;
+    }
+    input[type="date"]::-webkit-date-and-time-value,
+    input[type="time"]::-webkit-date-and-time-value {
+      text-align: left;
+    }
+    .safe-bottom-nav {
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+  </style>
 </head>
 
 <body
@@ -104,6 +126,13 @@
 
       <!-- アクションボタン群 -->
       <div class="flex items-center gap-2">
+        <!-- オフライン / 未同期インジケーター -->
+        <button id="headerOfflineBadge" type="button" title="オフライン状態・未同期の記録を確認"
+          class="hidden h-9 items-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 px-2.5 text-xs font-bold text-amber-800 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300 transition">
+          <span id="headerOfflineDot" class="h-2 w-2 rounded-full bg-amber-500"></span>
+          <span id="headerOfflineLabel">オフライン</span>
+        </button>
+
         <!-- Googleアカウント管理ボタン -->
         <button id="openAccountBtn" type="button" title="Googleアカウント管理・初期設定"
           class="inline-flex h-9 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition">
@@ -146,6 +175,22 @@
 
   <!-- メインコンテンツ -->
   <main class="mx-auto max-w-6xl px-4 pb-24 pt-6 sm:px-6 sm:pb-10">
+
+    <!-- オフライン通知バナー（全ビュー共通） -->
+    <div id="offlineModeBanner"
+      class="mb-4 hidden flex-col items-start justify-between gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900 sm:flex-row sm:items-center dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+      <div class="flex items-center gap-2">
+        <span class="inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-amber-500"></span>
+        <div>
+          <strong class="font-bold">オフラインモード：</strong>
+          <span id="offlineBannerMessage">現在オフラインです。タイマー計測と学習記録は端末に保存され、オンライン復帰時に自動でスプレッドシートへ同期されます。</span>
+        </div>
+      </div>
+      <button id="bannerSyncOfflineBtn" type="button"
+        class="hidden shrink-0 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-700 transition">
+        今すぐ同期
+      </button>
+    </div>
 
     <!-- ===================================================================== -->
     <!-- ビュー1：ハブ（ダッシュボード・分析） -->
@@ -425,49 +470,197 @@
     <!-- ===================================================================== -->
     <!-- ビュー2：学習記録（タイマー・スプレッドシート送信） -->
     <!-- ===================================================================== -->
-    <div id="logView" class="mx-auto hidden max-w-xl space-y-5">
+    <div id="logView" class="mx-auto hidden w-full max-w-xl space-y-4 sm:space-y-5">
 
-      <!-- タイマーカード -->
+      <!-- タイマーカード（通常計測 / ポモドーロ切替） -->
       <div
-        class="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div class="mb-1 flex items-center justify-center gap-2">
-          <span id="timerStateDot" class="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600"></span>
-          <span id="timerStateLabel" class="text-xs font-semibold text-slate-500 dark:text-slate-400">待機中</span>
-        </div>
-        <div id="timerDisplay"
-          class="my-2 text-5xl font-extrabold tracking-tight tabular-nums text-slate-900 dark:text-white">00:00:00</div>
-        <div class="mt-4 flex flex-wrap items-center justify-center gap-2.5">
-          <button id="startStopBtn" type="button"
-            class="min-w-[110px] rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-blue-700 active:scale-[0.98] transition">
-            開始
+        class="rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-sm sm:p-6 dark:border-slate-800 dark:bg-slate-900">
+        <!-- モード切替タブ -->
+        <div class="mb-4 grid w-full grid-cols-2 rounded-xl border border-slate-200 bg-slate-100/80 p-1 sm:inline-flex sm:w-auto dark:border-slate-700 dark:bg-slate-800/80">
+          <button id="timerModeStopwatchBtn" type="button"
+            class="rounded-lg bg-white px-4 py-2 text-xs font-bold text-blue-600 shadow-sm sm:py-1.5 dark:bg-slate-900 dark:text-blue-400 transition">
+            ⏱ 通常計測
           </button>
-          <button id="resetBtn" type="button"
-            class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition">
-            リセット
-          </button>
-          <button id="syncTimerBtn" type="button" title="他端末のタイマー・教材状態を取得"
-            class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition">
-            同期
+          <button id="timerModePomoBtn" type="button"
+            class="rounded-lg px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-800 sm:py-1.5 dark:text-slate-400 dark:hover:text-white transition">
+            🍅 ポモドーロ
           </button>
         </div>
+
+        <!-- 通常計測パネル -->
+        <div id="stopwatchPanel">
+          <div class="mb-1 flex items-center justify-center gap-2">
+            <span id="timerStateDot" class="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+            <span id="timerStateLabel" class="text-xs font-semibold text-slate-500 dark:text-slate-400">待機中</span>
+          </div>
+          <div id="timerDisplay"
+            class="my-2 text-4xl font-extrabold tracking-tight tabular-nums text-slate-900 sm:text-5xl dark:text-white">00:00:00</div>
+          <div class="mt-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-center sm:gap-2.5">
+            <button id="startStopBtn" type="button"
+              class="col-span-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-blue-700 active:scale-[0.98] sm:col-span-1 sm:min-w-[120px] sm:py-2.5 transition">
+              開始
+            </button>
+            <button id="resetBtn" type="button"
+              class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition">
+              リセット
+            </button>
+            <button id="syncTimerBtn" type="button" title="他端末のタイマー・教材状態を取得"
+              class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition">
+              同期
+            </button>
+          </div>
+        </div>
+
+        <!-- ポモドーロパネル -->
+        <div id="pomodoroPanel" class="hidden">
+          <!-- フェーズ＆セット表示 -->
+          <div class="mb-2 flex flex-wrap items-center justify-center gap-2">
+            <span id="pomoPhaseBadge"
+              class="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-3 py-1 text-xs font-bold text-rose-600 dark:bg-rose-950/60 dark:text-rose-300">
+              <span id="pomoStateDot" class="h-2 w-2 rounded-full bg-rose-500"></span>
+              <span id="pomoPhaseLabel">集中タイム</span>
+            </span>
+            <span id="pomoCycleLabel" class="text-xs font-semibold text-slate-500 dark:text-slate-400">セット 1 / 4</span>
+          </div>
+
+          <!-- セット進捗ドット -->
+          <div id="pomoDots" class="mb-2 flex items-center justify-center gap-1.5"></div>
+
+          <!-- カウントダウン表示 -->
+          <div id="pomoDisplay"
+            class="my-2 text-4xl font-extrabold tracking-tight tabular-nums text-slate-900 sm:text-5xl dark:text-white">25:00</div>
+
+          <!-- 進捗バー -->
+          <div class="mx-auto mb-3 h-2 w-full max-w-xs overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+            <div id="pomoProgressBar" class="h-full rounded-full bg-rose-500 transition-all duration-300" style="width: 0%"></div>
+          </div>
+
+          <!-- 累積集中時間サマリー -->
+          <div id="pomoFocusSummary"
+            class="mb-4 inline-flex max-w-full flex-wrap items-center justify-center gap-2 rounded-xl bg-slate-50 px-3 py-1.5 text-xs text-slate-600 dark:bg-slate-800/70 dark:text-slate-300">
+            <span>累積集中：<strong id="pomoAccumFocusText" class="font-bold text-slate-900 dark:text-white">0分</strong></span>
+            <button id="pomoApplyToFormBtn" type="button"
+              class="hidden rounded-lg bg-blue-600/10 px-2.5 py-1 text-[11px] font-bold text-blue-600 hover:bg-blue-600/20 dark:text-blue-400 transition">
+              フォームに反映
+            </button>
+          </div>
+
+          <!-- 操作ボタン（スマホ：1行目にメインボタン全幅、2行目にサブボタン均等配置） -->
+          <div class="grid grid-cols-[1fr_1fr_auto] gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-center">
+            <button id="pomoStartStopBtn" type="button"
+              class="col-span-3 rounded-xl bg-rose-600 px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-rose-700 active:scale-[0.98] sm:col-span-1 sm:min-w-[126px] sm:py-2.5 transition">
+              集中を開始
+            </button>
+            <button id="pomoSkipBtn" type="button" title="次のフェーズへ進む"
+              class="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition">
+              スキップ
+            </button>
+            <button id="pomoResetBtn" type="button" title="ポモドーロをリセット"
+              class="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition">
+              リセット
+            </button>
+            <button id="pomoSoundToggleBtn" type="button" title="通知音のON/OFF"
+              class="flex h-10 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-sm text-slate-700 hover:bg-slate-100 sm:w-10 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition">
+              🔊
+            </button>
+          </div>
+
+          <!-- プリセット＆設定トグル（スマホ：2×2均等グリッドで綺麗に整列） -->
+          <div class="mt-4 grid grid-cols-2 gap-1.5 border-t border-slate-100 pt-3.5 sm:flex sm:flex-wrap sm:items-center sm:justify-center dark:border-slate-800">
+            <button type="button" data-pomo-preset="25-5-15-4"
+              class="pomo-preset-btn rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-semibold text-slate-600 hover:border-rose-400 hover:text-rose-600 sm:rounded-full sm:py-1 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 transition">
+              25 / 5分
+            </button>
+            <button type="button" data-pomo-preset="50-10-20-3"
+              class="pomo-preset-btn rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-semibold text-slate-600 hover:border-rose-400 hover:text-rose-600 sm:rounded-full sm:py-1 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 transition">
+              50 / 10分
+            </button>
+            <button type="button" data-pomo-preset="15-3-10-4"
+              class="pomo-preset-btn rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-semibold text-slate-600 hover:border-rose-400 hover:text-rose-600 sm:rounded-full sm:py-1 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 transition">
+              15 / 3分
+            </button>
+            <button id="pomoToggleSettingsBtn" type="button"
+              class="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-600 hover:border-blue-400 hover:text-blue-600 sm:rounded-full sm:py-1 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 transition">
+              ⚙ カスタム
+            </button>
+          </div>
+
+          <!-- カスタム設定パネル -->
+          <div id="pomoSettingsPanel"
+            class="mt-3 hidden rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 text-left text-xs dark:border-slate-700 dark:bg-slate-800/60">
+            <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+              <div class="min-w-0">
+                <label for="pomoWorkMinInput" class="mb-1 block text-[11px] font-bold text-slate-500 dark:text-slate-400">集中（分）</label>
+                <input id="pomoWorkMinInput" type="number" min="1" max="180" value="25"
+                  class="h-10 w-full min-w-0 rounded-lg border border-slate-300 bg-white px-2.5 text-base font-semibold focus:border-blue-500 focus:outline-none sm:h-9 sm:text-xs dark:border-slate-600 dark:bg-slate-900" />
+              </div>
+              <div class="min-w-0">
+                <label for="pomoShortBreakInput" class="mb-1 block text-[11px] font-bold text-slate-500 dark:text-slate-400">短休憩（分）</label>
+                <input id="pomoShortBreakInput" type="number" min="1" max="60" value="5"
+                  class="h-10 w-full min-w-0 rounded-lg border border-slate-300 bg-white px-2.5 text-base font-semibold focus:border-blue-500 focus:outline-none sm:h-9 sm:text-xs dark:border-slate-600 dark:bg-slate-900" />
+              </div>
+              <div class="min-w-0">
+                <label for="pomoLongBreakInput" class="mb-1 block text-[11px] font-bold text-slate-500 dark:text-slate-400">長休憩（分）</label>
+                <input id="pomoLongBreakInput" type="number" min="1" max="90" value="15"
+                  class="h-10 w-full min-w-0 rounded-lg border border-slate-300 bg-white px-2.5 text-base font-semibold focus:border-blue-500 focus:outline-none sm:h-9 sm:text-xs dark:border-slate-600 dark:bg-slate-900" />
+              </div>
+              <div class="min-w-0">
+                <label for="pomoCyclesInput" class="mb-1 block text-[11px] font-bold text-slate-500 dark:text-slate-400">長休憩まで</label>
+                <input id="pomoCyclesInput" type="number" min="1" max="12" value="4"
+                  class="h-10 w-full min-w-0 rounded-lg border border-slate-300 bg-white px-2.5 text-base font-semibold focus:border-blue-500 focus:outline-none sm:h-9 sm:text-xs dark:border-slate-600 dark:bg-slate-900" />
+              </div>
+            </div>
+            <div class="mt-3 flex flex-col items-stretch justify-between gap-2.5 sm:flex-row sm:items-center">
+              <label class="inline-flex cursor-pointer items-center gap-2 text-xs font-semibold text-slate-600 sm:text-[11px] dark:text-slate-300">
+                <input id="pomoAutoNextInput" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-blue-600 sm:h-3.5 sm:w-3.5" />
+                フェーズ終了後に次を自動開始する
+              </label>
+              <button id="pomoSaveSettingsBtn" type="button"
+                class="rounded-lg bg-blue-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-blue-700 sm:py-1.5 sm:text-[11px] transition">
+                設定を適用
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 未同期オフライン記録キューカード -->
+      <div id="offlineQueueCard"
+        class="hidden rounded-2xl border border-amber-200 bg-amber-50/70 p-4 shadow-sm dark:border-amber-900/60 dark:bg-amber-950/30">
+        <div class="mb-2.5 flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <span class="inline-flex h-2 w-2 rounded-full bg-amber-500"></span>
+            <h3 class="text-xs font-bold text-amber-900 dark:text-amber-200">
+              未同期の学習記録（<span id="offlineQueueCount">0</span>件）
+            </h3>
+          </div>
+          <button id="syncOfflineQueueBtn" type="button"
+            class="rounded-lg bg-amber-600 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-amber-700 disabled:opacity-50 transition">
+            ☁️ 今すぐ同期
+          </button>
+        </div>
+        <p class="mb-2.5 text-[11px] text-amber-800/90 dark:text-amber-300/90">
+          端末に保存済みの記録です。オンライン復帰時または「今すぐ同期」でスプレッドシートへ反映されます。
+        </p>
+        <div id="offlineQueueList" class="space-y-2"></div>
       </div>
 
       <!-- 記録フォームカード -->
       <div
-        class="space-y-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 dark:border-slate-800 dark:bg-slate-900">
+        class="space-y-4 overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:space-y-5 sm:p-6 dark:border-slate-800 dark:bg-slate-900">
         <!-- 科目 -->
         <div>
           <div class="mb-2 flex items-center justify-between">
             <label class="text-xs font-bold text-slate-500 dark:text-slate-400">科目 *</label>
             <button type="button" id="editSubjectBtn"
-              class="text-xs font-bold text-blue-600 hover:underline dark:text-blue-400">編集</button>
+              class="rounded-lg px-2 py-0.5 text-xs font-bold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/50 transition">編集</button>
           </div>
           <div id="subjectChips" class="flex flex-wrap gap-2"></div>
           <div id="addSubjectRow" class="mt-2.5 hidden gap-2">
-            <input type="text" id="newSubjectInput" placeholder="追加する科目名を入力（例：英語・数学・物理）"
-              class="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+            <input type="text" id="newSubjectInput" placeholder="追加する科目名（例：英語・数学）"
+              class="h-10 min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 text-base focus:border-blue-500 focus:outline-none sm:text-sm dark:border-slate-700 dark:bg-slate-800" />
             <button type="button" id="addSubjectBtn"
-              class="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 transition">追加</button>
+              class="shrink-0 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 transition">追加</button>
           </div>
         </div>
 
@@ -476,53 +669,53 @@
           <div class="mb-2 flex items-center justify-between">
             <label class="text-xs font-bold text-slate-500 dark:text-slate-400">教材 *</label>
             <button type="button" id="editMaterialBtn"
-              class="hidden text-xs font-bold text-blue-600 hover:underline dark:text-blue-400">編集</button>
+              class="hidden rounded-lg px-2 py-0.5 text-xs font-bold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/50 transition">編集</button>
           </div>
           <div id="materialChips" class="flex flex-wrap gap-2">
             <span class="text-xs text-slate-400">先に科目を選択してください</span>
           </div>
           <div id="addMaterialRow" class="mt-2.5 hidden gap-2">
             <input type="text" id="newMaterialInput" placeholder="追加する教材名を入力"
-              class="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+              class="h-10 min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 text-base focus:border-blue-500 focus:outline-none sm:text-sm dark:border-slate-700 dark:bg-slate-800" />
             <button type="button" id="addMaterialBtn"
-              class="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 transition">追加</button>
+              class="shrink-0 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 transition">追加</button>
           </div>
         </div>
 
         <!-- 学習日 ＆ 学習時間 -->
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
+        <div class="grid grid-cols-1 gap-3.5 sm:grid-cols-2 sm:gap-4">
+          <div class="min-w-0">
             <label for="studyDateInput"
               class="mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400">学習日</label>
             <input type="date" id="studyDateInput"
-              class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+              class="block h-11 w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none sm:text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" />
           </div>
-          <div>
+          <div class="min-w-0">
             <label for="minutesInput" class="mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400">学習時間（分）
               *</label>
-            <input type="number" id="minutesInput" min="1" placeholder="停止で自動入力"
-              class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+            <input type="number" id="minutesInput" min="1" inputmode="numeric" placeholder="停止で自動入力"
+              class="block h-11 w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none sm:text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" />
           </div>
         </div>
 
         <!-- 時間帯 -->
-        <div>
-          <label class="mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400">時間帯（タイマーで自動入力／手入力も可）</label>
-          <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+        <div class="min-w-0">
+          <label class="mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400">時間帯（自動入力／手入力可）</label>
+          <div class="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
             <input type="time" id="startTimeInput"
-              class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
-            <span class="text-xs font-semibold text-slate-400">〜</span>
+              class="block h-11 w-full min-w-0 rounded-xl border border-slate-300 bg-white px-2.5 text-base text-slate-900 focus:border-blue-500 focus:outline-none sm:px-3 sm:text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" />
+            <span class="shrink-0 text-xs font-semibold text-slate-400">〜</span>
             <input type="time" id="endTimeInput"
-              class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+              class="block h-11 w-full min-w-0 rounded-xl border border-slate-300 bg-white px-2.5 text-base text-slate-900 focus:border-blue-500 focus:outline-none sm:px-3 sm:text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" />
           </div>
         </div>
 
         <!-- 単元・ページ -->
-        <div>
+        <div class="min-w-0">
           <label for="topicInput"
             class="mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400">単元・ページ（任意）</label>
           <input type="text" id="topicInput" placeholder="例：連結会計 P.45〜52"
-            class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+            class="block h-11 w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none sm:text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" />
         </div>
 
         <!-- 手応え -->
@@ -532,11 +725,11 @@
         </div>
 
         <!-- 一言メモ -->
-        <div>
+        <div class="min-w-0">
           <label for="memoInput"
             class="mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400">一言メモ（任意）</label>
           <textarea id="memoInput" rows="3" placeholder="つまずいた論点や次回の申し送りなど"
-            class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800"></textarea>
+            class="block w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 focus:border-blue-500 focus:outline-none sm:text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"></textarea>
         </div>
 
         <!-- 送信ボタン -->
@@ -602,7 +795,7 @@
 
   <!-- スマホ用 下部固定ナビゲーションバー -->
   <nav aria-label="モバイルアプリ切替"
-    class="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/90 bg-white/95 backdrop-blur-md sm:hidden dark:border-slate-800 dark:bg-slate-900/95">
+    class="safe-bottom-nav fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/90 bg-white/95 backdrop-blur-md sm:hidden dark:border-slate-800 dark:bg-slate-900/95">
     <div class="mx-auto grid max-w-md grid-cols-3 px-2 py-2">
       <button type="button" data-app-tab="hubView"
         class="app-tab-mobile-btn flex flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 text-blue-600 dark:text-blue-400 transition">
@@ -1154,6 +1347,11 @@
       TIMER_ACCUM: 'cpa_timer_accum',
       TIMER_FIRST_START: 'cpa_timer_first_start',
       TIMER_UPDATED: 'cpa_timer_updated',
+      TIMER_MODE: 'cpa_timer_mode_v1',
+      POMO_SETTINGS: 'cpa_pomo_settings_v1',
+      POMO_STATE: 'cpa_pomo_state_v1',
+      OFFLINE_LOG_QUEUE: 'cpa_offline_log_queue_v1',
+      CACHED_DASHBOARD: 'cpa_hub_cached_dashboard_v1',
     };
 
     // 複数人公開用 Google OAuth クライアントID（Google Cloud Console で発行したIDをここかアカウント設定画面に入力）
@@ -1684,6 +1882,11 @@
       refreshIcon.classList.add('animate-spin');
       updatePeriodNavUI();
 
+      // 期限切れでも30日間セッションCookieがあればユーザー操作なしで自動更新
+      if (googleAuth.user && googleAuth.spreadsheetId && !isGoogleSignedIn() && navigator.onLine) {
+        await trySilentRefreshGoogleToken(true);
+      }
+
       const hasGoogleDirect = useGoogleDirectMode();
       const needsReconnect = !!(googleAuth.user && googleAuth.spreadsheetId && !isGoogleSignedIn());
       reconnectBanner.classList.toggle('hidden', !needsReconnect);
@@ -1692,11 +1895,38 @@
       if (!hasGoogleDirect && !settings.gasUrl) {
         demoBanner.classList.toggle('hidden', needsReconnect);
         demoBanner.classList.toggle('flex', !needsReconnect);
-        currentData = DEMO_DATA;
-        currentIsDemo = true;
-        renderDashboard(currentData, true);
+        const offlineFallback = buildOfflineDashboardData();
+        if (offlineFallback) {
+          currentData = offlineFallback;
+          currentIsDemo = false;
+          renderDashboard(currentData, false);
+        } else {
+          currentData = DEMO_DATA;
+          currentIsDemo = true;
+          renderDashboard(currentData, true);
+        }
         renderExamResults();
         refreshIcon.classList.remove('animate-spin');
+        return;
+      }
+
+      if (!navigator.onLine) {
+        demoBanner.classList.add('hidden');
+        demoBanner.classList.remove('flex');
+        const offlineFallback = buildOfflineDashboardData();
+        if (offlineFallback) {
+          currentData = offlineFallback;
+          currentIsDemo = false;
+          renderDashboard(currentData, false);
+          document.getElementById('lastUpdated').textContent = 'オフライン表示（端末キャッシュ）';
+        } else {
+          currentData = DEMO_DATA;
+          currentIsDemo = true;
+          renderDashboard(currentData, true);
+        }
+        renderExamResults();
+        refreshIcon.classList.remove('animate-spin');
+        if (showSyncToast) showToast('オフラインのため端末キャッシュを表示しています');
         return;
       }
 
@@ -1789,6 +2019,9 @@
 
         currentData = json;
         currentIsDemo = false;
+        saveJSON(STORAGE_KEYS.CACHED_DASHBOARD, json);
+        const mergedData = mergeOfflineQueueIntoDashboard(json);
+        currentData = mergedData;
         renderDashboard(currentData, false);
         const now = new Date();
         document.getElementById('lastUpdated').textContent =
@@ -1796,10 +2029,19 @@
         if (showSyncToast) showToast('最新データと他端末の状態を同期しました');
       } catch (err) {
         console.error(err);
-        showToast(err.message || 'データ取得に失敗しました（デモを表示します）');
-        currentData = DEMO_DATA;
-        currentIsDemo = true;
-        renderDashboard(currentData, true);
+        const offlineFallback = buildOfflineDashboardData();
+        if (offlineFallback) {
+          currentData = offlineFallback;
+          currentIsDemo = false;
+          renderDashboard(currentData, false);
+          document.getElementById('lastUpdated').textContent = 'オフライン表示（端末キャッシュ）';
+          if (showSyncToast) showToast('通信できないため端末キャッシュを表示しています');
+        } else {
+          showToast(err.message || 'データ取得に失敗しました（デモを表示します）');
+          currentData = DEMO_DATA;
+          currentIsDemo = true;
+          renderDashboard(currentData, true);
+        }
       } finally {
         refreshIcon.classList.remove('animate-spin');
       }
@@ -2374,18 +2616,444 @@
         : sec > 0 ? 'h-2 w-2 rounded-full bg-amber-400' : 'h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600';
       timerStateLabel.textContent = running ? '計測中' : sec > 0 ? '一時停止中' : '待機中';
 
-      // ナビバーの計測中インジケーター
-      const shortTime = Math.floor(sec / 3600) > 0 ? `${h}:${m}` : `${m}:${s}`;
+      // ナビバーの計測中インジケーター（通常計測・ポモドーロ統合）
+      updateNavTimerIndicator();
+    }
+
+    function updateNavTimerIndicator() {
+      const swRunning = !!localStorage.getItem(STORAGE_KEYS.TIMER_START);
+      const pomoRunning = !!(typeof pomoState !== 'undefined' && pomoState.running);
+      const isAnyRunning = swRunning || pomoRunning;
+
+      let shortTime = '00:00';
+      if (pomoRunning && (!swRunning || timerMode === 'pomodoro')) {
+        const rem = getPomoRemainingSec();
+        const pm = String(Math.floor(rem / 60)).padStart(2, '0');
+        const ps = String(rem % 60).padStart(2, '0');
+        shortTime = `${pomoState.phase === 'work' ? '🍅' : '☕'}${pm}:${ps}`;
+      } else if (swRunning) {
+        const sec = getElapsedSec();
+        const h = String(Math.floor(sec / 3600)).padStart(2, '0');
+        const m = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
+        const s = String(sec % 60).padStart(2, '0');
+        shortTime = Math.floor(sec / 3600) > 0 ? `${h}:${m}` : `${m}:${s}`;
+      }
+
       document.querySelectorAll('.nav-timer-badge').forEach(b => {
-        b.classList.toggle('hidden', !running);
-        b.classList.toggle('inline-flex', running);
+        b.classList.toggle('hidden', !isAnyRunning);
+        b.classList.toggle('inline-flex', isAnyRunning);
       });
       document.querySelectorAll('.nav-timer-text').forEach(t => { t.textContent = shortTime; });
-      document.querySelectorAll('.nav-timer-dot').forEach(d => d.classList.toggle('hidden', !running));
+      document.querySelectorAll('.nav-timer-dot').forEach(d => d.classList.toggle('hidden', !isAnyRunning));
       document.querySelectorAll('.nav-mobile-log-label').forEach(l => {
-        l.textContent = running ? shortTime : '記録';
+        l.textContent = isAnyRunning ? shortTime : '記録';
       });
     }
+
+    // =========================================================================
+    // 6-2. ポモドーロタイマー（オフライン完全動作・Web Audio通知・フォーム自動連携）
+    // =========================================================================
+    const DEFAULT_POMO_SETTINGS = {
+      workMin: 25,
+      shortBreakMin: 5,
+      longBreakMin: 15,
+      cyclesBeforeLong: 4,
+      soundEnabled: true,
+      autoNext: false
+    };
+    let timerMode = (() => {
+      try { return localStorage.getItem(STORAGE_KEYS.TIMER_MODE) === 'pomodoro' ? 'pomodoro' : 'stopwatch'; }
+      catch (e) { return 'stopwatch'; }
+    })();
+    let pomoSettings = Object.assign({}, DEFAULT_POMO_SETTINGS, loadJSON(STORAGE_KEYS.POMO_SETTINGS, {}));
+    let pomoState = Object.assign({
+      phase: 'work', // 'work' | 'shortBreak' | 'longBreak'
+      completedWorkSessions: 0,
+      running: false,
+      endAt: 0,
+      remainingSec: pomoSettings.workMin * 60,
+      phaseDurationSec: pomoSettings.workMin * 60,
+      phaseStartAt: 0,
+      accumFocusSec: 0,
+      firstFocusStartAt: 0
+    }, loadJSON(STORAGE_KEYS.POMO_STATE, {}));
+    let pomoInterval = null;
+
+    function savePomoSettings() {
+      saveJSON(STORAGE_KEYS.POMO_SETTINGS, pomoSettings);
+    }
+    function savePomoState() {
+      saveJSON(STORAGE_KEYS.POMO_STATE, pomoState);
+    }
+
+    function getPomoPhaseDurationSec(phase) {
+      if (phase === 'shortBreak') return Math.max(1, Number(pomoSettings.shortBreakMin) || 5) * 60;
+      if (phase === 'longBreak') return Math.max(1, Number(pomoSettings.longBreakMin) || 15) * 60;
+      return Math.max(1, Number(pomoSettings.workMin) || 25) * 60;
+    }
+
+    function getPomoRemainingSec() {
+      if (pomoState.running && pomoState.endAt) {
+        return Math.max(0, Math.ceil((pomoState.endAt - Date.now()) / 1000));
+      }
+      return Math.max(0, Number(pomoState.remainingSec) || 0);
+    }
+
+    function getPomoTotalFocusSec() {
+      let total = Number(pomoState.accumFocusSec) || 0;
+      if (pomoState.phase === 'work' && pomoState.running && pomoState.phaseStartAt) {
+        const elapsedInRun = Math.max(0, Math.floor((Date.now() - pomoState.phaseStartAt) / 1000));
+        total += Math.min(elapsedInRun, pomoState.remainingSec || getPomoPhaseDurationSec('work'));
+      }
+      return total;
+    }
+
+    function playPomoChime(isWorkComplete = true) {
+      if (!pomoSettings.soundEnabled) return;
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const notes = isWorkComplete ? [523.25, 659.25, 783.99] : [783.99, 1046.5];
+        notes.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.16);
+          gain.gain.setValueAtTime(0.001, ctx.currentTime + idx * 0.16);
+          gain.gain.exponentialRampToValueAtTime(0.18, ctx.currentTime + idx * 0.16 + 0.03);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.16 + 0.45);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + idx * 0.16);
+          osc.stop(ctx.currentTime + idx * 0.16 + 0.48);
+        });
+      } catch (e) { }
+    }
+
+    function sendPomoBrowserNotification(title, body) {
+      try {
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification(title, { body, icon: './icon2.png' });
+        }
+      } catch (e) { }
+    }
+
+    function applyPomoFocusToForm(silent = false) {
+      const totalSec = getPomoTotalFocusSec();
+      if (totalSec <= 0) return;
+      const mins = Math.max(1, Math.round(totalSec / 60));
+      minutesInput.value = mins;
+      if (pomoState.firstFocusStartAt) {
+        startTimeInput.value = fmtTime(new Date(pomoState.firstFocusStartAt));
+      }
+      endTimeInput.value = fmtTime(new Date());
+      if (!silent) showToast(`ポモドーロの累積集中時間（${mins}分）を記録フォームに反映しました`);
+    }
+
+    function switchTimerMode(mode) {
+      timerMode = mode === 'pomodoro' ? 'pomodoro' : 'stopwatch';
+      try { localStorage.setItem(STORAGE_KEYS.TIMER_MODE, timerMode); } catch (e) { }
+      const swBtn = document.getElementById('timerModeStopwatchBtn');
+      const pmBtn = document.getElementById('timerModePomoBtn');
+      const swPanel = document.getElementById('stopwatchPanel');
+      const pmPanel = document.getElementById('pomodoroPanel');
+      if (!swBtn || !pmBtn || !swPanel || !pmPanel) return;
+
+      const isPomo = timerMode === 'pomodoro';
+      swPanel.classList.toggle('hidden', isPomo);
+      pmPanel.classList.toggle('hidden', !isPomo);
+
+      swBtn.className = !isPomo
+        ? 'rounded-lg bg-white px-4 py-2 text-xs font-bold text-blue-600 shadow-sm sm:py-1.5 dark:bg-slate-900 dark:text-blue-400 transition'
+        : 'rounded-lg px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-800 sm:py-1.5 dark:text-slate-400 dark:hover:text-white transition';
+      pmBtn.className = isPomo
+        ? 'rounded-lg bg-white px-4 py-2 text-xs font-bold text-rose-600 shadow-sm sm:py-1.5 dark:bg-slate-900 dark:text-rose-400 transition'
+        : 'rounded-lg px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-800 sm:py-1.5 dark:text-slate-400 dark:hover:text-white transition';
+      updatePomoUI();
+      updateNavTimerIndicator();
+    }
+
+    function updatePomoUI() {
+      const displayEl = document.getElementById('pomoDisplay');
+      if (!displayEl) return;
+      const rem = getPomoRemainingSec();
+      const m = String(Math.floor(rem / 60)).padStart(2, '0');
+      const s = String(rem % 60).padStart(2, '0');
+      displayEl.textContent = `${m}:${s}`;
+
+      const phaseTotal = Math.max(1, pomoState.phaseDurationSec || getPomoPhaseDurationSec(pomoState.phase));
+      const pct = Math.min(100, Math.max(0, Math.round(((phaseTotal - rem) / phaseTotal) * 100)));
+
+      const badgeEl = document.getElementById('pomoPhaseBadge');
+      const dotEl = document.getElementById('pomoStateDot');
+      const labelEl = document.getElementById('pomoPhaseLabel');
+      const barEl = document.getElementById('pomoProgressBar');
+      const startBtn = document.getElementById('pomoStartStopBtn');
+      const cycleLabel = document.getElementById('pomoCycleLabel');
+      const dotsEl = document.getElementById('pomoDots');
+      const accumEl = document.getElementById('pomoAccumFocusText');
+      const applyBtn = document.getElementById('pomoApplyToFormBtn');
+      const soundBtn = document.getElementById('pomoSoundToggleBtn');
+
+      const cycles = Math.max(1, Number(pomoSettings.cyclesBeforeLong) || 4);
+      const currentCycleIdx = (pomoState.completedWorkSessions % cycles) + 1;
+      cycleLabel.textContent = `セット ${Math.min(currentCycleIdx, cycles)} / ${cycles}（累計${pomoState.completedWorkSessions}完了）`;
+
+      const doneInCycle = pomoState.completedWorkSessions % cycles;
+      dotsEl.innerHTML = Array.from({ length: cycles }, (_, i) => {
+        const filled = i < doneInCycle || (pomoState.phase === 'longBreak');
+        const active = !filled && i === doneInCycle && pomoState.phase === 'work';
+        const cls = filled
+          ? 'h-2.5 w-2.5 rounded-full bg-rose-500'
+          : active
+            ? 'h-2.5 w-2.5 rounded-full border-2 border-rose-500 bg-rose-100 dark:bg-rose-950'
+            : 'h-2.5 w-2.5 rounded-full bg-slate-200 dark:bg-slate-700';
+        return `<span class="${cls}"></span>`;
+      }).join('');
+
+      if (pomoState.phase === 'work') {
+        badgeEl.className = 'inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-3 py-1 text-xs font-bold text-rose-600 dark:bg-rose-950/60 dark:text-rose-300';
+        dotEl.className = pomoState.running ? 'h-2 w-2 animate-pulse rounded-full bg-rose-500' : 'h-2 w-2 rounded-full bg-rose-400';
+        labelEl.textContent = pomoState.running ? '集中タイム（計測中）' : '集中タイム';
+        barEl.className = 'h-full rounded-full bg-rose-500 transition-all duration-300';
+        startBtn.className = 'col-span-3 rounded-xl bg-rose-600 px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-rose-700 active:scale-[0.98] sm:col-span-1 sm:min-w-[126px] sm:py-2.5 transition';
+        startBtn.textContent = pomoState.running ? '一時停止' : (rem < phaseTotal ? '集中を再開' : '集中を開始');
+      } else if (pomoState.phase === 'shortBreak') {
+        badgeEl.className = 'inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-300';
+        dotEl.className = pomoState.running ? 'h-2 w-2 animate-pulse rounded-full bg-emerald-500' : 'h-2 w-2 rounded-full bg-emerald-400';
+        labelEl.textContent = pomoState.running ? '短休憩（計測中）' : '短休憩';
+        barEl.className = 'h-full rounded-full bg-emerald-500 transition-all duration-300';
+        startBtn.className = 'col-span-3 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-emerald-700 active:scale-[0.98] sm:col-span-1 sm:min-w-[126px] sm:py-2.5 transition';
+        startBtn.textContent = pomoState.running ? '一時停止' : (rem < phaseTotal ? '休憩を再開' : '休憩を開始');
+      } else {
+        badgeEl.className = 'inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-600 dark:bg-blue-950/60 dark:text-blue-300';
+        dotEl.className = pomoState.running ? 'h-2 w-2 animate-pulse rounded-full bg-blue-500' : 'h-2 w-2 rounded-full bg-blue-400';
+        labelEl.textContent = pomoState.running ? '長休憩（計測中）' : '長休憩';
+        barEl.className = 'h-full rounded-full bg-blue-500 transition-all duration-300';
+        startBtn.className = 'col-span-3 rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-blue-700 active:scale-[0.98] sm:col-span-1 sm:min-w-[126px] sm:py-2.5 transition';
+        startBtn.textContent = pomoState.running ? '一時停止' : (rem < phaseTotal ? '休憩を再開' : '長休憩を開始');
+      }
+      barEl.style.width = `${pct}%`;
+
+      const totalFocusSec = getPomoTotalFocusSec();
+      const focusMin = Math.floor(totalFocusSec / 60);
+      const focusRemSec = totalFocusSec % 60;
+      accumEl.textContent = totalFocusSec >= 60 ? `${focusMin}分${focusRemSec > 0 ? focusRemSec + '秒' : ''}` : `${totalFocusSec}秒`;
+      applyBtn.classList.toggle('hidden', totalFocusSec < 10);
+
+      if (soundBtn) soundBtn.textContent = pomoSettings.soundEnabled ? '🔊' : '🔇';
+
+      // プリセットのアクティブ状態
+      const curKey = `${pomoSettings.workMin}-${pomoSettings.shortBreakMin}-${pomoSettings.longBreakMin}-${pomoSettings.cyclesBeforeLong}`;
+      document.querySelectorAll('.pomo-preset-btn').forEach(btn => {
+        const active = btn.dataset.pomoPreset === curKey;
+        btn.className = active
+          ? 'pomo-preset-btn rounded-xl border border-rose-500 bg-rose-50 px-3 py-1.5 text-[11px] font-bold text-rose-600 sm:rounded-full sm:py-1 dark:border-rose-600 dark:bg-rose-950/50 dark:text-rose-300 transition'
+          : 'pomo-preset-btn rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-semibold text-slate-600 hover:border-rose-400 hover:text-rose-600 sm:rounded-full sm:py-1 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 transition';
+      });
+
+      updateNavTimerIndicator();
+    }
+
+    function transitionPomoPhase(completedNaturally = true) {
+      clearInterval(pomoInterval);
+      pomoInterval = null;
+      const prevPhase = pomoState.phase;
+
+      if (prevPhase === 'work') {
+        if (completedNaturally) {
+          const added = pomoState.running && pomoState.phaseStartAt
+            ? Math.min(pomoState.remainingSec || getPomoPhaseDurationSec('work'), Math.max(0, Math.round((Date.now() - pomoState.phaseStartAt) / 1000)))
+            : 0;
+          pomoState.accumFocusSec = (Number(pomoState.accumFocusSec) || 0) + added;
+          pomoState.completedWorkSessions = (Number(pomoState.completedWorkSessions) || 0) + 1;
+          applyPomoFocusToForm(true);
+        } else if (pomoState.running && pomoState.phaseStartAt) {
+          const elapsed = Math.max(0, Math.floor((Date.now() - pomoState.phaseStartAt) / 1000));
+          pomoState.accumFocusSec = (Number(pomoState.accumFocusSec) || 0) + Math.min(elapsed, pomoState.remainingSec || 0);
+        }
+        const cycles = Math.max(1, Number(pomoSettings.cyclesBeforeLong) || 4);
+        const nextPhase = (pomoState.completedWorkSessions > 0 && pomoState.completedWorkSessions % cycles === 0) ? 'longBreak' : 'shortBreak';
+        pomoState.phase = nextPhase;
+        pomoState.phaseDurationSec = getPomoPhaseDurationSec(nextPhase);
+        pomoState.remainingSec = pomoState.phaseDurationSec;
+        pomoState.running = false;
+        pomoState.endAt = 0;
+        pomoState.phaseStartAt = 0;
+        savePomoState();
+
+        if (completedNaturally) {
+          playPomoChime(true);
+          const breakLabel = nextPhase === 'longBreak' ? `長休憩（${pomoSettings.longBreakMin}分）` : `短休憩（${pomoSettings.shortBreakMin}分）`;
+          showToast(`🍅 集中完了！${breakLabel}に入りましょう（記録フォームに反映済み）`);
+          sendPomoBrowserNotification('ポモドーロ集中完了！', `お疲れさまでした。次は${breakLabel}です。`);
+        }
+      } else {
+        pomoState.phase = 'work';
+        pomoState.phaseDurationSec = getPomoPhaseDurationSec('work');
+        pomoState.remainingSec = pomoState.phaseDurationSec;
+        pomoState.running = false;
+        pomoState.endAt = 0;
+        pomoState.phaseStartAt = 0;
+        savePomoState();
+
+        if (completedNaturally) {
+          playPomoChime(false);
+          showToast(`☕ 休憩終了！次の集中（${pomoSettings.workMin}分）を始めましょう`);
+          sendPomoBrowserNotification('休憩終了', `次の集中タイム（${pomoSettings.workMin}分）を始めましょう！`);
+        }
+      }
+
+      updatePomoUI();
+      if (completedNaturally && pomoSettings.autoNext) {
+        startPomo();
+      }
+    }
+
+    function tickPomo() {
+      const rem = getPomoRemainingSec();
+      if (rem <= 0 && pomoState.running) {
+        transitionPomoPhase(true);
+        return;
+      }
+      updatePomoUI();
+    }
+
+    function startPomo() {
+      if ('Notification' in window && Notification.permission === 'default') {
+        try { Notification.requestPermission(); } catch (e) { }
+      }
+      const now = Date.now();
+      const rem = Math.max(1, Number(pomoState.remainingSec) || getPomoPhaseDurationSec(pomoState.phase));
+      pomoState.running = true;
+      pomoState.phaseStartAt = now;
+      pomoState.endAt = now + rem * 1000;
+      if (pomoState.phase === 'work' && !pomoState.firstFocusStartAt) {
+        pomoState.firstFocusStartAt = now;
+        startTimeInput.value = fmtTime(new Date(now));
+      }
+      savePomoState();
+      clearInterval(pomoInterval);
+      pomoInterval = setInterval(tickPomo, 500);
+      updatePomoUI();
+    }
+
+    function pausePomo(updateForm = true) {
+      if (!pomoState.running) return;
+      const now = Date.now();
+      const rem = getPomoRemainingSec();
+      if (pomoState.phase === 'work' && pomoState.phaseStartAt) {
+        const elapsed = Math.max(0, Math.floor((now - pomoState.phaseStartAt) / 1000));
+        pomoState.accumFocusSec = (Number(pomoState.accumFocusSec) || 0) + Math.min(elapsed, pomoState.remainingSec || elapsed);
+      }
+      pomoState.running = false;
+      pomoState.remainingSec = rem;
+      pomoState.endAt = 0;
+      pomoState.phaseStartAt = 0;
+      clearInterval(pomoInterval);
+      pomoInterval = null;
+      savePomoState();
+      if (updateForm && pomoState.accumFocusSec > 0) {
+        applyPomoFocusToForm(true);
+      }
+      updatePomoUI();
+    }
+
+    function resetPomo(resetAccum = true) {
+      clearInterval(pomoInterval);
+      pomoInterval = null;
+      pomoState.phase = 'work';
+      pomoState.phaseDurationSec = getPomoPhaseDurationSec('work');
+      pomoState.remainingSec = pomoState.phaseDurationSec;
+      pomoState.running = false;
+      pomoState.endAt = 0;
+      pomoState.phaseStartAt = 0;
+      if (resetAccum) {
+        pomoState.accumFocusSec = 0;
+        pomoState.firstFocusStartAt = 0;
+        pomoState.completedWorkSessions = 0;
+      }
+      savePomoState();
+      updatePomoUI();
+    }
+
+    function syncPomoSettingsInputs() {
+      const w = document.getElementById('pomoWorkMinInput');
+      const sb = document.getElementById('pomoShortBreakInput');
+      const lb = document.getElementById('pomoLongBreakInput');
+      const cy = document.getElementById('pomoCyclesInput');
+      const an = document.getElementById('pomoAutoNextInput');
+      if (w) w.value = pomoSettings.workMin;
+      if (sb) sb.value = pomoSettings.shortBreakMin;
+      if (lb) lb.value = pomoSettings.longBreakMin;
+      if (cy) cy.value = pomoSettings.cyclesBeforeLong;
+      if (an) an.checked = !!pomoSettings.autoNext;
+    }
+
+    // ポモドーロイベント登録
+    document.getElementById('timerModeStopwatchBtn')?.addEventListener('click', () => switchTimerMode('stopwatch'));
+    document.getElementById('timerModePomoBtn')?.addEventListener('click', () => switchTimerMode('pomodoro'));
+    document.getElementById('pomoStartStopBtn')?.addEventListener('click', () => {
+      if (pomoState.running) pausePomo(true);
+      else startPomo();
+    });
+    document.getElementById('pomoSkipBtn')?.addEventListener('click', () => {
+      transitionPomoPhase(false);
+    });
+    document.getElementById('pomoResetBtn')?.addEventListener('click', () => {
+      resetPomo(true);
+      showToast('ポモドーロタイマーをリセットしました');
+    });
+    document.getElementById('pomoApplyToFormBtn')?.addEventListener('click', () => {
+      applyPomoFocusToForm(false);
+    });
+    document.getElementById('pomoSoundToggleBtn')?.addEventListener('click', () => {
+      pomoSettings.soundEnabled = !pomoSettings.soundEnabled;
+      savePomoSettings();
+      updatePomoUI();
+      showToast(pomoSettings.soundEnabled ? 'ポモドーロ通知音をONにしました' : 'ポモドーロ通知音をミュートにしました');
+    });
+    document.getElementById('pomoToggleSettingsBtn')?.addEventListener('click', () => {
+      syncPomoSettingsInputs();
+      document.getElementById('pomoSettingsPanel')?.classList.toggle('hidden');
+    });
+    document.querySelectorAll('.pomo-preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const parts = (btn.dataset.pomoPreset || '').split('-').map(Number);
+        if (parts.length !== 4 || parts.some(isNaN)) return;
+        pomoSettings.workMin = parts[0];
+        pomoSettings.shortBreakMin = parts[1];
+        pomoSettings.longBreakMin = parts[2];
+        pomoSettings.cyclesBeforeLong = parts[3];
+        savePomoSettings();
+        syncPomoSettingsInputs();
+        if (!pomoState.running) {
+          pomoState.phaseDurationSec = getPomoPhaseDurationSec(pomoState.phase);
+          pomoState.remainingSec = pomoState.phaseDurationSec;
+          savePomoState();
+        }
+        updatePomoUI();
+        showToast(`ポモドーロ設定を ${parts[0]}分 / ${parts[1]}分 に変更しました`);
+      });
+    });
+    document.getElementById('pomoSaveSettingsBtn')?.addEventListener('click', () => {
+      const workMin = Math.min(180, Math.max(1, Number(document.getElementById('pomoWorkMinInput')?.value) || 25));
+      const shortBreakMin = Math.min(60, Math.max(1, Number(document.getElementById('pomoShortBreakInput')?.value) || 5));
+      const longBreakMin = Math.min(90, Math.max(1, Number(document.getElementById('pomoLongBreakInput')?.value) || 15));
+      const cyclesBeforeLong = Math.min(12, Math.max(1, Number(document.getElementById('pomoCyclesInput')?.value) || 4));
+      const autoNext = !!document.getElementById('pomoAutoNextInput')?.checked;
+      pomoSettings = Object.assign({}, pomoSettings, { workMin, shortBreakMin, longBreakMin, cyclesBeforeLong, autoNext });
+      savePomoSettings();
+      if (!pomoState.running) {
+        pomoState.phaseDurationSec = getPomoPhaseDurationSec(pomoState.phase);
+        pomoState.remainingSec = pomoState.phaseDurationSec;
+        savePomoState();
+      }
+      document.getElementById('pomoSettingsPanel')?.classList.add('hidden');
+      updatePomoUI();
+      showToast(`カスタム設定を適用しました（集中${workMin}分 / 休憩${shortBreakMin}分）`);
+    });
 
     async function saveTimerToCloud() {
       const updatedAt = Date.now();
@@ -2494,19 +3162,361 @@
     };
     document.getElementById('syncTimerBtn').onclick = () => fetchAndRenderData(true);
 
+    // =========================================================================
+    // 6-3. オフライン記録キュー ＆ 自動同期（ネットワーク復帰・再接続で自動送信）
+    // =========================================================================
+    let offlineLogQueue = loadJSON(STORAGE_KEYS.OFFLINE_LOG_QUEUE, []);
+    if (!Array.isArray(offlineLogQueue)) offlineLogQueue = [];
+    let isSyncingOfflineQueue = false;
+
+    function saveOfflineLogQueue() {
+      saveJSON(STORAGE_KEYS.OFFLINE_LOG_QUEUE, offlineLogQueue);
+    }
+
+    function mergeOfflineQueueIntoDashboard(baseData) {
+      if (!baseData || !offlineLogQueue.length) return baseData;
+      const cloned = JSON.parse(JSON.stringify(baseData));
+      const ctx = getPeriodContext(selectedPeriod, periodOffset);
+      const base = ctx.baseDate ? new Date(`${ctx.baseDate}T00:00:00`) : new Date();
+      const dayStart = new Date(base.getFullYear(), base.getMonth(), base.getDate(), 0, 0, 0, 0);
+      const dayEnd = new Date(base.getFullYear(), base.getMonth(), base.getDate(), 23, 59, 59, 999);
+      const dow = (base.getDay() + 6) % 7;
+      const weekStart = new Date(dayStart); weekStart.setDate(dayStart.getDate() - dow);
+      const weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate() + 6); weekEnd.setHours(23, 59, 59, 999);
+      const monthStart = new Date(base.getFullYear(), base.getMonth(), 1, 0, 0, 0, 0);
+      const monthEnd = new Date(base.getFullYear(), base.getMonth() + 1, 0, 23, 59, 59, 999);
+      const yearStart = new Date(base.getFullYear(), 0, 1, 0, 0, 0, 0);
+      const yearEnd = new Date(base.getFullYear(), 11, 31, 23, 59, 59, 999);
+
+      const addAct = (bucket, subj, mins) => {
+        if (!bucket) return;
+        bucket.actual = (Number(bucket.actual) || 0) + mins;
+        if (!bucket.bySubject) bucket.bySubject = { actual: {}, planned: {} };
+        if (!bucket.bySubject.actual) bucket.bySubject.actual = {};
+        bucket.bySubject.actual[subj] = (Number(bucket.bySubject.actual[subj]) || 0) + mins;
+      };
+
+      offlineLogQueue.forEach(item => {
+        const p = item.payload;
+        if (!p || !p.date || !p.minutes) return;
+        const d = new Date(String(p.date).replace(/-/g, '/'));
+        if (isNaN(d.getTime())) return;
+        const mins = Number(p.minutes) || 0;
+        if (cloned.periods) {
+          if (d >= dayStart && d <= dayEnd) addAct(cloned.periods.today, p.subject, mins);
+          if (d >= weekStart && d <= weekEnd) addAct(cloned.periods.week, p.subject, mins);
+          if (d >= monthStart && d <= monthEnd) addAct(cloned.periods.month, p.subject, mins);
+          if (d >= yearStart && d <= yearEnd) addAct(cloned.periods.year, p.subject, mins);
+        }
+      });
+      return cloned;
+    }
+
+    function buildOfflineDashboardData() {
+      const cached = loadJSON(STORAGE_KEYS.CACHED_DASHBOARD, null);
+      if (cached && cached.periods) {
+        return mergeOfflineQueueIntoDashboard(cached);
+      }
+      const localLogs = Array.isArray(studyLogs) ? studyLogs : [];
+      if (!localLogs.length && !offlineLogQueue.length) return null;
+
+      const makeBucket = () => {
+        const actual = {}, planned = {};
+        SUBJECTS.forEach(s => { actual[s] = 0; planned[s] = 0; });
+        return { actual: 0, planned: 0, bySubject: { actual, planned } };
+      };
+      const base = {
+        status: 'ok',
+        todayEvents: [],
+        overdueEvents: [],
+        periods: {
+          today: makeBucket(),
+          week: makeBucket(),
+          month: makeBucket(),
+          year: makeBucket()
+        }
+      };
+      const ctx = getPeriodContext(selectedPeriod, periodOffset);
+      const ref = ctx.baseDate ? new Date(`${ctx.baseDate}T00:00:00`) : new Date();
+      const dayStart = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate(), 0, 0, 0, 0);
+      const dayEnd = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate(), 23, 59, 59, 999);
+      const dow = (ref.getDay() + 6) % 7;
+      const weekStart = new Date(dayStart); weekStart.setDate(dayStart.getDate() - dow);
+      const weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate() + 6); weekEnd.setHours(23, 59, 59, 999);
+      const monthStart = new Date(ref.getFullYear(), ref.getMonth(), 1, 0, 0, 0, 0);
+      const monthEnd = new Date(ref.getFullYear(), ref.getMonth() + 1, 0, 23, 59, 59, 999);
+      const yearStart = new Date(ref.getFullYear(), 0, 1, 0, 0, 0, 0);
+      const yearEnd = new Date(ref.getFullYear(), 11, 31, 23, 59, 59, 999);
+
+      const addAct = (b, subj, mins) => {
+        b.actual += mins;
+        b.bySubject.actual[subj] = (b.bySubject.actual[subj] || 0) + mins;
+      };
+      localLogs.forEach(l => {
+        const d = new Date(String(l.date).replace(/-/g, '/'));
+        if (isNaN(d.getTime())) return;
+        const mins = Number(l.minutes) || 0;
+        if (d >= dayStart && d <= dayEnd) addAct(base.periods.today, l.subject, mins);
+        if (d >= weekStart && d <= weekEnd) addAct(base.periods.week, l.subject, mins);
+        if (d >= monthStart && d <= monthEnd) addAct(base.periods.month, l.subject, mins);
+        if (d >= yearStart && d <= yearEnd) addAct(base.periods.year, l.subject, mins);
+      });
+      return mergeOfflineQueueIntoDashboard(base);
+    }
+
+    async function sendSingleLogToRemote(payload) {
+      const hasGoogleDirect = useGoogleDirectMode();
+      if (hasGoogleDirect) {
+        await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${googleAuth.spreadsheetId}/values/log!A:I:append?valueInputOption=USER_ENTERED`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            values: [[
+              payload.date, payload.subject, payload.material, payload.minutes,
+              payload.topic, payload.rating, payload.memo, payload.start_time, payload.end_time
+            ]]
+          })
+        });
+        return;
+      }
+      if (settings.gasUrl) {
+        const res = await fetch(settings.gasUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify(payload)
+        });
+        const json = await res.json();
+        if (json.status !== 'ok') throw new Error(json.message || 'GAS送信エラー');
+        return;
+      }
+      throw new Error('SYNC_TARGET_NOT_READY');
+    }
+
+    function enqueueOfflineLog(payload) {
+      const item = {
+        id: `off_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        savedAt: Date.now(),
+        payload
+      };
+      offlineLogQueue.push(item);
+      saveOfflineLogQueue();
+
+      // ローカルの学習ログとダッシュボードへ楽観的に即時反映
+      const isoDate = String(payload.date || '').replace(/\//g, '-');
+      studyLogs = [...(Array.isArray(studyLogs) ? studyLogs : []), Object.assign({}, payload, { date: isoDate, _offlineId: item.id })];
+      saveJSON(STORAGE_KEYS.STUDY_LOGS, studyLogs);
+      const updatedDash = buildOfflineDashboardData();
+      if (updatedDash) {
+        currentData = updatedDash;
+        currentIsDemo = false;
+        renderDashboard(currentData, false);
+      }
+      renderPersonalCoach();
+      renderOfflineStatusUI();
+      return item;
+    }
+
+    function renderOfflineStatusUI() {
+      const online = navigator.onLine;
+      const count = offlineLogQueue.length;
+
+      // ヘッダーバッジ
+      const headerBadge = document.getElementById('headerOfflineBadge');
+      const headerDot = document.getElementById('headerOfflineDot');
+      const headerLabel = document.getElementById('headerOfflineLabel');
+      if (headerBadge && headerDot && headerLabel) {
+        const showBadge = !online || count > 0;
+        headerBadge.classList.toggle('hidden', !showBadge);
+        headerBadge.classList.toggle('inline-flex', showBadge);
+        if (!online) {
+          headerDot.className = 'h-2 w-2 rounded-full bg-amber-500';
+          headerLabel.textContent = count > 0 ? `オフライン (${count})` : 'オフライン';
+        } else if (count > 0) {
+          headerDot.className = 'h-2 w-2 animate-pulse rounded-full bg-blue-500';
+          headerLabel.textContent = `未同期 ${count}件`;
+        }
+      }
+
+      // 全ビュー共通オフラインバナー
+      const banner = document.getElementById('offlineModeBanner');
+      const bannerMsg = document.getElementById('offlineBannerMessage');
+      const bannerSyncBtn = document.getElementById('bannerSyncOfflineBtn');
+      if (banner && bannerMsg && bannerSyncBtn) {
+        const showBanner = !online || count > 0;
+        banner.classList.toggle('hidden', !showBanner);
+        banner.classList.toggle('flex', showBanner);
+        if (!online) {
+          bannerMsg.textContent = count > 0
+            ? `現在オフラインです（未同期の記録 ${count}件を端末に保持中）。オンライン復帰時に自動でスプレッドシートへ同期されます。`
+            : '現在オフラインです。タイマー計測と学習記録は端末に保存され、オンライン復帰時に自動でスプレッドシートへ同期されます。';
+          bannerSyncBtn.classList.add('hidden');
+        } else if (count > 0) {
+          bannerMsg.textContent = `オフラインで保存された学習記録が ${count}件 あります。「今すぐ同期」でスプレッドシートへ反映できます。`;
+          bannerSyncBtn.classList.remove('hidden');
+        }
+      }
+
+      // 送信ボタンラベル
+      const submitBtn = document.getElementById('submitLogBtn');
+      if (submitBtn && !submitBtn.disabled) {
+        submitBtn.textContent = !online
+          ? '端末にオフライン保存する'
+          : (useGoogleDirectMode() || settings.gasUrl)
+            ? 'スプレッドシートに記録する'
+            : '端末に保存する（後で同期可）';
+      }
+
+      // 学習記録ビュー内の未同期キューカード
+      const card = document.getElementById('offlineQueueCard');
+      const countEl = document.getElementById('offlineQueueCount');
+      const listEl = document.getElementById('offlineQueueList');
+      const syncBtn = document.getElementById('syncOfflineQueueBtn');
+      if (!card || !countEl || !listEl || !syncBtn) return;
+
+      card.classList.toggle('hidden', count === 0);
+      countEl.textContent = String(count);
+      syncBtn.disabled = isSyncingOfflineQueue || !online;
+      syncBtn.textContent = isSyncingOfflineQueue
+        ? '同期中...'
+        : !online ? 'オフライン待機中' : '☁️ 今すぐ同期';
+
+      listEl.innerHTML = offlineLogQueue.map(item => {
+        const p = item.payload || {};
+        return `
+          <div class="flex items-center justify-between gap-2 rounded-xl border border-amber-200/80 bg-white/90 px-3 py-2 text-xs dark:border-amber-900/50 dark:bg-slate-900/80">
+            <div class="min-w-0">
+              <div class="truncate font-bold text-slate-800 dark:text-slate-100">
+                ${escapeHTML(p.subject || '')} · ${escapeHTML(p.material || '')}（${Number(p.minutes) || 0}分）
+              </div>
+              <div class="truncate text-[11px] text-slate-500 dark:text-slate-400">
+                ${escapeHTML(p.date || '')} ${escapeHTML(p.start_time || '')}〜${escapeHTML(p.end_time || '')}${p.topic ? ` / ${escapeHTML(p.topic)}` : ''}
+              </div>
+            </div>
+            <button type="button" data-delete-offline-id="${escapeHTML(item.id)}"
+              class="shrink-0 rounded-lg border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-500 hover:border-rose-300 hover:text-rose-600 dark:border-slate-700 dark:text-slate-400 transition">
+              削除
+            </button>
+          </div>`;
+      }).join('');
+
+      listEl.querySelectorAll('[data-delete-offline-id]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-delete-offline-id');
+          offlineLogQueue = offlineLogQueue.filter(x => x.id !== id);
+          saveOfflineLogQueue();
+          studyLogs = (Array.isArray(studyLogs) ? studyLogs : []).filter(l => l._offlineId !== id);
+          saveJSON(STORAGE_KEYS.STUDY_LOGS, studyLogs);
+          const updatedDash = buildOfflineDashboardData();
+          if (updatedDash) {
+            currentData = updatedDash;
+            renderDashboard(currentData, false);
+          }
+          renderPersonalCoach();
+          renderOfflineStatusUI();
+          showToast('未同期の記録を削除しました');
+        });
+      });
+    }
+
+    async function syncOfflineLogQueue({ silent = false, promptReconnect = false } = {}) {
+      if (isSyncingOfflineQueue || !offlineLogQueue.length) return;
+      if (!navigator.onLine) {
+        if (!silent) showToast('オフラインのため同期できません。オンライン復帰後に自動で同期されます');
+        return;
+      }
+      if (googleAuth.user && googleAuth.spreadsheetId && !isGoogleSignedIn() && navigator.onLine) {
+        await trySilentRefreshGoogleToken(true);
+      }
+      const hasTarget = useGoogleDirectMode() || !!settings.gasUrl;
+      if (!hasTarget) {
+        if (promptReconnect) {
+          if (googleAuth.user && googleAuth.spreadsheetId) {
+            try {
+              await requestGoogleLogin();
+            } catch (e) {
+              showToast(e.message || 'Google再接続がキャンセルされました');
+              return;
+            }
+          } else {
+            openOnboardingModal(isGoogleSignedIn() ? 2 : 1);
+            showToast('同期するにはGoogleログイン＆初期設定を完了してください');
+            return;
+          }
+        } else {
+          return;
+        }
+      }
+
+      isSyncingOfflineQueue = true;
+      renderOfflineStatusUI();
+
+      let syncedCount = 0;
+      const remaining = [];
+      for (let i = 0; i < offlineLogQueue.length; i++) {
+        const item = offlineLogQueue[i];
+        try {
+          await sendSingleLogToRemote(item.payload);
+          syncedCount++;
+          // 重複防止のためローカル仮レコードを除去（直後のfetchで正規データが取得される）
+          studyLogs = (Array.isArray(studyLogs) ? studyLogs : []).filter(l => l._offlineId !== item.id);
+        } catch (err) {
+          // 残りは安全にキューへ保持
+          remaining.push(item, ...offlineLogQueue.slice(i + 1));
+          if (!silent) showToast(`一部の同期に失敗しました（${err.message || '通信エラー'}）`);
+          break;
+        }
+      }
+
+      offlineLogQueue = remaining;
+      saveOfflineLogQueue();
+      saveJSON(STORAGE_KEYS.STUDY_LOGS, studyLogs);
+      isSyncingOfflineQueue = false;
+      renderOfflineStatusUI();
+
+      if (syncedCount > 0) {
+        showToast(`☁️ オフライン記録 ${syncedCount}件をスプレッドシートへ同期しました`);
+        fetchAndRenderData(false);
+      }
+    }
+
+    document.getElementById('syncOfflineQueueBtn')?.addEventListener('click', () => {
+      syncOfflineLogQueue({ silent: false, promptReconnect: true });
+    });
+    document.getElementById('bannerSyncOfflineBtn')?.addEventListener('click', () => {
+      syncOfflineLogQueue({ silent: false, promptReconnect: true });
+    });
+    document.getElementById('headerOfflineBadge')?.addEventListener('click', () => {
+      switchAppTab('logView');
+      if (navigator.onLine && offlineLogQueue.length > 0) {
+        syncOfflineLogQueue({ silent: false, promptReconnect: true });
+      }
+    });
+
+    window.addEventListener('online', () => {
+      renderOfflineStatusUI();
+      if (offlineLogQueue.length > 0) {
+        showToast('オンラインに復帰しました。未同期の記録を自動同期します...');
+        syncOfflineLogQueue({ silent: false, promptReconnect: false });
+      } else {
+        showToast('オンラインに復帰しました');
+      }
+    });
+    window.addEventListener('offline', () => {
+      renderOfflineStatusUI();
+      showToast('オフラインになりました（記録は端末に自動保存されます）');
+    });
+
     document.getElementById('submitLogBtn').onclick = async () => {
       const statusEl = document.getElementById('logStatus');
       if (localStorage.getItem(STORAGE_KEYS.TIMER_START)) stopTimer(false);
+      if (pomoState.running) pausePomo(true);
+      if (!minutesInput.value && getPomoTotalFocusSec() > 0) {
+        applyPomoFocusToForm(true);
+      }
 
       const minutes = Number(minutesInput.value);
       if (!selectedSubject || !selectedMaterial || !minutes) {
         statusEl.textContent = '科目・教材・学習時間（分）を入力してください。';
-        return;
-      }
-      const hasGoogleDirect = useGoogleDirectMode();
-      if (!hasGoogleDirect && !settings.gasUrl) {
-        openOnboardingModal(isGoogleSignedIn() ? 2 : 1);
-        showToast('先にGoogleログイン＆スプレッドシート自動作成を完了してください');
         return;
       }
 
@@ -2529,47 +3539,54 @@
         end_time: endTime
       };
 
-      const btn = document.getElementById('submitLogBtn');
-      btn.disabled = true;
-      statusEl.textContent = '送信中...';
-
-      try {
-        if (hasGoogleDirect) {
-          await gApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${googleAuth.spreadsheetId}/values/log!A:I:append?valueInputOption=USER_ENTERED`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              values: [[
-                payload.date, payload.subject, payload.material, payload.minutes,
-                payload.topic, payload.rating, payload.memo, payload.start_time, payload.end_time
-              ]]
-            })
-          });
-        } else {
-          const res = await fetch(settings.gasUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify(payload)
-          });
-          const json = await res.json();
-          if (json.status !== 'ok') throw new Error(json.message);
+      const resetFormAndTimers = (syncTimer) => {
+        resetTimer(syncTimer);
+        if (pomoState.accumFocusSec > 0 || pomoState.completedWorkSessions > 0) {
+          resetPomo(true);
         }
-        statusEl.textContent = `記録しました（${dateStr} ${startTime}〜${endTime} / ${selectedSubject} / ${minutes}分）`;
-        showToast(`${selectedSubject} ${minutes}分を記録しました`);
-        resetTimer(true);
         studyDateInput.value = fmtDateInput(new Date());
         minutesInput.value = '';
         startTimeInput.value = '';
         endTimeInput.value = '';
         document.getElementById('topicInput').value = '';
         document.getElementById('memoInput').value = '';
+      };
+
+      if (navigator.onLine && googleAuth.user && googleAuth.spreadsheetId && !isGoogleSignedIn()) {
+        await trySilentRefreshGoogleToken(true);
+      }
+      const hasGoogleDirect = useGoogleDirectMode();
+      const canSendNow = navigator.onLine && (hasGoogleDirect || !!settings.gasUrl);
+
+      // オフラインまたは未接続・トークン期限切れ時は即座に端末へオフライン保存
+      if (!canSendNow) {
+        enqueueOfflineLog(payload);
+        const reason = !navigator.onLine ? 'オフライン保存' : '端末に一時保存（未同期）';
+        statusEl.textContent = `${reason}しました（${dateStr} ${startTime}〜${endTime} / ${selectedSubject} / ${minutes}分）`;
+        showToast(`📱 ${selectedSubject} ${minutes}分を端末に保存しました（再接続時に同期）`);
+        resetFormAndTimers(false);
+        return;
+      }
+
+      const btn = document.getElementById('submitLogBtn');
+      btn.disabled = true;
+      statusEl.textContent = '送信中...';
+
+      try {
+        await sendSingleLogToRemote(payload);
+        statusEl.textContent = `記録しました（${dateStr} ${startTime}〜${endTime} / ${selectedSubject} / ${minutes}分）`;
+        showToast(`${selectedSubject} ${minutes}分を記録しました`);
+        resetFormAndTimers(true);
         fetchAndRenderData(false);
       } catch (err) {
-        statusEl.textContent = hasGoogleDirect
-          ? `送信エラー：${err.message || 'Google認証を再接続してください。'}`
-          : '送信エラー：GASを新バージョンで再デプロイしたか確認してください。';
+        // 通信エラー・トークン期限切れ等で失敗しても記録を失わずオフラインキューへ退避
+        enqueueOfflineLog(payload);
+        statusEl.textContent = `送信できなかったため端末に一時保存しました（${err.message || '通信エラー'}）`;
+        showToast(`📱 通信エラーのため端末に保存しました（後で自動同期されます）`);
+        resetFormAndTimers(false);
       } finally {
         btn.disabled = false;
+        renderOfflineStatusUI();
       }
     };
 
@@ -2778,7 +3795,12 @@
     // =========================================================================
     // 9. イベントリスナー（期間切替・過去ナビ・Drive OCR・答練手入力）＆ 初期化
     // =========================================================================
-    document.getElementById('refreshDataBtn').addEventListener('click', () => fetchAndRenderData(true));
+    document.getElementById('refreshDataBtn').addEventListener('click', async () => {
+      if (navigator.onLine && offlineLogQueue.length > 0) {
+        await syncOfflineLogQueue({ silent: false, promptReconnect: false });
+      }
+      fetchAndRenderData(true);
+    });
 
     document.getElementById('prevPeriodBtn').addEventListener('click', () => {
       periodOffset -= 1;
@@ -3382,6 +4404,100 @@
           currentIsDemo = true;
         }
 
+        let serverAuthSupported = (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1');
+        let silentRefreshPromise = null;
+
+        async function trySilentRefreshGoogleToken(force = false) {
+          if (!serverAuthSupported || !navigator.onLine) return false;
+          if (!force && isGoogleSignedIn() && (googleAuth.expiresAt - Date.now() > 5 * 60 * 1000)) {
+            return true;
+          }
+          if (silentRefreshPromise) return silentRefreshPromise;
+
+          silentRefreshPromise = (async () => {
+            try {
+              const res = await fetch('/api/auth', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'refresh' })
+              });
+              if (res.status === 404 || res.status === 503) {
+                serverAuthSupported = false;
+                return false;
+              }
+              const json = await res.json().catch(() => ({}));
+              if (!res.ok || json.status !== 'ok' || !json.access_token) {
+                if (res.status === 401) {
+                  googleAuth.hasLongSession = false;
+                  saveJSON(STORAGE_KEYS.GOOGLE_AUTH, googleAuth);
+                }
+                return false;
+              }
+              googleAuth.accessToken = json.access_token;
+              googleAuth.expiresAt = Date.now() + ((Number(json.expires_in) || 3500) * 1000);
+              googleAuth.hasLongSession = true;
+              saveJSON(STORAGE_KEYS.GOOGLE_AUTH, googleAuth);
+              renderAccountUI();
+              renderOfflineStatusUI();
+              return true;
+            } catch (_) {
+              return false;
+            } finally {
+              silentRefreshPromise = null;
+            }
+          })();
+          return silentRefreshPromise;
+        }
+
+        async function finalizeGoogleSignIn(newToken, expiresInSec, prevEmail, hasLongSession = false) {
+          const newExpiresAt = Date.now() + ((Number(expiresInSec) || 3500) * 1000);
+          let newUser = null;
+          try {
+            const uRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+              headers: { Authorization: `Bearer ${newToken}` }
+            });
+            newUser = await uRes.json();
+          } catch (e) { }
+          // 別アカウントへ切り替わった場合は前ユーザーのローカルキャッシュを完全消去
+          if (prevEmail && newUser?.email && prevEmail !== newUser.email) {
+            clearAllUserLocalData(true);
+          }
+          googleAuth.accessToken = newToken;
+          googleAuth.expiresAt = newExpiresAt;
+          googleAuth.user = newUser || googleAuth.user;
+          googleAuth.hasLongSession = Boolean(hasLongSession);
+          saveJSON(STORAGE_KEYS.GOOGLE_AUTH, googleAuth);
+          renderAccountUI();
+          renderOfflineStatusUI();
+          if (navigator.onLine && offlineLogQueue.length > 0 && googleAuth.spreadsheetId) {
+            setTimeout(() => syncOfflineLogQueue({ silent: false, promptReconnect: false }), 300);
+          }
+          return googleAuth;
+        }
+
+        function requestGoogleLoginViaTokenClient(prevEmail) {
+          return new Promise((resolve, reject) => {
+            const tokenClient = google.accounts.oauth2.initTokenClient({
+              client_id: googleClientId,
+              scope: GOOGLE_SCOPES,
+              callback: async (resp) => {
+                if (resp.error) {
+                  reject(new Error(resp.error_description || resp.error));
+                  return;
+                }
+                try {
+                  const auth = await finalizeGoogleSignIn(resp.access_token, resp.expires_in, prevEmail, false);
+                  resolve(auth);
+                } catch (e) {
+                  reject(e);
+                }
+              }
+            });
+            tokenClient.requestAccessToken({ prompt: googleAuth.user ? '' : 'consent' });
+          });
+        }
+
         function requestGoogleLogin() {
           return new Promise((resolve, reject) => {
             if (!googleClientId) {
@@ -3393,44 +4509,78 @@
               return;
             }
             const prevEmail = googleAuth.user?.email || '';
-            const tokenClient = google.accounts.oauth2.initTokenClient({
-              client_id: googleClientId,
-              scope: GOOGLE_SCOPES,
-              callback: async (resp) => {
-                if (resp.error) {
-                  reject(new Error(resp.error_description || resp.error));
-                  return;
+
+            // サーバー連携が可能な環境では認可コードフロー（30日間自動更新・リフレッシュトークン対応）を使用
+            if (serverAuthSupported && typeof google.accounts.oauth2.initCodeClient === 'function') {
+              const codeClient = google.accounts.oauth2.initCodeClient({
+                client_id: googleClientId,
+                scope: GOOGLE_SCOPES,
+                ux_mode: 'popup',
+                callback: async (resp) => {
+                  if (resp.error) {
+                    reject(new Error(resp.error_description || resp.error));
+                    return;
+                  }
+                  if (!resp.code) {
+                    reject(new Error('Google認可コードの取得に失敗しました'));
+                    return;
+                  }
+                  try {
+                    const exRes = await fetch('/api/auth', {
+                      method: 'POST',
+                      credentials: 'same-origin',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ action: 'exchange', code: resp.code })
+                    });
+                    if (exRes.status === 404 || exRes.status === 503) {
+                      // サーバー側に GOOGLE_CLIENT_SECRET 未設定時は従来の1時間トークン方式へ自動フォールバック
+                      serverAuthSupported = false;
+                      const fallbackAuth = await requestGoogleLoginViaTokenClient(prevEmail);
+                      resolve(fallbackAuth);
+                      return;
+                    }
+                    const exJson = await exRes.json().catch(() => ({}));
+                    if (!exRes.ok || exJson.status !== 'ok' || !exJson.access_token) {
+                      reject(new Error(exJson.message || 'Google認証トークンの取得に失敗しました'));
+                      return;
+                    }
+                    const auth = await finalizeGoogleSignIn(
+                      exJson.access_token,
+                      exJson.expires_in,
+                      prevEmail,
+                      Boolean(exJson.has_refresh_token)
+                    );
+                    resolve(auth);
+                  } catch (err) {
+                    reject(err);
+                  }
+                },
+                error_callback: (err) => {
+                  reject(new Error(err?.message || 'Googleログインがキャンセルされました'));
                 }
-                const newToken = resp.access_token;
-                const newExpiresAt = Date.now() + ((Number(resp.expires_in) || 3500) * 1000);
-                let newUser = null;
-                try {
-                  const uRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                    headers: { Authorization: `Bearer ${newToken}` }
-                  });
-                  newUser = await uRes.json();
-                } catch (e) { }
-                // 別アカウントへ切り替わった場合は前ユーザーのローカルキャッシュを完全消去
-                if (prevEmail && newUser?.email && prevEmail !== newUser.email) {
-                  clearAllUserLocalData(true);
-                }
-                googleAuth.accessToken = newToken;
-                googleAuth.expiresAt = newExpiresAt;
-                googleAuth.user = newUser || googleAuth.user;
-                saveJSON(STORAGE_KEYS.GOOGLE_AUTH, googleAuth);
-                renderAccountUI();
-                resolve(googleAuth);
-              }
-            });
-            tokenClient.requestAccessToken({ prompt: googleAuth.user ? '' : 'consent' });
+              });
+              codeClient.requestCode();
+              return;
+            }
+
+            requestGoogleLoginViaTokenClient(prevEmail).then(resolve).catch(reject);
           });
         }
 
-        async function gApiFetch(url, options = {}) {
+        async function gApiFetch(url, options = {}, _retried = false) {
+          if (googleAuth.user && !isGoogleSignedIn() && navigator.onLine) {
+            await trySilentRefreshGoogleToken(true);
+          }
           const headers = Object.assign({ Authorization: `Bearer ${googleAuth.accessToken}` }, options.headers || {});
           const res = await fetch(url, Object.assign({}, options, { headers }));
           const json = await res.json();
           if (res.status === 401) {
+            if (!_retried && navigator.onLine) {
+              const refreshed = await trySilentRefreshGoogleToken(true);
+              if (refreshed) {
+                return gApiFetch(url, options, true);
+              }
+            }
             googleAuth.expiresAt = 0;
             saveJSON(STORAGE_KEYS.GOOGLE_AUTH, googleAuth);
             renderAccountUI();
@@ -3571,15 +4721,24 @@
         });
 
         document.getElementById('googleSignOutBtn').addEventListener('click', () => {
+          if (serverAuthSupported) {
+            fetch('/api/auth', {
+              method: 'POST',
+              credentials: 'same-origin',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'logout' })
+            }).catch(() => { });
+          }
           clearAllUserLocalData(true);
           renderAccountUI();
+          renderOfflineStatusUI();
           renderCountdowns();
           renderQuickLinks();
           renderExamResults();
           renderExamMistakeDashboard();
           renderPersonalCoach();
           fetchAndRenderData(false);
-          showToast('ログアウトし、端末内の学習キャッシュ・一時APIキーをすべて消去しました');
+          showToast('ログアウトし、端末内の学習キャッシュ・長期セッションをすべて消去しました');
         });
 
         document.getElementById('bannerStartOnboardingBtn').addEventListener('click', () => {
@@ -4766,6 +5925,51 @@
         }
         if (localStorage.getItem(STORAGE_KEYS.TIMER_START)) startTimer(false);
         else updateTimerUI();
+
+        // ポモドーロタイマーの初期化・リロード復帰
+        syncPomoSettingsInputs();
+        switchTimerMode(timerMode);
+        if (pomoState.running) {
+          if (getPomoRemainingSec() <= 0) {
+            transitionPomoPhase(true);
+          } else {
+            clearInterval(pomoInterval);
+            pomoInterval = setInterval(tickPomo, 500);
+            updatePomoUI();
+          }
+        } else {
+          updatePomoUI();
+        }
+
+        // オフライン状態・未同期キューUIの初期化と起動時自動同期（長期セッションがあれば先にサイレント更新）
+        renderOfflineStatusUI();
+        (async () => {
+          if (googleAuth.user && navigator.onLine && (!isGoogleSignedIn() || (googleAuth.expiresAt - Date.now() < 10 * 60 * 1000))) {
+            await trySilentRefreshGoogleToken(true);
+          }
+          if (navigator.onLine && offlineLogQueue.length > 0 && (useGoogleDirectMode() || settings.gasUrl)) {
+            await syncOfflineLogQueue({ silent: true, promptReconnect: false });
+          }
+        })();
+
+        // タブ復帰時・5分おきに残り10分未満ならバックグラウンドでサイレント更新
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible' && googleAuth.user && navigator.onLine) {
+            if (!isGoogleSignedIn() || (googleAuth.expiresAt - Date.now() < 10 * 60 * 1000)) {
+              trySilentRefreshGoogleToken(true);
+            }
+          }
+        });
+        setInterval(() => {
+          if (googleAuth.user && navigator.onLine && (!isGoogleSignedIn() || (googleAuth.expiresAt - Date.now() < 10 * 60 * 1000))) {
+            trySilentRefreshGoogleToken(true);
+          }
+        }, 5 * 60 * 1000);
+
+        // Service Worker登録（オフライン起動・キャッシュ対応）
+        if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+          navigator.serviceWorker.register('./sw.js').catch(() => { });
+        }
 
         const savedTab = (() => { try { return localStorage.getItem(STORAGE_KEYS.ACTIVE_TAB); } catch (e) { return 'hubView'; } })();
         switchAppTab((savedTab === 'logView' || savedTab === 'coachView') ? savedTab : 'hubView');
