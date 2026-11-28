@@ -718,9 +718,9 @@
             class="block h-11 w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none sm:text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" />
         </div>
 
-        <!-- 手応え -->
+        <!-- 集中度合い -->
         <div>
-          <label class="mb-2 block text-xs font-bold text-slate-500 dark:text-slate-400">手応え（任意）</label>
+          <label class="mb-2 block text-xs font-bold text-slate-500 dark:text-slate-400">集中度合い（任意）</label>
           <div id="ratingChips" class="flex flex-wrap gap-2"></div>
         </div>
 
@@ -743,40 +743,151 @@
     </div>
 
     <!-- ===================================================================== -->
-    <!-- ビュー3：パーソナル改善コーチ（10パターン自動診断・時間帯×科目タイプ分析） -->
+    <!-- ビュー3：パーソナル改善コーチ（全55指標定量エンジン ＋ AIコーチ ＋ 自己進化） -->
     <!-- ===================================================================== -->
-    <div id="coachView" class="hidden space-y-6">
+    <div id="coachView" class="hidden space-y-5">
       <section id="personalCoachSection" class="space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-2">
+        <!-- ヘッダー & コーチ性格切替 & 外部AI送信 -->
+        <div class="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 class="text-base font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
-              🧭 パーソナル改善コーチ（10パターン自動診断）
-            </h2>
-            <p class="mt-0.5 text-xs text-slate-400">学習ログ（時間帯・1クール時間・集中度）× 予実 × 答練誤答データから優先改善アクションを提案します</p>
+            <div class="flex flex-wrap items-center gap-2">
+              <h2 class="text-base font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
+                🧭 パーソナル改善コーチ（全55指標 × AI）
+              </h2>
+              <span id="coachActiveCountBadge"
+                class="rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">診断中...</span>
+            </div>
+            <p class="mt-0.5 text-xs text-slate-400">学習ログ（集中度・時間帯・教材3分類）× 予実 × 答練誤答から全55指標を自動算出し、最適アクションを提案します</p>
           </div>
-          <div class="flex items-center gap-2">
-            <span id="coachActiveCountBadge"
-              class="rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">診断中...</span>
-            <button id="toggleAllCoachPatternsBtn" type="button"
-              class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 transition">
-              全10パターン詳細 ▾
+          <div class="flex flex-wrap items-center gap-2">
+            <select id="coachPersonaSelect" aria-label="コーチ性格切替"
+              class="h-8 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-bold text-slate-700 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+              <option value="strategist">🧠 論理ストラテジスト</option>
+              <option value="passionate">🔥 熱血伴走コーチ</option>
+              <option value="spartan">⚡ スパルタ合格請負人</option>
+            </select>
+            <button id="coachSendChatGptBtn" type="button"
+              class="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-bold text-slate-700 hover:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 transition">
+              ChatGPT ↗
+            </button>
+            <button id="coachSendGeminiBtn" type="button"
+              class="rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-[11px] font-bold text-blue-700 hover:bg-blue-100 dark:border-blue-900 dark:bg-blue-950/60 dark:text-blue-300 transition">
+              Gemini ↗
             </button>
           </div>
         </div>
-        <div id="coachAdviceGrid" class="grid grid-cols-1 gap-3 md:grid-cols-2"></div>
-        <!-- 時間帯 × 科目タイプ別 1クール継続時間＆集中度サマリー -->
-        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200">⏱ 時間帯 × 科目タイプ別：平均1クール時間 ＆ 集中度</h3>
-            <span class="text-[11px] text-slate-400">朝(5-11時) / 昼(12-17時) / 夜(18-4時) · 集中度は手応え(◎/○/△)から自動算出</span>
+
+        <!-- 3段階の分析濃度切替タブ & 最新答練分析ボタン & AI分析実行ボタン -->
+        <div class="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div class="flex flex-wrap items-center gap-1.5" role="tablist" aria-label="分析濃度切替">
+            <button type="button" data-coach-depth="daily"
+              class="coach-depth-tab rounded-xl bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition">
+              ⚡ 毎日（ライト）
+            </button>
+            <button type="button" data-coach-depth="weekly"
+              class="coach-depth-tab rounded-xl px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition">
+              📊 週末（ミドル）
+            </button>
+            <button type="button" data-coach-depth="monthly"
+              class="coach-depth-tab rounded-xl px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition">
+              🔬 月末（ディープ）
+            </button>
           </div>
-          <div id="sessionMatrixBox" class="grid grid-cols-1 gap-3 sm:grid-cols-3"></div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button id="analyzeLatestExamBtn" type="button"
+              class="inline-flex items-center gap-1 rounded-xl bg-rose-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-rose-700 active:scale-[0.98] transition">
+              <span>🎯 最新の答練を分析する</span>
+            </button>
+            <button id="runAiCoachBtn" type="button"
+              class="inline-flex items-center gap-1 rounded-xl bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700 active:scale-[0.98] transition">
+              <span>✨ AIコーチ分析を実行</span>
+            </button>
+          </div>
         </div>
-        <!-- 全10パターン診断ステータス（折りたたみ） -->
-        <div id="coachAllPatternsPanel"
-          class="hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div class="mb-3 text-sm font-bold text-slate-700 dark:text-slate-200">全10パターンの診断ステータス</div>
-          <div id="coachAllPatternsList" class="grid grid-cols-1 gap-2 sm:grid-cols-2"></div>
+
+        <!-- AI総評・最優先1アクション -->
+        <div id="coachSummaryCard"
+          class="rounded-2xl border border-indigo-200/80 bg-gradient-to-br from-indigo-50/70 via-white to-blue-50/50 p-4 shadow-sm dark:border-indigo-900/60 dark:from-indigo-950/40 dark:via-slate-900 dark:to-slate-900">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div id="coachHeadline" class="text-sm font-extrabold text-slate-900 dark:text-slate-100">定量メトリクスを解析中...</div>
+            <span id="coachModeSourceBadge"
+              class="rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-bold text-slate-500 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700">ローカル即時算出</span>
+          </div>
+          <p id="coachSummaryText" class="mt-1.5 text-xs leading-relaxed text-slate-600 dark:text-slate-300"></p>
+          <div id="coachNextActionBox"
+            class="mt-3 hidden rounded-xl border border-indigo-200 bg-white/90 px-3.5 py-2.5 text-xs font-bold text-indigo-800 dark:border-indigo-800/70 dark:bg-slate-800/80 dark:text-indigo-200"></div>
+        </div>
+
+        <!-- ポジティブ評価（強み承認カード） -->
+        <div id="coachStrengthsSection" class="hidden space-y-2">
+          <h3 class="text-xs font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">🌟 強み・継続できていること</h3>
+          <div id="coachStrengthsGrid" class="grid grid-cols-1 gap-3 md:grid-cols-2"></div>
+        </div>
+
+        <!-- 改善提案カード（ワンタップ実行 ＋ 自己進化フィードバック） -->
+        <div class="space-y-2">
+          <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">🛠 優先改善アクション</h3>
+          <div id="coachAdviceGrid" class="grid grid-cols-1 gap-3 md:grid-cols-2"></div>
+        </div>
+
+        <!-- 教材3タイプ自動分類バランス ＆ 時間帯×科目タイプ別マトリクス -->
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div class="mb-2 flex items-center justify-between">
+              <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200">📚 学習内容3タイプ比率</h3>
+              <span class="text-[10px] text-slate-400">自動分類</span>
+            </div>
+            <div id="materialTypeMixBox" class="space-y-2.5 text-xs"></div>
+          </div>
+          <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-2 dark:border-slate-800 dark:bg-slate-900">
+            <div class="mb-2.5 flex flex-wrap items-center justify-between gap-2">
+              <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200">⏱ 時間帯 × 科目タイプ別：平均1クール時間 ＆ 集中度</h3>
+              <span class="text-[11px] text-slate-400">朝(5-11時) / 昼(12-17時) / 夜(18-4時) · 集中度合い(◎/○/△)から自動算出</span>
+            </div>
+            <div id="sessionMatrixBox" class="grid grid-cols-1 gap-3 sm:grid-cols-3"></div>
+          </div>
+        </div>
+
+        <!-- 自己進化設定パネル（ユーザーの制約・追加指標M56〜・要望送信） -->
+        <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200">🧬 コーチの記憶・カスタマイズ（自己進化ループ）</h3>
+              <p class="text-[11px] text-slate-400">あなたの生活制約や独自に監視したい指標（M56〜）をAIに伝えると、次回以降の分析に自動反映されます</p>
+            </div>
+          </div>
+          <div id="coachConstraintsList" class="mt-3 flex flex-wrap gap-1.5"></div>
+          <div class="mt-3 flex flex-col gap-2 sm:flex-row">
+            <input id="coachGlobalOpinionInput" type="text"
+              placeholder="例：平日は仕事で朝は6時〜7時しかできない／毎週「監査論の基準読み込み」を60分以上やったか指標追加して"
+              class="h-10 flex-1 rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" />
+            <button id="coachGlobalOpinionBtn" type="button"
+              class="h-10 shrink-0 rounded-xl bg-slate-900 px-4 text-xs font-bold text-white hover:bg-slate-700 dark:bg-indigo-600 dark:hover:bg-indigo-500 transition">
+              💬 意見・指標追加を反映
+            </button>
+          </div>
+          <div id="coachEvolutionStatus" class="mt-2 min-h-[1rem] text-[11px] font-medium text-indigo-600 dark:text-indigo-400"></div>
+        </div>
+
+        <!-- 全55指標（＋カスタム指標）ステータス一覧アコーディオン -->
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <button id="toggleAllCoachPatternsBtn" type="button"
+            class="flex w-full items-center justify-between px-4 py-3.5 text-left transition hover:bg-slate-50 dark:hover:bg-slate-800/60">
+            <div>
+              <div class="text-sm font-bold text-slate-800 dark:text-slate-100">📋 全55指標＋カスタム指標の診断ステータス一覧</div>
+              <div id="coachAll55Summary" class="mt-0.5 text-[11px] text-slate-400">カテゴリA〜Gの全55指標を確認できます</div>
+            </div>
+            <span id="toggleAllCoachChevron" class="text-xs font-bold text-slate-500">詳細を開く ▾</span>
+          </button>
+          <div id="coachAllPatternsPanel" class="hidden border-t border-slate-100 p-4 dark:border-slate-800">
+            <div class="mb-3 flex flex-wrap items-center gap-1.5">
+              <button type="button" data-metric-filter="all" class="metric-filter-btn rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-bold text-white dark:bg-slate-100 dark:text-slate-900">すべて</button>
+              <button type="button" data-metric-filter="alert_warn" class="metric-filter-btn rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">要改善のみ</button>
+              <button type="button" data-metric-filter="strength" class="metric-filter-btn rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">強みのみ</button>
+              <button type="button" data-metric-filter="computed" class="metric-filter-btn rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">算出済みのみ</button>
+            </div>
+            <div id="coachAllPatternsList" class="space-y-4"></div>
+          </div>
         </div>
       </section>
     </div>
@@ -1356,6 +1467,7 @@
       POMO_STATE: 'cpa_pomo_state_v1',
       OFFLINE_LOG_QUEUE: 'cpa_offline_log_queue_v1',
       CACHED_DASHBOARD: 'cpa_hub_cached_dashboard_v1',
+      COACH_PROFILE: 'cpa_hub_coach_profile_v1',
     };
 
     // 複数人公開用 Google OAuth クライアントID（Google Cloud Console で発行したIDをここかアカウント設定画面に入力）
@@ -1448,7 +1560,17 @@
       { key: '社会', words: ['社会', '地理', '歴史', '公民', '公共'] }
     ];
     const SUBJECT_COLORS = ['#2563eb', '#38bdf8', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#64748b', '#ec4899', '#14b8a6', '#f97316', '#6366f1', '#84cc16'];
-    const RATINGS = ['◎ 余裕', '○ 普通', '△ 要復習'];
+    const RATINGS = ['◎ 深く集中', '○ 普通', '△ 散漫・眠気'];
+
+    const DEFAULT_COACH_PROFILE = {
+      persona: 'strategist',
+      base_weights: {},
+      user_constraints: [],
+      custom_metrics: [],
+      material_type_overrides: {},
+      feedback_history: [],
+      updatedAt: 0
+    };
 
     const DEFAULT_SETTINGS = {
       gasUrl: '',
@@ -1582,6 +1704,11 @@
     let reviewedMistakeIds = loadJSON(STORAGE_KEYS.REVIEWED_MISTAKES, []);
     let studyLogs = loadJSON(STORAGE_KEYS.STUDY_LOGS, []);
     let calendarDoneMap = loadJSON(STORAGE_KEYS.CALENDAR_DONE, {});
+    let coachProfile = Object.assign({}, DEFAULT_COACH_PROFILE, loadJSON(STORAGE_KEYS.COACH_PROFILE, DEFAULT_COACH_PROFILE));
+    let allCalendarEvents = [];
+    let activeCoachDepth = 'daily'; // 'daily' | 'weekly' | 'monthly' | 'latest_exam'
+    let latestAiCoachResult = null;
+    let latestMetricsReport = null;
     let activeCalendarTab = 'today'; // 'today' | 'overdue'
     let weeklyHistory = [];
     let selectedPeriod = 'week';
@@ -1990,6 +2117,15 @@
         if (json.calendarDoneMap && typeof json.calendarDoneMap === 'object') {
           calendarDoneMap = json.calendarDoneMap;
           saveJSON(STORAGE_KEYS.CALENDAR_DONE, calendarDoneMap);
+        }
+        if (Array.isArray(json.allCalendarEvents)) {
+          allCalendarEvents = json.allCalendarEvents;
+        }
+        if (json.coachProfile && typeof json.coachProfile === 'object') {
+          if ((json.coachProfile.updatedAt || 0) >= (coachProfile.updatedAt || 0)) {
+            coachProfile = Object.assign({}, DEFAULT_COACH_PROFILE, json.coachProfile);
+            saveJSON(STORAGE_KEYS.COACH_PROFILE, coachProfile);
+          }
         }
         renderExamResults();
         // Hub設定・学習目的・科目・カウントダウン同期
@@ -2540,24 +2676,54 @@
         el.innerHTML = '<span class="text-xs text-slate-400">教材がありません。「編集」から追加してください</span>';
         return;
       }
+      const MAT_TYPE_CYCLE = ['lecture', 'text', 'drill'];
+      const MAT_TYPE_BADGE = {
+        lecture: { label: '講義', cls: 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300' },
+        text: { label: 'テキスト', cls: 'bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300' },
+        drill: { label: '回転', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' }
+      };
       list.forEach((item, idx) => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
+        const mType = typeof window.classifyStudyMaterialType === 'function'
+          ? window.classifyStudyMaterialType(selectedSubject, item, '', '', coachProfile.material_type_overrides)
+          : 'text';
+        const badgeInfo = MAT_TYPE_BADGE[mType] || MAT_TYPE_BADGE.text;
         if (isEditingMaterials) {
-          btn.className = chipClass(false, true);
-          btn.textContent = `${item} ×`;
-          btn.onclick = () => {
+          const wrap = document.createElement('div');
+          wrap.className = 'inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50/70 pl-2.5 pr-1 py-1 text-xs dark:border-rose-900/60 dark:bg-rose-950/30';
+          const tagBtn = document.createElement('button');
+          tagBtn.type = 'button';
+          tagBtn.title = 'クリックで教材タイプ（講義/テキスト/回転）を切替';
+          tagBtn.className = `rounded-full px-1.5 py-0.5 text-[10px] font-bold ${badgeInfo.cls}`;
+          tagBtn.textContent = badgeInfo.label;
+          tagBtn.onclick = () => {
+            const next = MAT_TYPE_CYCLE[(MAT_TYPE_CYCLE.indexOf(mType) + 1) % MAT_TYPE_CYCLE.length];
+            if (!coachProfile.material_type_overrides) coachProfile.material_type_overrides = {};
+            coachProfile.material_type_overrides[`${selectedSubject}::${item}`] = next;
+            saveCoachProfileToCloud();
+            renderMaterials();
+            renderPersonalCoach();
+          };
+          const delBtn = document.createElement('button');
+          delBtn.type = 'button';
+          delBtn.className = 'px-1.5 font-semibold text-rose-700 hover:text-rose-900 dark:text-rose-300';
+          delBtn.textContent = `${item} ×`;
+          delBtn.onclick = () => {
             materialsBySubject[selectedSubject].splice(idx, 1);
             if (selectedMaterial === item) selectedMaterial = '';
             renderMaterials();
             saveMaterialsToCloud();
           };
+          wrap.appendChild(tagBtn);
+          wrap.appendChild(delBtn);
+          el.appendChild(wrap);
         } else {
-          btn.className = chipClass(selectedMaterial === item);
-          btn.textContent = item;
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = chipClass(selectedMaterial === item) + ' inline-flex items-center gap-1.5';
+          btn.innerHTML = `<span>${escapeHTML(item)}</span><span class="rounded-full px-1.5 py-0.2 text-[9px] font-bold ${selectedMaterial === item ? 'bg-white/25 text-white' : badgeInfo.cls}">${badgeInfo.label}</span>`;
           btn.onclick = () => { selectedMaterial = item; renderMaterials(); };
+          el.appendChild(btn);
         }
-        el.appendChild(btn);
       });
     }
 
@@ -3740,8 +3906,21 @@
         .map(m => `- ${m.subject} ${m.qNo}（${m.examTitle} / 全体正答率${m.accuracy}% / 体感${m.feeling}${m.causeTag ? ` / 原因:${m.causeTag}` : ''}${m.memo ? ` / ${m.memo}` : ''}）`);
 
       const coachRole = GOAL_PRESETS[studyGoal]?.coachRole || '資格・受験の学習コーチ';
+      const metricsCompact = {};
+      if (coachEval.metricsReport && coachEval.metricsReport.metrics) {
+        Object.values(coachEval.metricsReport.metrics).forEach(m => {
+          if (m && m.status !== 'insufficient_data') {
+            metricsCompact[m.id] = { name: m.name, status: m.status, summary: m.summary };
+          }
+        });
+      }
+      const profileCompact = {
+        persona: coachProfile.persona,
+        user_constraints: coachProfile.user_constraints || [],
+        custom_metrics: (coachProfile.custom_metrics || []).map(c => ({ id: c.id, name: c.name, description: c.description }))
+      };
       return [
-        `${coachRole}として、以下の【${ctx.rangeLabel}の学習時間】【パーソナル診断結果】【答練成績・誤答分析】をすべて踏まえ、振り返り（反省）と次週の勉強時間の配分・具体的な学習法調整を提案してください。`,
+        `${coachRole}として、以下の【${ctx.rangeLabel}の学習時間】【全55指標定量レポート】【ユーザー制約・好み】【答練成績・誤答分析】をすべて踏まえ、振り返り（反省）と次週の勉強時間の配分・具体的な学習法調整を提案してください。`,
         '',
         `■ 基準日：${todayStr}`,
         '■ 試験・重要日程',
@@ -3757,6 +3936,12 @@
         '■ パーソナル改善コーチの自動診断結果（検出された課題）',
         ...(activeCoachLines.length ? activeCoachLines : ['- 重大なボトルネックは未検出']),
         '',
+        '■ 全55指標 算出結果JSON（計算済み指標のみ抜粋）',
+        JSON.stringify(metricsCompact),
+        '',
+        '■ ユーザー固有の制約・コーチ設定（coachProfile）',
+        JSON.stringify(profileCompact),
+        '',
         '■ 直近の模試・答練・テスト成績',
         ...(examLines.length ? examLines : ['- まだ登録なし']),
         '',
@@ -3765,7 +3950,7 @@
         ...(priorityReviewLines.length ? priorityReviewLines : ['- 該当なし']),
         '',
         '■ お願いしたいこと',
-        '1. 勉強時間・時間帯リズム・答練誤答（選球眼・失点原因）の相関を踏まえた反省点・良かった点',
+        '1. 勉強時間・時間帯リズム・学習内容バランス（講義/テキスト/回転）・答練誤答の相関を踏まえた反省点・良かった点',
         '2. 成績が伸び悩んでいる科目／予定遅れ科目のリカバリーを踏まえた、次週の科目別・時間帯別の具体的な配分案',
         '3. 次週に最優先で取り組むべきアクション3点（上記「最優先復習リスト」の消化手順を含む）'
       ].join('\n');
@@ -4192,18 +4377,21 @@
 
           let hubConfig = null;
           let activeTimer = null;
+          let coachProfileCloud = null;
           for (let i = 1; i < cfgRows.length; i++) {
             const [k, v] = cfgRows[i];
             if (!k || !v) continue;
             try {
               if (k === 'hubConfig') hubConfig = JSON.parse(v);
               if (k === 'activeTimer') activeTimer = JSON.parse(v);
+              if (k === 'coachProfile') coachProfileCloud = JSON.parse(v);
             } catch (e) { }
           }
 
           // 2. Googleカレンダーの予定を取得して集計（過去30日分の未完了予定も抽出・権限未設定でも安全に続行）
           const todayEvents = [];
           const pastEvents = [];
+          const allCalEvents = [];
           try {
             const nowDay = new Date();
             const realTodayStart = new Date(nowDay.getFullYear(), nowDay.getMonth(), nowDay.getDate(), 0, 0, 0, 0);
@@ -4225,6 +4413,7 @@
               const evDate = fmtDateInput(start);
               const evId = ev.id || `${evDate}_${fmtTime(start)}_${title}`;
               const evItem = { id: evId, date: evDate, title, start: fmtTime(start), end: fmtTime(end), mins, subject: matchedSubject || '' };
+              allCalEvents.push(evItem);
 
               ensureWeek(getWeekKey(start)).planned += mins;
               if (start >= realTodayStart && start <= realTodayEnd) {
@@ -4305,6 +4494,7 @@
             periods,
             todayEvents,
             pastEvents,
+            allCalendarEvents: allCalEvents,
             materials,
             examResults: parsedExams.reverse(),
             studyLogs: parsedStudyLogs,
@@ -4313,7 +4503,8 @@
             examMistakes: parsedMistakes,
             calendarDoneMap: parsedCalendarDoneMap,
             hubConfig,
-            activeTimer
+            activeTimer,
+            coachProfile: coachProfileCloud
           };
         }
 
@@ -5839,8 +6030,16 @@
         });
 
         // =========================================================================
-        // 12. 学習ログ × 答練成績 パーソナル改善コーチ（外部 coach-rules.js 連携）
+        // 12. 学習ログ × 答練成績 パーソナル改善コーチ（全55指標 ＋ AI連携 ＋ 自己進化）
         // =========================================================================
+        let activeMetricFilter = 'all';
+
+        async function saveCoachProfileToCloud() {
+          coachProfile.updatedAt = Date.now();
+          saveJSON(STORAGE_KEYS.COACH_PROFILE, coachProfile);
+          try { await saveConfigKeyToGoogleSheet('coachProfile', coachProfile, 5); } catch (e) { }
+        }
+
         function evaluateCoach10Patterns() {
           const emptyMatrix = {
             morning: { label: '朝 (5〜11時)', calc: { count: 0 }, theory: { count: 0 } },
@@ -5850,114 +6049,613 @@
           const realLogs = (studyLogs || []).filter(l => l && Number(l.minutes) > 0);
           const realMistakes = (examMistakes || []).filter(m => m && !String(m.id || '').startsWith('exm_demo'));
           const realExams = (examResults || []).filter(e => e && !String(e.id || '').startsWith('ex_demo'));
+          const realDetailedExams = (examDetailedResults || []).filter(e => e && !String(e.id || '').startsWith('exr_demo'));
           const hasUserData = realLogs.length > 0 || realMistakes.length > 0 || (!currentIsDemo && realExams.length > 0);
 
-          if (!hasUserData) {
-            return { hasData: false, patterns: [], matrix: emptyMatrix };
-          }
-
           const data = currentData || DEMO_DATA;
-          const weekSlice = !currentIsDemo ? resolvePeriodData(data, 'week').slice : { actual: 0, bySubject: { actual: {} } };
+          const weekSlice = !currentIsDemo ? resolvePeriodData(data, 'week').slice : { actual: 0, planned: 0, bySubject: { actual: {}, planned: {} } };
           const weekActualMap = weekSlice.bySubject?.actual || {};
+          const weekPlannedMap = weekSlice.bySubject?.planned || {};
           const weekTotalActual = weekSlice.actual || Object.values(weekActualMap).reduce((a, b) => a + b, 0);
+
+          const calEvs = allCalendarEvents.length
+            ? allCalendarEvents
+            : [...(data.todayEvents || []), ...(data.pastEvents || [])];
 
           if (typeof window.evaluateCpaCoachRules === 'function') {
             const evaluated = window.evaluateCpaCoachRules({
               logs: realLogs,
               mistakes: realMistakes,
               exams: realExams,
+              examDetailedResults: realDetailedExams,
+              reviewedMistakeIds: reviewedMistakeIds || [],
+              calendarEvents: currentIsDemo ? [] : calEvs,
+              calendarDoneMap: calendarDoneMap || {},
               subjects: SUBJECTS || [],
               countdowns: countdowns || [],
               weeklyHistory: weeklyHistory || [],
               weekActualMap,
+              weekPlannedMap,
               weekTotalActual,
+              coachProfile,
+              materialTypeOverrides: coachProfile.material_type_overrides || {},
               getSubjectType
             });
-            return { hasData: true, ...evaluated };
+            latestMetricsReport = evaluated.metricsReport || null;
+            return { hasData: hasUserData, ...evaluated };
           }
-          return { hasData: false, patterns: [], matrix: emptyMatrix };
+          return { hasData: false, patterns: [], matrix: emptyMatrix, metricsReport: null };
+        }
+
+        function executeCoachQuickAction(actionType, payload) {
+          const p = payload || {};
+          if (actionType === 'review') {
+            switchAppTab('hubView');
+            setTimeout(() => {
+              document.getElementById('examMistakeDashboard')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 120);
+            showToast('最優先復習リストへ移動しました');
+            return;
+          }
+          if (actionType === 'calendar') {
+            const now = new Date();
+            const targetDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+            const [hh, mm] = String(p.suggestedTime || '09:00').split(':').map(n => Number(n) || 0);
+            const start = new Date(targetDay.getFullYear(), targetDay.getMonth(), targetDay.getDate(), hh, mm, 0);
+            const dur = Math.max(15, Number(p.minutes) || 60);
+            const end = new Date(start.getTime() + dur * 60000);
+            const fmtCal = (d) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+            const title = `${p.subject || '勉強'} ${p.material || p.topic || '復習・演習'}`.trim();
+            const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${fmtCal(start)}/${fmtCal(end)}&details=${encodeURIComponent('CPA Study Hub パーソナル改善コーチから仮組み')}`;
+            window.open(url, '_blank', 'noopener,noreferrer');
+            showToast('Googleカレンダーの予定作成画面を開きました');
+            return;
+          }
+          // Default: timer
+          if (p.subject && SUBJECTS.includes(p.subject)) {
+            selectedSubject = p.subject;
+            renderSubjectChips();
+            renderMaterials();
+          }
+          if (p.material && selectedSubject && (materialsBySubject[selectedSubject] || []).includes(p.material)) {
+            selectedMaterial = p.material;
+            renderMaterials();
+          }
+          if (p.topic) {
+            const topicEl = document.getElementById('topicInput');
+            if (topicEl) topicEl.value = p.topic;
+          }
+          switchAppTab('logView');
+          if (!localStorage.getItem(STORAGE_KEYS.TIMER_START)) {
+            startTimer(true);
+          }
+          showToast(`${p.subject ? p.subject + ' の' : ''}タイマーを起動しました`);
+        }
+
+        async function submitCoachFeedback({ feedbackType, metricId, reasonChip, userText }) {
+          const statusEl = document.getElementById('coachEvolutionStatus');
+          if (statusEl) statusEl.textContent = 'フィードバックを解析してコーチ設定を更新中...';
+
+          // ローカル即時反映（未ログインや通信エラー時も確実に動くように）
+          const applyLocalFallback = () => {
+            if (!coachProfile.base_weights) coachProfile.base_weights = {};
+            if (!Array.isArray(coachProfile.user_constraints)) coachProfile.user_constraints = [];
+            if (feedbackType === 'hit' && metricId) {
+              const cur = Number(coachProfile.base_weights[metricId] ?? 1.0);
+              coachProfile.base_weights[metricId] = Math.min(2.0, Math.round((cur + 0.2) * 10) / 10);
+            } else if (feedbackType === 'miss' && metricId) {
+              const cur = Number(coachProfile.base_weights[metricId] ?? 1.0);
+              coachProfile.base_weights[metricId] = Math.max(0.1, Math.round((cur - 0.3) * 10) / 10);
+              const note = reasonChip ? `${metricId}: ${reasonChip}` : `${metricId}は優先度低め`;
+              if (!coachProfile.user_constraints.includes(note)) coachProfile.user_constraints.push(note);
+            } else if (userText) {
+              if (!coachProfile.user_constraints.includes(userText)) coachProfile.user_constraints.push(userText.slice(0, 120));
+            }
+          };
+
+          try {
+            if (isGoogleSignedIn() && googleAuth.accessToken) {
+              const res = await fetch('/api/coach', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${googleAuth.accessToken}`
+                },
+                body: JSON.stringify({
+                  action: 'evolve_profile',
+                  feedbackType,
+                  metricId: metricId || '',
+                  reasonChip: reasonChip || '',
+                  userText: userText || '',
+                  coachProfile,
+                  coachRole: GOAL_PRESETS[studyGoal]?.coachRole || '公認会計士（CPA）試験の学習コーチ'
+                })
+              });
+              const json = await res.json();
+              if (res.ok && json.status === 'ok' && json.updatedProfile) {
+                coachProfile.base_weights = json.updatedProfile.base_weights || coachProfile.base_weights;
+                coachProfile.user_constraints = json.updatedProfile.user_constraints || coachProfile.user_constraints;
+                coachProfile.custom_metrics = json.updatedProfile.custom_metrics || coachProfile.custom_metrics;
+                await saveCoachProfileToCloud();
+                if (statusEl) statusEl.textContent = `✓ ${json.replyMessage}`;
+                showToast(json.replyMessage || 'コーチ設定を更新しました');
+                renderPersonalCoach();
+                return;
+              }
+            }
+            applyLocalFallback();
+            await saveCoachProfileToCloud();
+            if (statusEl) statusEl.textContent = '✓ ローカル設定に反映しました（Googleログイン中はAIによる自動ルール化も有効になります）';
+            showToast('フィードバックをコーチ設定に反映しました');
+            renderPersonalCoach();
+          } catch (err) {
+            applyLocalFallback();
+            await saveCoachProfileToCloud();
+            if (statusEl) statusEl.textContent = '✓ フィードバックを設定へ保存しました';
+            renderPersonalCoach();
+          }
+        }
+
+        async function runRemoteAiCoach(modeOverride) {
+          const mode = modeOverride || activeCoachDepth;
+          const runBtn = document.getElementById('runAiCoachBtn');
+          const examBtn = document.getElementById('analyzeLatestExamBtn');
+          const sourceBadge = document.getElementById('coachModeSourceBadge');
+
+          const evalRes = evaluateCoach10Patterns();
+          if (!evalRes.hasData || !evalRes.metricsReport) {
+            showToast('まず学習ログまたは答練データを登録してください');
+            return;
+          }
+          if (!isGoogleSignedIn() || !googleAuth.accessToken) {
+            showToast('AIコーチ分析の実行にはGoogleアカウントログインが必要です（現在はローカル55指標診断を表示中）');
+            return;
+          }
+
+          if (runBtn) runBtn.disabled = true;
+          if (examBtn) examBtn.disabled = true;
+          if (sourceBadge) sourceBadge.textContent = 'AI分析生成中...';
+
+          try {
+            const isLatestExam = mode === 'latest_exam';
+            let latestExamContext = null;
+            if (isLatestExam) {
+              const realEx = (examResults || []).filter(e => e && !String(e.id || '').startsWith('ex_demo'))
+                .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+              const realDet = (examDetailedResults || []).filter(e => e && !String(e.id || '').startsWith('exr_demo'))
+                .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+              const realMis = (examMistakes || []).filter(m => m && !String(m.id || '').startsWith('exm_demo'));
+              const latest = realDet[0] || realEx[0] || null;
+              const twoWeeksAgo = new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10);
+              const recentLogs = (studyLogs || []).filter(l => l && l.date >= twoWeeksAgo).slice(-30);
+              latestExamContext = {
+                latestExam: latest,
+                recentMistakes: realMis.slice(-20),
+                recent2WeeksLogSummary: recentLogs.map(l => ({ date: l.date, subject: l.subject, material: l.material, minutes: l.minutes, rating: l.rating, topic: l.topic }))
+              };
+            }
+
+            const res = await fetch('/api/coach', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${googleAuth.accessToken}`
+              },
+              body: JSON.stringify({
+                action: isLatestExam ? 'latest_exam' : 'analyze',
+                depth: mode,
+                persona: coachProfile.persona || 'strategist',
+                coachRole: GOAL_PRESETS[studyGoal]?.coachRole || '公認会計士（CPA）試験の学習コーチ',
+                metricsReport: evalRes.metricsReport,
+                coachProfile,
+                latestExamContext
+              })
+            });
+            const json = await res.json();
+            if (!res.ok || json.status !== 'ok') {
+              throw new Error(json.message || 'AIコーチ分析の取得に失敗しました');
+            }
+            latestAiCoachResult = {
+              mode,
+              persona: coachProfile.persona || 'strategist',
+              model: json.model || 'Gemini',
+              analysis: json.analysis
+            };
+            renderPersonalCoach();
+            showToast(isLatestExam ? '最新答練のAI分析が完了しました' : 'AIコーチ分析を更新しました');
+          } catch (err) {
+            showToast(err.message || 'AIコーチ分析でエラーが発生しました');
+            renderPersonalCoach();
+          } finally {
+            if (runBtn) runBtn.disabled = false;
+            if (examBtn) examBtn.disabled = false;
+          }
+        }
+
+        function renderAll55MetricsAccordion(metricsReport) {
+          const allList = document.getElementById('coachAllPatternsList');
+          const summaryEl = document.getElementById('coachAll55Summary');
+          if (!allList) return;
+          if (!metricsReport || !metricsReport.metrics) {
+            allList.innerHTML = `<div class="text-xs text-slate-400">データが蓄積されると全55指標のステータスが表示されます。</div>`;
+            return;
+          }
+          const ov = metricsReport.overview || {};
+          if (summaryEl) {
+            summaryEl.textContent = `算出済み ${ov.computedCount || 0} / ${Object.keys(metricsReport.metrics).length}指標（強み ${ov.strengthCount || 0}・要改善 ${(ov.alertCount || 0) + (ov.warningCount || 0)}・データ待ち ${ov.insufficientCount || 0}）`;
+          }
+
+          const statusMeta = {
+            strength: { label: '強み', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300', border: 'border-emerald-200/80 bg-emerald-50/30 dark:border-emerald-900/50 dark:bg-emerald-950/20' },
+            normal: { label: '正常', cls: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300', border: 'border-slate-200 bg-slate-50/40 dark:border-slate-800 dark:bg-slate-800/30' },
+            warning: { label: '要注意', cls: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300', border: 'border-amber-200 bg-amber-50/40 dark:border-amber-900/50 dark:bg-amber-950/20' },
+            alert: { label: '要改善', cls: 'bg-rose-600 text-white', border: 'border-rose-200 bg-rose-50/40 dark:border-rose-900/50 dark:bg-rose-950/20' },
+            insufficient_data: { label: 'データ待ち', cls: 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500', border: 'border-slate-200/60 bg-white dark:border-slate-800/70 dark:bg-slate-900' }
+          };
+
+          const cats = [...(metricsReport.categories || [])];
+          if (metricsReport.customMetrics && metricsReport.customMetrics.length) {
+            cats.push({ id: 'custom', name: 'ユーザー追加カスタム指標（M56〜）', metricIds: metricsReport.customMetrics.map(c => c.id) });
+          }
+
+          const htmlParts = [];
+          cats.forEach(cat => {
+            const items = (cat.metricIds || [])
+              .map(id => metricsReport.metrics[id])
+              .filter(m => {
+                if (!m) return false;
+                if (activeMetricFilter === 'alert_warn') return m.status === 'alert' || m.status === 'warning';
+                if (activeMetricFilter === 'strength') return m.status === 'strength';
+                if (activeMetricFilter === 'computed') return m.status !== 'insufficient_data';
+                return true;
+              });
+            if (!items.length) return;
+            htmlParts.push(`
+              <div>
+                <div class="mb-2 text-xs font-extrabold text-slate-700 dark:text-slate-200">カテゴリ${escapeHTML(cat.id)}：${escapeHTML(cat.name)}（${items.length}指標）</div>
+                <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  ${items.map(m => {
+                    const sm = statusMeta[m.status] || statusMeta.insufficient_data;
+                    return `
+                      <div class="flex items-start justify-between gap-2 rounded-xl border p-2.5 text-[11px] ${sm.border}">
+                        <div class="min-w-0">
+                          <div class="font-bold text-slate-800 dark:text-slate-100"><span class="mr-1 font-mono text-[10px] text-indigo-600 dark:text-indigo-400">${escapeHTML(m.id)}</span>${escapeHTML(m.name)}</div>
+                          <div class="mt-0.5 text-[10px] leading-relaxed text-slate-500 dark:text-slate-400">${escapeHTML(m.summary)}</div>
+                        </div>
+                        <span class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${sm.cls}">${sm.label}</span>
+                      </div>`;
+                  }).join('')}
+                </div>
+              </div>`);
+          });
+
+          allList.innerHTML = htmlParts.length
+            ? htmlParts.join('')
+            : `<div class="text-xs text-slate-400">該当するステータスの指標はありません。</div>`;
         }
 
         function renderPersonalCoach() {
           const grid = document.getElementById('coachAdviceGrid');
           const badge = document.getElementById('coachActiveCountBadge');
           const matrixBox = document.getElementById('sessionMatrixBox');
-          const allList = document.getElementById('coachAllPatternsList');
+          const mixBox = document.getElementById('materialTypeMixBox');
+          const headlineEl = document.getElementById('coachHeadline');
+          const summaryTextEl = document.getElementById('coachSummaryText');
+          const nextActionEl = document.getElementById('coachNextActionBox');
+          const sourceBadge = document.getElementById('coachModeSourceBadge');
+          const strengthsSec = document.getElementById('coachStrengthsSection');
+          const strengthsGrid = document.getElementById('coachStrengthsGrid');
+          const constraintsList = document.getElementById('coachConstraintsList');
+          const personaSelect = document.getElementById('coachPersonaSelect');
           if (!grid) return;
 
-          const { hasData, patterns, matrix } = evaluateCoach10Patterns();
-          const active = hasData ? patterns.filter(p => p.triggered).sort((a, b) => b.priority - a.priority) : [];
+          if (personaSelect) personaSelect.value = coachProfile.persona || 'strategist';
+
+          const { hasData, matrix, metricsReport } = evaluateCoach10Patterns();
+          const issueCount = metricsReport ? ((metricsReport.overview.alertCount || 0) + (metricsReport.overview.warningCount || 0)) : 0;
+
           document.querySelectorAll('.nav-coach-badge').forEach(el => {
-            el.textContent = String(active.length);
-            el.classList.toggle('hidden', active.length === 0);
+            el.textContent = String(issueCount);
+            el.classList.toggle('hidden', !hasData || issueCount === 0);
           });
           document.querySelectorAll('.nav-coach-dot').forEach(el => {
-            el.classList.toggle('hidden', active.length === 0);
+            el.classList.toggle('hidden', !hasData || issueCount === 0);
           });
 
-          if (!hasData) {
+          // 3段階タブのアクティブ表示
+          document.querySelectorAll('.coach-depth-tab').forEach(btn => {
+            const active = btn.dataset.coachDepth === activeCoachDepth;
+            btn.className = active
+              ? 'coach-depth-tab rounded-xl bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition'
+              : 'coach-depth-tab rounded-xl px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition';
+          });
+
+          if (!hasData || !metricsReport) {
             badge.textContent = 'データ蓄積待ち';
-            badge.className = 'rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-400';
+            badge.className = 'rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-400';
+            if (headlineEl) headlineEl.textContent = 'まだ診断データがありません';
+            if (summaryTextEl) summaryTextEl.textContent = '「記録」タブで学習ログを記録するか、「ハブ」の成績表OCR＆誤答分析から答練データを登録すると、全55指標の定量分析とAI改善提案が表示されます。';
+            if (nextActionEl) nextActionEl.classList.add('hidden');
+            if (strengthsSec) strengthsSec.classList.add('hidden');
             grid.innerHTML = `
               <div class="col-span-full rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center text-xs leading-relaxed text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
-                <div class="mb-1 text-sm font-bold text-slate-700 dark:text-slate-200">まだ診断データがありません</div>
-                「記録」タブで学習ログを記録するか、「ハブ」の <strong>🎯 成績表OCR＆誤答(A/B/C)分析</strong> から答練データを登録すると、あなたのデータをもとに改善提案が表示されます。
+                まずは1件の学習記録または答練結果を登録して、パーソナル改善コーチを起動しましょう。
               </div>`;
           } else {
-            badge.textContent = active.length ? `${active.length}件の改善提案あり` : '全10パターン良好 ✓';
-            badge.className = active.length
-              ? 'rounded-full bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-700 dark:bg-rose-950 dark:text-rose-300'
-              : 'rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300';
+            badge.textContent = issueCount ? `要改善 ${issueCount}指標 / 55` : '全55指標 良好 ✓';
+            badge.className = issueCount
+              ? 'rounded-full bg-rose-50 px-2.5 py-0.5 text-[11px] font-bold text-rose-700 dark:bg-rose-950 dark:text-rose-300'
+              : 'rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300';
 
-            if (!active.length) {
+            const useRemote = latestAiCoachResult
+              && latestAiCoachResult.mode === activeCoachDepth
+              && latestAiCoachResult.persona === (coachProfile.persona || 'strategist');
+            const digest = useRemote
+              ? latestAiCoachResult.analysis
+              : (typeof window.buildLocalCoachDigest === 'function'
+                ? window.buildLocalCoachDigest(metricsReport, activeCoachDepth, coachProfile.persona || 'strategist')
+                : { headline: 'パーソナル診断', summary: '', strengths: [], improvements: [], nextAction: '' });
+
+            if (sourceBadge) sourceBadge.textContent = useRemote ? `✨ AI生成 (${latestAiCoachResult.model})` : '⚡ ローカル55指標即時算出';
+            if (headlineEl) headlineEl.textContent = digest.headline || 'パーソナル学習診断';
+            if (summaryTextEl) summaryTextEl.textContent = digest.summary || '';
+            if (nextActionEl) {
+              if (digest.nextAction) {
+                nextActionEl.classList.remove('hidden');
+                nextActionEl.textContent = `🎯 最優先1アクション：${digest.nextAction}`;
+              } else {
+                nextActionEl.classList.add('hidden');
+              }
+            }
+
+            // 強み承認カード
+            const strengths = Array.isArray(digest.strengths) ? digest.strengths : [];
+            if (strengthsSec && strengthsGrid) {
+              if (strengths.length) {
+                strengthsSec.classList.remove('hidden');
+                strengthsGrid.innerHTML = strengths.map(st => `
+                  <div class="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-3.5 shadow-sm dark:border-emerald-900/60 dark:bg-emerald-950/30">
+                    <div class="flex items-center gap-1.5">
+                      <span class="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-bold text-white">強み</span>
+                      ${st.metricId ? `<span class="font-mono text-[10px] font-bold text-emerald-700 dark:text-emerald-300">${escapeHTML(st.metricId)}</span>` : ''}
+                    </div>
+                    <div class="mt-1.5 text-xs font-extrabold text-emerald-950 dark:text-emerald-100">${escapeHTML(st.title || '')}</div>
+                    <p class="mt-1 text-xs leading-relaxed text-emerald-900/90 dark:text-emerald-200/90">${escapeHTML(st.detail || '')}</p>
+                  </div>`).join('');
+              } else {
+                strengthsSec.classList.add('hidden');
+              }
+            }
+
+            // 改善提案カード（ワンタップ実行＋自己進化フィードバック）
+            const improvements = Array.isArray(digest.improvements) ? digest.improvements : [];
+            if (!improvements.length) {
               grid.innerHTML = `
                 <div class="col-span-full rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 text-xs text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200">
-                  <strong>現在の学習バランス・答練分析に大きなボトルネックは検出されていません。</strong> このリズムを維持しつつ、答練の誤答(A/B/C)を継続登録するとさらに精度が上がります。
+                  <strong>この分析モードで大きなボトルネックは検出されていません。</strong> 「✨ AIコーチ分析を実行」を押すとさらに深い戦略提案を生成できます。
                 </div>`;
             } else {
-              grid.innerHTML = active.map((p, i) => `
-                <div class="flex flex-col justify-between rounded-2xl border ${i === 0 ? 'border-rose-300 bg-rose-50/40 dark:border-rose-900/70 dark:bg-rose-950/20' : 'border-indigo-200 bg-white dark:border-slate-800 dark:bg-slate-900'} p-4 shadow-sm">
-                  <div>
-                    <div class="flex items-center justify-between gap-2">
-                      <span class="rounded-full ${i === 0 ? 'bg-rose-600 text-white' : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300'} px-2 py-0.5 text-[10px] font-bold">優先度 #${i + 1} · ${escapeHTML(p.badge)}</span>
-                      <span class="text-[10px] font-semibold text-slate-400">${escapeHTML(p.metric)}</span>
+              grid.innerHTML = improvements.map((item, idx) => {
+                const payloadJson = escapeHTML(JSON.stringify(item.actionPayload || {}));
+                const mId = escapeHTML(item.metricId || '');
+                const actionIcon = item.actionType === 'calendar' ? '📅' : item.actionType === 'review' ? '🎯' : '⏱';
+                return `
+                  <div class="coach-card flex flex-col justify-between rounded-2xl border ${idx === 0 ? 'border-rose-300 bg-rose-50/30 dark:border-rose-900/70 dark:bg-rose-950/20' : 'border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900'} p-4 shadow-sm">
+                    <div>
+                      <div class="flex flex-wrap items-center justify-between gap-1.5">
+                        <span class="rounded-full ${idx === 0 ? 'bg-rose-600 text-white' : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300'} px-2 py-0.5 text-[10px] font-bold">優先 #${idx + 1} · ${escapeHTML(item.badge || '改善提案')}</span>
+                        ${mId ? `<span class="font-mono text-[10px] font-bold text-slate-400">${mId}</span>` : ''}
+                      </div>
+                      <div class="mt-2 text-sm font-extrabold text-slate-900 dark:text-slate-100">${escapeHTML(item.title || '')}</div>
+                      <p class="mt-1.5 text-xs leading-relaxed text-slate-600 dark:text-slate-300">${escapeHTML(item.detail || '')}</p>
                     </div>
-                    <div class="mt-2 text-sm font-extrabold text-slate-900 dark:text-slate-100">${escapeHTML(p.title)}</div>
-                    <p class="mt-1.5 text-xs leading-relaxed text-slate-600 dark:text-slate-300">${escapeHTML(p.advice)}</p>
-                  </div>
-                </div>`).join('');
+                    <div class="mt-3 space-y-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+                      <button type="button" data-quick-action="${escapeHTML(item.actionType || 'timer')}" data-quick-payload="${payloadJson}"
+                        class="coach-quick-action-btn w-full rounded-xl bg-indigo-600 px-3 py-2 text-xs font-bold text-white hover:bg-indigo-700 active:scale-[0.99] transition">
+                        ${actionIcon} ${escapeHTML(item.actionLabel || '改善アクションを開始')}
+                      </button>
+                      <div class="flex flex-wrap items-center gap-1.5 text-[11px]">
+                        <button type="button" data-fb-type="hit" data-metric-id="${mId}"
+                          class="coach-fb-btn rounded-lg border border-slate-200 bg-white px-2 py-1 font-semibold text-slate-600 hover:border-emerald-400 hover:text-emerald-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 transition">🎯 刺さった</button>
+                        <button type="button" data-fb-type="miss_toggle" data-metric-id="${mId}"
+                          class="coach-fb-btn rounded-lg border border-slate-200 bg-white px-2 py-1 font-semibold text-slate-600 hover:border-amber-400 hover:text-amber-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 transition">🙅 外れ・事情あり</button>
+                        <button type="button" data-fb-type="opinion_toggle" data-metric-id="${mId}"
+                          class="coach-fb-btn rounded-lg border border-slate-200 bg-white px-2 py-1 font-semibold text-slate-600 hover:border-indigo-400 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 transition">💬 意見を送る</button>
+                      </div>
+                      <div class="coach-miss-chips hidden flex-wrap gap-1 pt-1">
+                        ${['生活リズムの事情', '講義視聴期のため', '今は別科目を優先', '一時的な例外'].map(r => `
+                          <button type="button" data-fb-type="miss" data-metric-id="${mId}" data-reason="${escapeHTML(r)}"
+                            class="coach-fb-btn rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-800 hover:bg-amber-100 dark:bg-amber-950/60 dark:text-amber-200">${escapeHTML(r)}</button>
+                        `).join('')}
+                      </div>
+                      <div class="coach-opinion-box hidden flex-col gap-1.5 pt-1 sm:flex-row">
+                        <input type="text" placeholder="要望や事情を入力..." class="coach-card-opinion-input h-8 flex-1 rounded-lg border border-slate-300 bg-white px-2.5 text-[11px] text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" />
+                        <button type="button" data-fb-type="opinion_send" data-metric-id="${mId}"
+                          class="coach-fb-btn h-8 rounded-lg bg-slate-900 px-3 text-[11px] font-bold text-white dark:bg-indigo-600">送信</button>
+                      </div>
+                    </div>
+                  </div>`;
+              }).join('');
             }
           }
 
-          // 時間帯 × 科目タイプ別マトリクス
-          matrixBox.innerHTML = ['morning', 'day', 'night'].map(k => {
-            const m = matrix[k];
-            const fmtCell = (obj) => obj.count
-              ? `${Math.round(obj.avgMins)}分 / 集中${obj.avgScore ? Math.round((obj.avgScore / 3) * 100) + '%' : '--'} <span class="text-slate-400">(${obj.count}件)</span>`
-              : `<span class="text-slate-400">記録なし</span>`;
-            return `
-              <div class="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3 text-xs dark:border-slate-800 dark:bg-slate-800/40">
-                <div class="mb-1.5 font-bold text-slate-700 dark:text-slate-200">${m.label}</div>
-                <div class="flex justify-between text-[11px]"><span class="font-semibold text-blue-600 dark:text-blue-400">計算系</span><span>${fmtCell(m.calc)}</span></div>
-                <div class="mt-1 flex justify-between text-[11px]"><span class="font-semibold text-emerald-600 dark:text-emerald-400">理論系</span><span>${fmtCell(m.theory)}</span></div>
-              </div>`;
-          }).join('');
-
-          // 全10パターン一覧
-          allList.innerHTML = !hasData
-            ? `<div class="col-span-full text-xs text-slate-400">学習記録または答練誤答データが登録されると、10パターンの診断ステータスが表示されます。</div>`
-            : patterns.map(p => `
-              <div class="flex items-start justify-between gap-2 rounded-xl border p-2.5 text-[11px] ${p.triggered ? 'border-rose-200 bg-rose-50/40 dark:border-rose-900/50 dark:bg-rose-950/20' : 'border-slate-200 bg-slate-50/40 dark:border-slate-800 dark:bg-slate-800/30'}">
-                <div>
-                  <div class="font-bold ${p.triggered ? 'text-rose-700 dark:text-rose-300' : 'text-slate-600 dark:text-slate-300'}">${escapeHTML(p.title)}</div>
-                  <div class="text-[10px] text-slate-400">${escapeHTML(p.metric)}</div>
+          // 学習内容3タイプ自動分類バランス
+          if (mixBox) {
+            const mix = metricsReport?.overview?.materialTypeMix || { lecturePct: 0, textPct: 0, drillPct: 0, lectureMins: 0, textMins: 0, drillMins: 0 };
+            const rows = [
+              { label: '講義（受動インプット）', pct: mix.lecturePct || 0, mins: mix.lectureMins || 0, bar: 'bg-purple-500' },
+              { label: 'テキスト・論証（精読・暗記）', pct: mix.textPct || 0, mins: mix.textMins || 0, bar: 'bg-sky-500' },
+              { label: '回転教材（演習アウトプット）', pct: mix.drillPct || 0, mins: mix.drillMins || 0, bar: 'bg-emerald-500' }
+            ];
+            mixBox.innerHTML = rows.map(r => `
+              <div>
+                <div class="mb-1 flex justify-between text-[11px]">
+                  <span class="font-semibold text-slate-700 dark:text-slate-300">${r.label}</span>
+                  <span class="font-bold tabular-nums text-slate-600 dark:text-slate-300">${r.pct}% <span class="font-normal text-slate-400">(${fmtHours(r.mins)})</span></span>
                 </div>
-                <span class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${p.triggered ? 'bg-rose-600 text-white' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'}">${p.triggered ? '該当' : 'OK'}</span>
+                <div class="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                  <div class="h-full rounded-full ${r.bar}" style="width: ${Math.min(100, r.pct)}%"></div>
+                </div>
               </div>`).join('');
+          }
+
+          // 時間帯 × 科目タイプ別マトリクス
+          if (matrixBox) {
+            matrixBox.innerHTML = ['morning', 'day', 'night'].map(k => {
+              const m = matrix[k];
+              const fmtCell = (obj) => obj.count
+                ? `${Math.round(obj.avgMins)}分 / 集中${obj.avgScore ? Math.round((obj.avgScore / 3) * 100) + '%' : '--'} <span class="text-slate-400">(${obj.count}件)</span>`
+                : `<span class="text-slate-400">記録なし</span>`;
+              return `
+                <div class="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3 text-xs dark:border-slate-800 dark:bg-slate-800/40">
+                  <div class="mb-1.5 font-bold text-slate-700 dark:text-slate-200">${m.label}</div>
+                  <div class="flex justify-between text-[11px]"><span class="font-semibold text-blue-600 dark:text-blue-400">計算系</span><span>${fmtCell(m.calc)}</span></div>
+                  <div class="mt-1 flex justify-between text-[11px]"><span class="font-semibold text-emerald-600 dark:text-emerald-400">理論系</span><span>${fmtCell(m.theory)}</span></div>
+                </div>`;
+            }).join('');
+          }
+
+          // 記憶している制約＆カスタム指標チップ
+          if (constraintsList) {
+            const cItems = (coachProfile.user_constraints || []).map((c, idx) => `
+              <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                <span>📌 ${escapeHTML(c)}</span>
+                <button type="button" data-del-constraint="${idx}" class="text-slate-400 hover:text-rose-500">×</button>
+              </span>`);
+            const mItems = (coachProfile.custom_metrics || []).map((cm, idx) => `
+              <span class="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                <span>✨ ${escapeHTML(cm.id || 'M56')} ${escapeHTML(cm.name || '')}</span>
+                <button type="button" data-del-custom-metric="${idx}" class="text-indigo-400 hover:text-rose-500">×</button>
+              </span>`);
+            constraintsList.innerHTML = (cItems.length || mItems.length)
+              ? [...cItems, ...mItems].join('')
+              : `<span class="text-[11px] text-slate-400">まだ固有の制約・追加指標は登録されていません。</span>`;
+          }
+
+          // 全55指標アコーディオン
+          renderAll55MetricsAccordion(metricsReport);
         }
 
+        // イベントリスナー（コーチUI）
         document.getElementById('toggleAllCoachPatternsBtn')?.addEventListener('click', () => {
-          document.getElementById('coachAllPatternsPanel')?.classList.toggle('hidden');
+          const panel = document.getElementById('coachAllPatternsPanel');
+          const chev = document.getElementById('toggleAllCoachChevron');
+          if (!panel) return;
+          const willOpen = panel.classList.contains('hidden');
+          panel.classList.toggle('hidden');
+          if (chev) chev.textContent = willOpen ? '詳細を閉じる ▴' : '詳細を開く ▾';
+        });
+
+        document.querySelectorAll('.coach-depth-tab').forEach(btn => {
+          btn.addEventListener('click', () => {
+            activeCoachDepth = btn.dataset.coachDepth || 'daily';
+            renderPersonalCoach();
+          });
+        });
+
+        document.getElementById('coachPersonaSelect')?.addEventListener('change', (e) => {
+          coachProfile.persona = e.target.value || 'strategist';
+          saveCoachProfileToCloud();
+          renderPersonalCoach();
+        });
+
+        document.getElementById('runAiCoachBtn')?.addEventListener('click', () => {
+          runRemoteAiCoach(activeCoachDepth === 'latest_exam' ? 'daily' : activeCoachDepth);
+        });
+
+        document.getElementById('analyzeLatestExamBtn')?.addEventListener('click', () => {
+          activeCoachDepth = 'latest_exam';
+          renderPersonalCoach();
+          runRemoteAiCoach('latest_exam');
+        });
+
+        document.getElementById('coachSendChatGptBtn')?.addEventListener('click', async () => {
+          const prompt = buildAiStudyPrompt();
+          await copyToClipboard(prompt);
+          window.open(`https://chatgpt.com/?q=${encodeURIComponent(prompt)}`, '_blank', 'noopener,noreferrer');
+          showToast('全55指標JSON付きでChatGPTを開きました（コピー済み）');
+        });
+
+        document.getElementById('coachSendGeminiBtn')?.addEventListener('click', async () => {
+          const prompt = buildAiStudyPrompt();
+          await copyToClipboard(prompt);
+          window.open('https://gemini.google.com/app', '_blank', 'noopener,noreferrer');
+          showToast('全55指標JSON付きプロンプトをコピーしました！Geminiへ貼り付けてください');
+        });
+
+        document.getElementById('coachAdviceGrid')?.addEventListener('click', (e) => {
+          const actionBtn = e.target.closest('.coach-quick-action-btn');
+          if (actionBtn) {
+            let payload = {};
+            try { payload = JSON.parse(actionBtn.dataset.quickPayload || '{}'); } catch (_) { }
+            executeCoachQuickAction(actionBtn.dataset.quickAction, payload);
+            return;
+          }
+          const fbBtn = e.target.closest('.coach-fb-btn');
+          if (!fbBtn) return;
+          const card = fbBtn.closest('.coach-card');
+          const fbType = fbBtn.dataset.fbType;
+          const metricId = fbBtn.dataset.metricId || '';
+          if (fbType === 'miss_toggle') {
+            card?.querySelector('.coach-miss-chips')?.classList.toggle('hidden');
+            card?.querySelector('.coach-miss-chips')?.classList.toggle('flex');
+          } else if (fbType === 'opinion_toggle') {
+            card?.querySelector('.coach-opinion-box')?.classList.toggle('hidden');
+            card?.querySelector('.coach-opinion-box')?.classList.toggle('flex');
+          } else if (fbType === 'hit') {
+            submitCoachFeedback({ feedbackType: 'hit', metricId });
+          } else if (fbType === 'miss') {
+            submitCoachFeedback({ feedbackType: 'miss', metricId, reasonChip: fbBtn.dataset.reason || '' });
+          } else if (fbType === 'opinion_send') {
+            const inp = card?.querySelector('.coach-card-opinion-input');
+            const text = String(inp?.value || '').trim();
+            if (!text) return;
+            inp.value = '';
+            submitCoachFeedback({ feedbackType: 'opinion', metricId, userText: text });
+          }
+        });
+
+        document.getElementById('coachGlobalOpinionBtn')?.addEventListener('click', () => {
+          const inp = document.getElementById('coachGlobalOpinionInput');
+          const text = String(inp?.value || '').trim();
+          if (!text) return;
+          inp.value = '';
+          submitCoachFeedback({ feedbackType: 'opinion', metricId: '', userText: text });
+        });
+
+        document.getElementById('coachConstraintsList')?.addEventListener('click', (e) => {
+          const delC = e.target.closest('button[data-del-constraint]');
+          if (delC) {
+            const idx = Number(delC.dataset.delConstraint);
+            if (Array.isArray(coachProfile.user_constraints)) {
+              coachProfile.user_constraints.splice(idx, 1);
+              saveCoachProfileToCloud();
+              renderPersonalCoach();
+            }
+            return;
+          }
+          const delM = e.target.closest('button[data-del-custom-metric]');
+          if (delM) {
+            const idx = Number(delM.dataset.delCustomMetric);
+            if (Array.isArray(coachProfile.custom_metrics)) {
+              coachProfile.custom_metrics.splice(idx, 1);
+              saveCoachProfileToCloud();
+              renderPersonalCoach();
+            }
+          }
+        });
+
+        document.querySelectorAll('.metric-filter-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            activeMetricFilter = btn.dataset.metricFilter || 'all';
+            document.querySelectorAll('.metric-filter-btn').forEach(b => {
+              const on = b.dataset.metricFilter === activeMetricFilter;
+              b.className = on
+                ? 'metric-filter-btn rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-bold text-white dark:bg-slate-100 dark:text-slate-900'
+                : 'metric-filter-btn rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300';
+            });
+            renderAll55MetricsAccordion(latestMetricsReport);
+          });
         });
 
         initTheme();
