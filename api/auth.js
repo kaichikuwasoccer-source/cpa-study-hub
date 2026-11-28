@@ -83,7 +83,7 @@ function parseCookies(cookieHeader) {
 function setRefreshCookie(req, res, value, maxAgeSec) {
   const parts = [
     `${COOKIE_NAME}=${encodeURIComponent(value)}`,
-    'Path=/api',
+    'Path=/',
     'HttpOnly',
     'SameSite=Lax',
     `Max-Age=${Math.max(0, Math.floor(maxAgeSec))}`
@@ -130,7 +130,8 @@ module.exports = async function handler(req, res) {
   // ログアウト（Cookie削除＆リフレッシュトークン失効）
   if (action === 'logout') {
     const cookies = parseCookies(req.headers?.cookie);
-    const session = decryptSession(cookies[COOKIE_NAME]);
+    const rawSession = cookies[COOKIE_NAME] || String(body.session_token || '');
+    const session = decryptSession(rawSession);
     clearRefreshCookie(req, res);
     if (session?.rt) {
       try {
@@ -179,15 +180,18 @@ module.exports = async function handler(req, res) {
         });
       }
 
-      // リフレッシュトークンが返ってきた場合は30日間有効な暗号化HttpOnly Cookieに保存
+      // リフレッシュトークンが返ってきた場合は30日間有効な暗号化トークンを生成し、HttpOnly Cookie＋レスポンスで保持
       let hasRefreshToken = false;
+      let encryptedSessionToken = '';
+      let sessionExp = 0;
       const existingCookies = parseCookies(req.headers?.cookie);
-      const existingSession = decryptSession(existingCookies[COOKIE_NAME]);
+      const existingRaw = existingCookies[COOKIE_NAME] || String(body.session_token || '');
+      const existingSession = decryptSession(existingRaw);
       const refreshToken = tokenJson.refresh_token || existingSession?.rt || '';
       if (refreshToken) {
-        const exp = Date.now() + SESSION_MAX_AGE_SEC * 1000;
-        const encrypted = encryptSession({ rt: refreshToken, exp });
-        setRefreshCookie(req, res, encrypted, SESSION_MAX_AGE_SEC);
+        sessionExp = Date.now() + SESSION_MAX_AGE_SEC * 1000;
+        encryptedSessionToken = encryptSession({ rt: refreshToken, exp: sessionExp });
+        setRefreshCookie(req, res, encryptedSessionToken, SESSION_MAX_AGE_SEC);
         hasRefreshToken = true;
       }
 
@@ -196,6 +200,8 @@ module.exports = async function handler(req, res) {
         access_token: tokenJson.access_token,
         expires_in: Number(tokenJson.expires_in) || 3500,
         has_refresh_token: hasRefreshToken,
+        session_token: encryptedSessionToken || undefined,
+        session_expires_at: sessionExp || undefined,
         session_days: 30
       });
     } catch (err) {
@@ -203,10 +209,11 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  // Cookie内のリフレッシュトークンを使ってサイレント更新
+  // Cookie または暗号化セッショントークン内のリフレッシュトークンを使ってサイレント更新
   if (action === 'refresh') {
     const cookies = parseCookies(req.headers?.cookie);
-    const session = decryptSession(cookies[COOKIE_NAME]);
+    const rawSession = cookies[COOKIE_NAME] || String(body.session_token || '');
+    const session = decryptSession(rawSession);
     if (!session || !session.rt) {
       return res.status(401).json({ status: 'error', code: 'NO_REFRESH_SESSION', message: '再ログインが必要です' });
     }
@@ -238,17 +245,20 @@ module.exports = async function handler(req, res) {
         });
       }
 
-      // 新しいリフレッシュトークンが返った場合はCookieを更新（残存期限を維持）
+      // Cookie が消えていた場合（iOS Safari/PWA等）も再セットし、新しいRTがあれば暗号化トークンを更新
+      const remainingSec = Math.max(60, Math.floor((Number(session.exp) - Date.now()) / 1000));
+      let nextSessionToken = rawSession;
       if (tokenJson.refresh_token) {
-        const remainingSec = Math.max(60, Math.floor((Number(session.exp) - Date.now()) / 1000));
-        const encrypted = encryptSession({ rt: tokenJson.refresh_token, exp: session.exp });
-        setRefreshCookie(req, res, encrypted, remainingSec);
+        nextSessionToken = encryptSession({ rt: tokenJson.refresh_token, exp: session.exp });
       }
+      setRefreshCookie(req, res, nextSessionToken, remainingSec);
 
       return res.status(200).json({
         status: 'ok',
         access_token: tokenJson.access_token,
-        expires_in: Number(tokenJson.expires_in) || 3500
+        expires_in: Number(tokenJson.expires_in) || 3500,
+        session_token: nextSessionToken,
+        session_expires_at: Number(session.exp) || undefined
       });
     } catch (err) {
       return res.status(500).json({ status: 'error', message: err.message || '自動更新通信エラー' });

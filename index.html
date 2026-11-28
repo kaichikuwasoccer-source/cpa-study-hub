@@ -994,6 +994,10 @@
           class="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-blue-700 transition">
           <span>Googleアカウントでログイン / 再接続</span>
         </button>
+        <button id="enableLongSessionBtn" type="button"
+          class="hidden w-full rounded-xl border border-emerald-200 bg-emerald-50 py-2.5 text-xs font-bold text-emerald-700 hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-300 transition">
+          🔄 30日間ログイン維持を有効化（権限を再取得）
+        </button>
         <button id="openOnboardingFromAccountBtn" type="button"
           class="w-full rounded-xl border border-blue-200 bg-blue-50 py-2.5 text-xs font-bold text-blue-700 hover:bg-blue-100 dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-300 transition">
           ✨ 初期設定ウィザード（スプシ＆フォルダ自動作成）を開く
@@ -4346,15 +4350,24 @@
           document.getElementById('accountEmail').textContent = signedIn ? (googleAuth.user.email || '') : 'Googleアカウントでログインして同期';
 
           const badge = document.getElementById('accountStatusBadge');
-          if (tokenValid) {
-            badge.textContent = '接続中';
+          const hasLong = Boolean(googleAuth.hasLongSession && googleAuth.sessionToken);
+          if (tokenValid && hasLong) {
+            badge.textContent = '長期接続中（自動更新）';
             badge.className = 'rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300';
+          } else if (tokenValid) {
+            badge.textContent = '接続中（1時間）';
+            badge.className = 'rounded-full bg-blue-100 px-2.5 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-blue-950 dark:text-blue-300';
           } else if (signedIn) {
             badge.textContent = '再認証要';
             badge.className = 'rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-950 dark:text-amber-300';
           } else {
             badge.textContent = '未接続';
             badge.className = 'rounded-full bg-slate-200 px-2.5 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-700 dark:text-slate-300';
+          }
+
+          const longBtn = document.getElementById('enableLongSessionBtn');
+          if (longBtn) {
+            longBtn.classList.toggle('hidden', !signedIn || hasLong);
           }
 
           const sLink = document.getElementById('accountSheetLink');
@@ -4420,7 +4433,10 @@
                 method: 'POST',
                 credentials: 'same-origin',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'refresh' })
+                body: JSON.stringify({
+                  action: 'refresh',
+                  session_token: googleAuth.sessionToken || undefined
+                })
               });
               if (res.status === 404 || res.status === 503) {
                 serverAuthSupported = false;
@@ -4430,13 +4446,17 @@
               if (!res.ok || json.status !== 'ok' || !json.access_token) {
                 if (res.status === 401) {
                   googleAuth.hasLongSession = false;
+                  googleAuth.sessionToken = '';
                   saveJSON(STORAGE_KEYS.GOOGLE_AUTH, googleAuth);
+                  renderAccountUI();
                 }
                 return false;
               }
               googleAuth.accessToken = json.access_token;
               googleAuth.expiresAt = Date.now() + ((Number(json.expires_in) || 3500) * 1000);
               googleAuth.hasLongSession = true;
+              if (json.session_token) googleAuth.sessionToken = json.session_token;
+              if (json.session_expires_at) googleAuth.sessionExpiresAt = Number(json.session_expires_at);
               saveJSON(STORAGE_KEYS.GOOGLE_AUTH, googleAuth);
               renderAccountUI();
               renderOfflineStatusUI();
@@ -4450,7 +4470,7 @@
           return silentRefreshPromise;
         }
 
-        async function finalizeGoogleSignIn(newToken, expiresInSec, prevEmail, hasLongSession = false) {
+        async function finalizeGoogleSignIn(newToken, expiresInSec, prevEmail, hasLongSession = false, sessionToken = '', sessionExpiresAt = 0) {
           const newExpiresAt = Date.now() + ((Number(expiresInSec) || 3500) * 1000);
           let newUser = null;
           try {
@@ -4467,9 +4487,16 @@
           googleAuth.expiresAt = newExpiresAt;
           googleAuth.user = newUser || googleAuth.user;
           googleAuth.hasLongSession = Boolean(hasLongSession);
+          if (sessionToken) googleAuth.sessionToken = sessionToken;
+          if (sessionExpiresAt) googleAuth.sessionExpiresAt = Number(sessionExpiresAt);
           saveJSON(STORAGE_KEYS.GOOGLE_AUTH, googleAuth);
           renderAccountUI();
           renderOfflineStatusUI();
+          if (hasLongSession) {
+            showToast('✅ 30日間ログイン維持（自動更新）が有効になりました');
+          } else if (serverAuthSupported) {
+            showToast('⚠️ 1時間セッションです。アカウント画面の「30日間ログイン維持を有効化」を押してください');
+          }
           if (navigator.onLine && offlineLogQueue.length > 0 && googleAuth.spreadsheetId) {
             setTimeout(() => syncOfflineLogQueue({ silent: false, promptReconnect: false }), 300);
           }
@@ -4530,7 +4557,11 @@
                       method: 'POST',
                       credentials: 'same-origin',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ action: 'exchange', code: resp.code })
+                      body: JSON.stringify({
+                        action: 'exchange',
+                        code: resp.code,
+                        session_token: googleAuth.sessionToken || undefined
+                      })
                     });
                     if (exRes.status === 404 || exRes.status === 503) {
                       // サーバー側に GOOGLE_CLIENT_SECRET 未設定時は従来の1時間トークン方式へ自動フォールバック
@@ -4548,7 +4579,9 @@
                       exJson.access_token,
                       exJson.expires_in,
                       prevEmail,
-                      Boolean(exJson.has_refresh_token)
+                      Boolean(exJson.has_refresh_token),
+                      exJson.session_token || '',
+                      exJson.session_expires_at || 0
                     );
                     resolve(auth);
                   } catch (err) {
@@ -4720,13 +4753,32 @@
           }
         });
 
+        document.getElementById('enableLongSessionBtn')?.addEventListener('click', async () => {
+          try {
+            // 既に同意済みのアカウントでもGoogleから確実にrefresh_tokenを発行させるため、一時的にアクセス権を取り消してから再同意する（ドライブのファイルは消えません）
+            if (googleAuth.accessToken) {
+              try {
+                await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(googleAuth.accessToken)}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                });
+              } catch (_) { }
+            }
+            await requestGoogleLogin();
+            closeAccountModal();
+            fetchAndRenderData(true);
+          } catch (err) {
+            showToast(err.message || '長期ログインの有効化がキャンセルされました');
+          }
+        });
+
         document.getElementById('googleSignOutBtn').addEventListener('click', () => {
           if (serverAuthSupported) {
             fetch('/api/auth', {
               method: 'POST',
               credentials: 'same-origin',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ action: 'logout' })
+              body: JSON.stringify({ action: 'logout', session_token: googleAuth.sessionToken || undefined })
             }).catch(() => { });
           }
           clearAllUserLocalData(true);

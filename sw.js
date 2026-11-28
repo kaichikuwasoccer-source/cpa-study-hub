@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cpa-study-hub-v1';
+const CACHE_NAME = 'cpa-study-hub-v2';
 const APP_SHELL_ASSETS = [
   './',
   './index.html',
